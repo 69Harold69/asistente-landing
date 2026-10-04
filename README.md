@@ -56,11 +56,7 @@ la licencia, sólo la atribución exacta).
 
 ## Pendientes / marcadores (no inventar al publicar)
 
-1. **`[COMPLETAR_RETENCION_BACKUPS]`** en `privacidad/index.html` (sección 7)
-   y en `eliminar-cuenta/index.html`: el dueño está decidiendo el plazo de
-   retención de los backups del servidor. Es el único texto con marcador que
-   queda en las páginas públicas, por instrucción explícita — hay que
-   reemplazarlo en los dos archivos (son el mismo texto) antes de publicar.
+1. ~~Retención de backups~~ → **resuelto 2026-10-04: 30 días** (decisión del dueño), con cron de rotación en el droplet. El plazo ARCO usa el artículo 31 de la LFPDPPP 2025 (20 días para responder, 15 para hacer efectivo, ampliables una vez).
 2. **Atribución exacta de las fuentes** (ver arriba).
 3. El badge de App Store en `index.html` queda deshabilitado (decisión 3.2 del
    plan); cuando haya ficha pública de Android, el CTA "Únete a la beta" de la
@@ -94,11 +90,7 @@ la licencia, sólo la atribución exacta).
     <https://basham.com.mx/en/nueva-ley-federal-de-proteccion-de-datos-personales-en-posesion-de-los-particulares-publicada-en-el-diario-oficial-de-la-federacion/>
   - Pirani Risk, *LFPDPPP: Guía de la Ley de Protección de Datos en México*:
     <https://www.piranirisk.com/es/hub-regulatorio/lfpdppp-ley-proteccion-datos-mexico>
-  - El plazo de **20 días hábiles** para responder derechos ARCO que usa la
-    política (sección 9) viene de la instrucción del dueño del proyecto, no
-    de un artículo específico que haya podido confirmar en la ley nueva de
-    2025 (las fuentes consultadas no mencionan el plazo); si la ley nueva fijó
-    un plazo distinto, hay que corregirlo antes de publicar.
+  - Plazo ARCO (sección 9 de la política y `/eliminar-cuenta`): **artículo 31 de la LFPDPPP 2025**, indicado por el dueño el 2026-10-04: máximo 20 días para comunicar la respuesta desde que se recibe la solicitud y 15 días para hacerla efectiva, ampliables una sola vez por un periodo igual. Se escribe como "días", sin "hábiles".
 
 ## Despliegue (NO ejecutado — sólo instrucciones para cuando el dueño lo apruebe)
 
