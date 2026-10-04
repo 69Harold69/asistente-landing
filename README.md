@@ -14,6 +14,7 @@ asistente-landing/
 ├── privacidad/index.html   Política de privacidad
 ├── terminos/index.html     Términos y condiciones
 ├── eliminar-cuenta/index.html  Cómo eliminar tu cuenta
+├── 404.html                Página de error, servida por el handle_errors de Caddy
 ├── assets/
 │   ├── css/  tokens.css (colores/tipografía/espaciado), fonts.css (@font-face),
 │   │         base.css (layout y componentes compartidos)
@@ -115,9 +116,16 @@ conexión.
 
 ### 2. Clonar el repo en el droplet
 
+Caddy corre como el usuario de sistema `caddy`, que no puede leer dentro de
+`/home/harold2003` (permisos `700` del home). Por eso el repo se clona fuera
+del home, en `/var/www`:
+
 ```bash
 ssh <usuario>@<droplet>
-git clone <url-del-repo> /home/harold2003/asistente-landing
+sudo mkdir -p /var/www
+sudo chown harold2003:harold2003 /var/www
+git clone <url-del-repo> /var/www/asistente-landing
+chmod -R a+rX /var/www/asistente-landing
 ```
 
 (Este repo todavía no existe en GitHub: el PM avisa al dueño antes de crearlo
@@ -130,45 +138,69 @@ Agregar al `Caddyfile` del droplet (junto al bloque existente de
 
 ```caddyfile
 yaruki.hjgr.dev {
-	root * /home/harold2003/asistente-landing
+	root * /var/www/asistente-landing
 	encode gzip zstd
+
+	try_files {path} {path}/index.html {path}.html
 
 	file_server
 
-	@tieneBarra path_regexp final ^(.*)/$
-	try_files {path} {path}/index.html {path}.html
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
 
 	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "geolocation=(), camera=(), microphone=(), interest-cohort=()"
 		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+		-Server
 	}
 }
 ```
 
-Notas sobre la CSP: hoy el sitio no tiene JS ni fuentes externas, así que
-`script-src 'self'` y `font-src 'self'` alcanzan. Cuando se agregue GSAP
-vendorizado (etapas 2+), sigue siendo `'self'` porque el plan dice que se
-vendoriza en el repo, no por CDN — no hay que relajar la CSP para eso.
+Notas:
+- **CSP:** hoy el sitio no tiene JS ni fuentes externas, así que
+  `script-src 'self'` y `font-src 'self'` alcanzan. Cuando se agregue GSAP
+  vendorizado (etapas 2+), sigue siendo `'self'` porque el plan dice que se
+  vendoriza en el repo, no por CDN — no hay que relajar la CSP para eso.
+- **HSTS:** sólo `max-age`, sin `includeSubDomains` ni `preload`. Es un
+  subdominio propio con su propio certificado; `preload` compromete al dominio
+  raíz completo con los navegadores de forma casi irreversible, y no
+  corresponde decidirlo desde el bloque de un subdominio.
+- **`-Server`:** quita la cabecera `Server` de la respuesta para no anunciar
+  la versión de Caddy.
+- **`handle_errors`:** sirve `404.html` (en la raíz del repo, con los mismos
+  tokens del sitio) para cualquier error, en vez de la página en blanco por
+  defecto de Caddy. Caddy conserva el código de estado original de la
+  petición (404, 500, etc.) aunque el cuerpo sea el de `404.html`.
+- Se quitó el matcher `@tieneBarra` de una versión anterior de este bloque:
+  quedaba definido pero nada lo usaba.
 
-### 4. Validar y recargar
+### 4. Validar, recargar y verificar
 
 ```bash
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
+
+# Verificación: debe responder 200 con las cabeceras de seguridad de arriba.
+curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
 ```
 
 Validar primero es obligatorio: un error en el bloque nuevo no debe tumbar
-`asistente.hjgr.dev`.
+`asistente.hjgr.dev`. Si `curl` no devuelve `200` o faltan las cabeceras,
+revisar el bloque antes de dar el despliegue por terminado.
 
 ### 5. Actualizar
 
 ```bash
-cd /home/harold2003/asistente-landing && git pull
+cd /var/www/asistente-landing && git pull
 # sólo si cambió el Caddyfile:
 sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
+# y volver a verificar, igual que en el paso 4:
+curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
 ```
 
 No toca Sail ni el worker de colas del backend. Impacto en RAM: despreciable.
