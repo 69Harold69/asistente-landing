@@ -1,0 +1,76 @@
+/*
+  Fuentes autoalojadas (sin Google Fonts ni ningún otro origen externo).
+  Archivos .woff2 convertidos de los .ttf que empaqueta asistente-android
+  (app/src/main/res/font/), con woff2_compress. Licencia SIL OFL en
+  assets/fonts/OFL.txt.
+*/
+
+@font-face {
+  font-family: "Baloo 2";
+  src: url("../fonts/baloo2-semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Baloo 2";
+  src: url("../fonts/baloo2-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Baloo 2";
+  src: url("../fonts/baloo2-extrabold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("../fonts/manrope-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("../fonts/manrope-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("../fonts/manrope-semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("../fonts/manrope-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Métrica de sistema de respaldo mientras carga la fuente, para evitar un
+   salto de layout grande (no hay fuentes de terceros, sólo ajuste local). */
+@font-face {
+  font-family: "Baloo 2 Fallback";
+  src: local("Arial");
+  size-adjust: 112%;
+}
+
+@font-face {
+  font-family: "Manrope Fallback";
+  src: local("Arial");
+  size-adjust: 102%;
+}
