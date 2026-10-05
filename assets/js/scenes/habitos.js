@@ -10,14 +10,20 @@
  * elegible para consolidar") — mostrar esa segunda rama sin que la regla de
  * consolidación sea pública todavía sería prometer algo que el producto no
  * define (plan, 4.4: "sin prometer reglas").
+ *
+ * **Punto de control 2, bug 8:** sin rojo — un día sin cumplir es una celda
+ * vacía (ver `ps-heat-cell` sin modificador en `scenes.css`), nunca una
+ * falta marcada en rojo (el dato real es booleano por día, "incumplimiento"
+ * no es un estado que el backend distinga). `done-suave` es sólo textura
+ * tipo GitHub, sigue siendo "cumplido".
  */
 export const id = "habitos";
 
 const PATRON_HEATMAP = [
-  "done", "done", "miss", "done", "none", "done", "done",
-  "done", "miss", "done", "done", "none", "done", "done",
-  "done", "miss", "done", "done", "done", "none", "done",
-  "miss", "done", "done", "done", "done", "miss", "done",
+  "done", "done", "none", "done", "none", "done", "done-suave",
+  "done", "none", "done", "done-suave", "none", "done", "done",
+  "done", "none", "done-suave", "done", "done", "none", "done",
+  "none", "done", "done", "done-suave", "done", "none", "done",
 ];
 
 function celdas() {

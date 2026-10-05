@@ -1,8 +1,10 @@
 /*
   Yaruki — el teléfono 3D persistente (plan, 4.2 y 5.2).
-  Etapa 2: teléfono ESTÁTICO. `--rotacion-y` se fija por JS sólo para el modo
-  de inspección (`?cara=`, ver stage.js) — la coreografía ligada al scroll
-  (giro 360° real) llega en la etapa 4, fuera de esta corrida.
+  Etapa 4: coreografía ligada al scroll (`assets/js/stage.js`, GSAP +
+  ScrollTrigger) — gira 360° y "vuela" de lado a lado entre fases en
+  escritorio con movimiento ok; crossfade liso en móvil/`reduced-motion`.
+  `--rotacion-y`/`--vuelo-x`/`--vuelo-escala` las fija JS en cada cuadro de
+  scroll (o una vez sola en el modo de inspección `?cara=`).
 
   Unidades `cqw` dentro de `.pantalla-telefono`: ese contenedor declara
   `container-type: inline-size`, así el texto de cada escena escala con el
@@ -25,13 +27,47 @@
     top: var(--space-3);
     height: calc(100vh - var(--space-4));
     align-items: center;
+    /* Overflow visible a propósito: el "vuelo" de la etapa 4 saca el
+       teléfono del ancho de su propia columna hacia el texto y de vuelta —
+       si esto recortara, el vuelo se vería guillotinado en el borde. */
+    overflow: visible;
   }
 }
 
 .escenario-3d {
+  position: relative;
   perspective: 1600px;
   width: var(--phone-width);
   flex-shrink: 0;
+}
+
+/*
+  Sombra de vuelo (plan 4.2: "sombra que se alarga y se suaviza") — una
+  elipse aparte en vez de animar el `box-shadow` estático del teléfono: la
+  etapa 4 sólo anima `transform`/`opacity` (regla explícita del encargo), y
+  blur/spread de `box-shadow` no son ninguna de las dos. `stage.js` la
+  escala/atenúa en cada cuadro con las mismas 2 propiedades permitidas.
+*/
+.phone-sombra-vuelo {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -6%;
+  height: 10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, hsl(var(--shadow-color) / 0.55), transparent 75%);
+  opacity: 0;
+  transform: scaleX(1);
+  pointer-events: none;
+}
+
+/* Teléfono más chico en móvil (punto de control 2, mejora 9) — el titular y
+   el CTA van primero (ver orden del DOM en index.html) y el teléfono
+   acompaña debajo sin competir por todo el alto de la primera pantalla. */
+@media (max-width: 1023px) {
+  .escenario-3d {
+    width: clamp(160px, 42vw, 240px);
+  }
 }
 
 .phone {
@@ -39,7 +75,11 @@
   width: 100%;
   aspect-ratio: 9 / 19.5;
   transform-style: preserve-3d;
-  transform: rotateY(var(--rotacion-y, 0deg));
+  /* Orden fijo: `stage.js` sólo toca las 3 variables, nunca reescribe esta
+     propiedad — así el orden de composición (trasladar, achicar, girar)
+     queda siempre igual cuadro a cuadro. */
+  transform: translateX(var(--vuelo-x, 0px)) scale(var(--vuelo-escala, 1))
+    rotateY(var(--rotacion-y, 0deg));
 }
 
 /*
@@ -66,6 +106,14 @@
     0 1px 0 rgba(255, 255, 255, 0.06) inset,
     0 44px 80px -32px hsl(var(--shadow-color) / 0.5);
   padding: var(--phone-bezel);
+  /*
+    Empuja el frente a +D/2 en Z — junto con la espalda en -D/2 (ver abajo),
+    el teléfono pasa de ser una tarjeta plana (frente y espalda coincidiendo
+    en el mismo plano) a una caja real con grosor. Sin esto, los cantos
+    (abajo) no tenían con qué encajar y la vista de canto se veía como una
+    tira flotando aparte en vez de una sola pieza (punto de control 2, bug 6).
+  */
+  transform: translateZ(calc(var(--phone-depth) / 2));
 }
 
 .phone-isla {
@@ -92,11 +140,43 @@
   container-name: pantalla;
 }
 
+/*
+  Capas apiladas dentro de la pantalla — sólo las usa el cruce Splash→Login
+  del hero (etapa 3): dos escenas montadas A LA VEZ, una encima de la otra,
+  para poder cruzarlas con `opacity` en vez de reemplazar el HTML de golpe.
+  El resto de los cambios de escena (fases B en adelante) siguen siendo un
+  reemplazo liso de `innerHTML` — pasan con el teléfono de espaldas
+  (`SceneManager` en stage.js), así que no hace falta animarlos.
+*/
+.capa-escena {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+  Los 4 cantos (ver abajo) comparten la geometría de "caja real" que arma
+  `.phone-frente`/`.phone-espalda`: cada uno está CENTRADO sobre la línea
+  del borde que le toca (no pegado desde adentro), con el grosor repartido
+  mitad para cada lado (`calc(100% - var(--phone-depth) / 2)` en vez de
+  `100%`/`0`) y gira sobre su propio centro (`transform-origin: center`).
+  Antes giraban desde un borde (`transform-origin: left/right center` con
+  `left: 100%`/`right: 100%`), así que al llegar a 90° el canto quedaba
+  corrido medio grosor respecto de dónde terminan el frente (+D/2) y la
+  espalda (-D/2) — la "tira separada, pantalla cortada en diagonal" del
+  punto de control 2 (bug 6). Centrado sobre el borde, al rotar 90° el
+  canto encaja exacto entre las dos caras.
+
+  `opacity: abs(sin(...))`: sin esto el canto se ve como una línea fina a
+  los lados del teléfono de frente/de espaldas (bug 5) — un borde con
+  grosor real SÍ debería notarse apenas en escorzo, pero acá se notaba
+  demasiado por el color de relleno. `sin(0deg)`/`sin(180deg)` = 0 (cerca
+  de frente/espalda, invisible) y `sin(90deg)` = 1 (de canto, visible al
+  100%) — sigue el ángulo real del teléfono en vez de un valor fijo, así
+  que funciona igual con `?cara=` (estático) que con la coreografía de
+  scroll de la etapa 4 (`--rotacion-y` cambiando en vivo).
+*/
 .phone-canto {
   position: absolute;
-  top: 0;
-  height: 100%;
-  width: var(--phone-depth);
   border-radius: var(--phone-radius);
   background: linear-gradient(
     90deg,
@@ -104,23 +184,51 @@
     var(--color-border-card) 45%,
     hsl(var(--shadow-color) / 0.3)
   );
+  opacity: abs(sin(var(--rotacion-y, 0deg)));
+}
+
+.phone-canto--derecha,
+.phone-canto--izquierda {
+  top: 0;
+  height: 100%;
+  width: var(--phone-depth);
+  transform-origin: center center;
 }
 
 .phone-canto--derecha {
-  left: 100%;
-  transform-origin: left center;
+  left: calc(100% - var(--phone-depth) / 2);
   transform: rotateY(90deg);
 }
 
 .phone-canto--izquierda {
-  right: 100%;
-  transform-origin: right center;
+  right: calc(100% - var(--phone-depth) / 2);
   transform: rotateY(-90deg);
+}
+
+.phone-canto--arriba,
+.phone-canto--abajo {
+  left: 0;
+  width: 100%;
+  height: var(--phone-depth);
+  transform-origin: center center;
+}
+
+.phone-canto--arriba {
+  top: calc(var(--phone-depth) / -2);
+  transform: rotateX(90deg);
+}
+
+.phone-canto--abajo {
+  bottom: calc(var(--phone-depth) / -2);
+  transform: rotateX(-90deg);
 }
 
 .phone-espalda {
   background: linear-gradient(135deg, var(--color-bg-elevated) 55%, var(--color-accent-soft) 140%);
-  transform: rotateY(180deg);
+  /* rotateY(180) la encara hacia -Z; translateZ(D/2) en ESE espacio ya
+     rotado empuja hacia +Z del padre, o sea -D/2 real — ver nota de
+     `.phone-frente`. */
+  transform: rotateY(180deg) translateZ(calc(var(--phone-depth) / 2));
   display: flex;
   align-items: center;
   justify-content: center;

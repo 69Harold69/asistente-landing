@@ -237,6 +237,15 @@ strong {
   color: var(--color-text-secondary);
 }
 
+/* Lema corto — sólo acá y en metadatos (<title>/description/og), nunca en
+   el hero (decisión del dueño, punto de control 2). */
+.lema-footer {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.3em;
+}
+
 .footer-links {
   display: flex;
   gap: var(--space-3);
@@ -574,6 +583,15 @@ strong {
   gap: var(--space-2);
 }
 
+/* El chip "Beta cerrada en Android" se esconde en móvil angosto (punto de
+   control 2, mejora 9): con el wordmark + el toggle, 3 elementos no entran
+   en un renglón sin que el header se parta en dos líneas. */
+@media (max-width: 480px) {
+  .chip-beta-header {
+    display: none;
+  }
+}
+
 /* Layout con escenario sticky ---------------------------------------------
    Grid de 2 columnas desde 1024px: columna de contenido + columna del
    teléfono (sticky, ver phone.css). Debajo de 1024px, una sola columna —
@@ -595,15 +613,18 @@ strong {
   }
 
   /*
-    Fila fijada EXPLÍCITA en las 3 (no sólo la columna): el auto-placement
+    Fila fijada EXPLÍCITA en los 4 (no sólo la columna): el auto-placement
     "sparse" de Grid no rellena hacia atrás una celda libre una vez que el
-    cursor ya avanzó de fila — con sólo `grid-column` (sin `grid-row`), el
-    cursor queda en fila 2 tras ubicar `.stage` y como la columna de `main`
-    (1) es "anterior" a la columna del cursor, Grid lo manda a la fila 3 en
-    vez de reusar la fila 2 col 1, que sí está libre. Encontrado en vivo:
-    `main` quedaba con un rect real (no 0×0) pero empujado ~930px hacia
-    abajo, fuera de cualquier viewport razonable. `grid-row` explícito en
-    los 3 selectores lo evita de raíz, sin depender de `grid-auto-flow: dense`.
+    cursor ya avanzó de fila (bug real encontrado en el punto de control 1:
+    `main` quedaba empujado ~930px hacia abajo). `grid-row` explícito evita
+    depender de `grid-auto-flow: dense`.
+
+    `#hero` vive FUERA de `<main>` en el HTML (ver comentario en index.html)
+    para que el móvil (flujo de bloque normal, sin grid) muestre
+    titular+CTA arriba y el teléfono debajo sin JS — acá en escritorio eso
+    se deshace: `#hero` y `<main>` son dos filas separadas en la misma
+    columna 1 (fila 2 y 3), y `.stage` las abarca a las DOS (`grid-row: 2 / 4`)
+    para quedar pegado durante todo el recorrido, no sólo durante el hero.
   */
   .layout-con-stage > .site-header {
     grid-column: 1 / -1;
@@ -615,14 +636,19 @@ strong {
     padding: 0;
   }
 
-  .layout-con-stage > main {
+  .layout-con-stage > #hero {
     grid-column: 1;
     grid-row: 2;
   }
 
+  .layout-con-stage > main {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
   .layout-con-stage > .stage {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 2 / 4;
   }
 }
 
@@ -644,14 +670,11 @@ strong {
   padding-top: var(--space-4);
 }
 
-.eyebrow-marca {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6em;
+.hero-significado {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: var(--text-base);
-  color: var(--color-accent);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
   margin: 0 0 var(--space-2);
 }
 
@@ -666,23 +689,6 @@ strong {
   color: var(--color-text-secondary);
   max-width: 34ch;
   margin-bottom: var(--space-3);
-}
-
-.significado {
-  font-size: var(--text-base);
-  line-height: 1.5;
-  color: var(--color-text);
-  background: var(--color-accent-soft);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  max-width: 34ch;
-  margin-bottom: var(--space-4);
-}
-
-.significado .ja {
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--color-accent);
 }
 
 .cta-row {
@@ -745,8 +751,7 @@ strong {
   }
 
   .seccion--par .fase-texto,
-  .seccion--par .subtitulo-hero,
-  .seccion--par .significado {
+  .seccion--par .subtitulo-hero {
     margin-left: auto;
   }
 

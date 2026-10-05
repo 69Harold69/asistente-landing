@@ -3,11 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Yaruki — las ganas de hacer algo</title>
+  <title>Yaruki — las ganas de hacerlo</title>
   <meta
     name="description"
-    content="Yaruki es un asistente personal que organiza tus tareas, notas, listas, eventos y hábitos conversando en lenguaje natural, sin cambiar ni borrar nada sin tu confirmación."
+    content="Yaruki (やる気, las ganas de hacerlo): un asistente personal que organiza tus tareas, notas, listas, eventos y hábitos conversando en lenguaje natural, sin cambiar ni borrar nada sin preguntarte."
   />
+  <meta property="og:title" content="Yaruki — las ganas de hacerlo" />
+  <meta
+    property="og:description"
+    content="Dile lo que tienes que hacer. Yaruki se encarga de anotarlo — tareas, notas, listas, eventos y hábitos, por conversación."
+  />
+  <meta property="og:type" content="website" />
   <link rel="stylesheet" href="assets/css/tokens.css" />
   <link rel="stylesheet" href="assets/css/fonts.css" />
   <link rel="stylesheet" href="assets/css/base.css" />
@@ -25,7 +31,7 @@
           Yaruki
         </a>
         <div class="header-acciones">
-          <span class="chip">Beta cerrada en Android</span>
+          <span class="chip chip-beta-header">Beta cerrada en Android</span>
           <button
             type="button"
             class="theme-toggle"
@@ -44,17 +50,60 @@
       </div>
     </header>
 
+    <!--
+      #hero vive FUERA de <main> a propósito (desvío anotado en el reporte del
+      punto de control 2): en móvil el layout es flujo normal de bloque, y el
+      orden real en pantalla es el orden del DOM — con #hero como hermano de
+      #stage (en vez de hijo de <main>), el titular+CTA quedan arriba y el
+      teléfono abajo sin necesitar JS. En escritorio, el grid de abajo
+      (`.layout-con-stage`, ver base.css) posiciona cada uno por `grid-row`/
+      `grid-column` explícitos, así que el orden del DOM deja de importarle a
+      esa vista — #stage igual queda sticky a la derecha, span en las filas
+      del hero Y de <main> para seguir pegado durante todo el recorrido.
+    -->
+    <section id="hero" class="seccion seccion-hero">
+      <p class="hero-significado">Yaruki (やる気): las ganas de hacer algo</p>
+      <h1 class="titular-hero">
+        Dile lo que tienes que hacer. Yaruki se encarga de anotarlo.
+      </h1>
+      <p class="subtitulo-hero">
+        Un asistente personal que organiza tareas, notas, listas, eventos y
+        hábitos por conversación. Nunca cambia ni borra nada sin preguntarte.
+      </p>
+      <div class="cta-row">
+        <div class="cta-item">
+          <a
+            class="button button--disabled"
+            aria-disabled="true"
+            href="#"
+            data-cta-beta
+          >
+            Únete a la beta
+          </a>
+          <span class="chip" data-chip-proximamente-beta>Próximamente</span>
+        </div>
+        <div class="cta-item">
+          <span class="button button--disabled" aria-disabled="true">Descárgala en App Store</span>
+          <span class="chip">Próximamente</span>
+        </div>
+      </div>
+      <p class="cta-nota">Beta cerrada en Android · te unes con tu cuenta de Google.</p>
+    </section>
+
     <div id="stage" class="stage">
       <div class="escenario-3d">
+        <span class="phone-sombra-vuelo" id="sombra-vuelo" aria-hidden="true"></span>
         <div class="phone" id="telefono" aria-hidden="true">
           <div class="phone-cara phone-frente">
             <span class="phone-isla"></span>
             <div class="phone-pantalla" id="pantalla-telefono">
-              <!-- Escena montada por assets/js/stage.js -->
+              <!-- Escenas montadas por assets/js/stage.js -->
             </div>
           </div>
           <span class="phone-canto phone-canto--derecha"></span>
           <span class="phone-canto phone-canto--izquierda"></span>
+          <span class="phone-canto phone-canto--arriba"></span>
+          <span class="phone-canto phone-canto--abajo"></span>
           <div class="phone-cara phone-espalda">
             <div class="phone-modulo-camaras">
               <span class="phone-lente"></span>
@@ -68,41 +117,6 @@
     </div>
 
     <main id="contenido">
-      <section id="hero" class="seccion seccion-hero">
-        <p class="eyebrow-marca">
-          <span class="punto-vivo" aria-hidden="true"></span>
-          Yaruki · las ganas de hacerlo
-        </p>
-        <h1 class="titular-hero">
-          Organiza tu día hablándole, como le escribirías a alguien de confianza.
-        </h1>
-        <p class="subtitulo-hero">
-          Yaruki convierte lo que le dices en tareas, notas, listas, eventos y
-          hábitos. Nunca cambia ni borra nada sin que tú lo confirmes primero.
-        </p>
-        <p class="significado">
-          <span class="ja">Yaruki (やる気)</span>: las ganas de hacer algo.
-        </p>
-        <div class="cta-row">
-          <div class="cta-item">
-            <a
-              class="button button--disabled"
-              aria-disabled="true"
-              href="#"
-              data-cta-beta
-            >
-              Únete a la beta
-            </a>
-            <span class="chip" data-chip-proximamente-beta>Próximamente</span>
-          </div>
-          <div class="cta-item">
-            <span class="button button--disabled" aria-disabled="true">Descárgala en App Store</span>
-            <span class="chip">Próximamente</span>
-          </div>
-        </div>
-        <p class="cta-nota">Beta cerrada en Android · te unes con tu cuenta de Google.</p>
-      </section>
-
       <section id="fase-chat" class="seccion">
         <p class="fase-kicker">Así es como empieza</p>
         <h2 class="fase-titulo">Háblale como a un amigo</h2>
@@ -117,7 +131,20 @@
         </p>
       </section>
 
-      <section id="fase-habitos" class="seccion seccion--par">
+      <section id="fase-elementos" class="seccion seccion--par">
+        <p class="fase-kicker">Y ahí queda</p>
+        <h2 class="fase-titulo">Todo lo que le dijiste, organizado solo</h2>
+        <p class="fase-texto">
+          Cada tarea, nota, lista, evento y hábito que mencionaste en el chat
+          aparece junto, en un solo lugar — sin que tengas que ordenarlo vos.
+        </p>
+        <p class="fase-texto">
+          Tocas cualquier tarjeta y vas directo al detalle, igual que si lo
+          hubieras creado a mano.
+        </p>
+      </section>
+
+      <section id="fase-habitos" class="seccion">
         <p class="fase-kicker">Y con el tiempo</p>
         <h2 class="fase-titulo">Hábitos que se ven, no que se imaginan</h2>
         <p class="fase-texto">
@@ -130,7 +157,7 @@
         </p>
       </section>
 
-      <section id="fase-llamada" class="seccion">
+      <section id="fase-llamada" class="seccion seccion--par">
         <p class="fase-kicker">Más adelante</p>
         <h2 class="fase-titulo">Un recordatorio que se siente real</h2>
         <p class="fase-texto fase-chip-inline">
@@ -227,10 +254,13 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>
-        Yaruki es un proyecto de Harold de Jesús García Ramírez, Guadalajara,
-        Jalisco, México.
-      </p>
+      <div>
+        <p class="lema-footer">Yaruki · las ganas de hacerlo</p>
+        <p>
+          Yaruki es un proyecto de Harold de Jesús García Ramírez, Guadalajara,
+          Jalisco, México.
+        </p>
+      </div>
       <ul class="footer-links">
         <li><a href="/privacidad/">Privacidad</a></li>
         <li><a href="/terminos/">Términos</a></li>

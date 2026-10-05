@@ -445,12 +445,22 @@
   background: var(--color-border-card);
 }
 
+/*
+  Sólo 2 estados reales: cumplido (verde éxito) y vacío (la pista de abajo,
+  ni gris oscuro ni rojo). Punto de control 2, bug 8: el rojo implicaba
+  "incumplido" como una falta — el dato que tiene la app hoy es sólo
+  booleano por día (cumplido o no registrado), nunca "incumplimiento
+  activo", así que marcarlo en rojo era inventar una severidad que no
+  existe. `--done-suave` (color-mix sobre el mismo verde) es sólo textura
+  tipo GitHub para que el heatmap no se vea plano — sigue siendo "cumplido",
+  no un tercer estado real.
+*/
 .ps-heat-cell--done {
   background: var(--color-success);
 }
 
-.ps-heat-cell--miss {
-  background: var(--color-danger);
+.ps-heat-cell--done-suave {
+  background: color-mix(in srgb, var(--color-success) 55%, var(--color-border-card));
 }
 
 .ps-stat-card {
@@ -552,12 +562,23 @@
   color: var(--color-on-accent);
 }
 
+/* Punto de control 2, mejora 10: ícono de trofeo de trazo en vez del
+   cuadro blanco vacío. */
 .ps-logro-badge {
   width: 17cqw;
   height: 17cqw;
   border-radius: 5cqw;
   background: var(--color-on-accent);
   margin-bottom: 1cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ps-logro-badge svg {
+  width: 62%;
+  height: 62%;
+  stroke: var(--color-accent);
 }
 
 .ps-logro-modal strong {
@@ -583,13 +604,23 @@
 
 /* Llamada --------------------------------------------------------------------- */
 
+/*
+  Degradado FIJO, no con tokens de tema (bug 7 del punto de control 2): con
+  `--color-text`/`--color-bg` se invertía entre claro/oscuro (en oscuro
+  `--color-text` es el lavanda claro, así que el degradado quedaba más
+  claro arriba que abajo) — una pantalla de llamada entrante tiene que
+  leerse oscura/dramática en los DOS temas, como la cámara in-call real de
+  un teléfono. Mismos hex que el tema oscuro de `tokens.css` (`#151322`/
+  `#332c57`), copiados a propósito en vez de referenciados: acá no deben
+  moverse si el tema oscuro cambia de paleta más adelante.
+*/
 .ps-llamada {
   position: relative;
-  background: linear-gradient(180deg, var(--color-text) 0%, var(--color-bg) 150%);
+  background: linear-gradient(180deg, #13111f 0%, #332c57 160%);
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: var(--color-on-accent);
+  color: #f1effb;
   gap: 5cqw;
 }
 
@@ -655,10 +686,26 @@
   min-width: 36px;
   min-height: 36px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ps-call-btn svg {
+  width: 46%;
+  height: 46%;
+  fill: #fff;
 }
 
 .ps-call-btn--rechazar {
   background: var(--color-danger);
+}
+
+/* El glifo de colgar es el mismo ícono de "llamar", rotado — mismo truco
+   que el ícono real "call_end" de Material (que es "call" a 135°): no hace
+   falta dibujar un segundo glifo. */
+.ps-call-btn--rechazar svg {
+  transform: rotate(135deg);
 }
 
 .ps-call-btn--aceptar {

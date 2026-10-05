@@ -49,3 +49,39 @@ export function iconoMic() {
     `<line x1="8" y1="22" x2="16" y2="22"/></svg>`
   );
 }
+
+/**
+ * Auricular de llamada — glifo "call" estándar de Material (relleno, 24×24),
+ * para los botones de Contestar/Colgar de la escena `llamada` (punto de
+ * control 2, bug 7). El de Colgar es el MISMO glifo rotado 135° por CSS
+ * (`.ps-call-btn--rechazar svg`) — así arma el ícono "call_end" real de
+ * Material sin dibujar un segundo path.
+ */
+export function iconoTelefono() {
+  return (
+    `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 ` +
+    `1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 ` +
+    `0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>`
+  );
+}
+
+/**
+ * Trofeo de trazo (estilo IconosBento — viewBox 24, trazo redondeado), para
+ * el modal de logro (punto de control 2, mejora 10). Path del ícono
+ * "trophy" de Lucide (ISC) — mismo origen que ya usa `IconosBento.habitos`
+ * en la app (el `repeat` de Lucide, ver su propio KDoc), así que no es una
+ * fuente nueva para este repo.
+ */
+export function iconoTrofeo() {
+  return (
+    `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" ` +
+    `stroke-linejoin="round" aria-hidden="true">` +
+    `<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>` +
+    `<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>` +
+    `<path d="M4 22h16"/>` +
+    `<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>` +
+    `<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>` +
+    `<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>` +
+    `</svg>`
+  );
+}

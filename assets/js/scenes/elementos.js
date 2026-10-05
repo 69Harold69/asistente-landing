@@ -20,7 +20,6 @@ export function mount(contenedor) {
     <div class="escena ps-elementos">
       <div class="ps-elementos-head">
         <h2 class="ps-title">Elementos</h2>
-        <span>Métricas</span>
       </div>
       <div class="ps-elementos-grid">
         <div class="ps-tile">

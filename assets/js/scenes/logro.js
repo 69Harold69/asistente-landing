@@ -8,6 +8,8 @@
  * que no existe todavía). Lleva el chip "Próximamente" (regla de la
  * sección 2 del plan: toda función fuera del MVP se marca así).
  */
+import { iconoTrofeo } from "../icons.js";
+
 export const id = "logro";
 
 const CONFETIS = [
@@ -22,7 +24,7 @@ export function mount(contenedor) {
   contenedor.innerHTML = `
     <div class="escena ps-logro">
       <div class="ps-logro-modal">
-        <div class="ps-logro-badge" aria-hidden="true"></div>
+        <div class="ps-logro-badge" aria-hidden="true">${iconoTrofeo()}</div>
         <strong>Vas muy bien</strong>
         <p>Cuando tu constancia sea lo bastante fuerte, Yaruki te lo va a hacer saber.</p>
         <span class="ps-chip-proximamente">Próximamente</span>
