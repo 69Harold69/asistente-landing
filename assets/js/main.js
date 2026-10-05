@@ -1,16 +1,17 @@
 import { inicializarTema, alternarTema } from "./theme.js";
+import { inicializarEscenario } from "./stage.js";
 import { BETA_URL } from "./config.js";
 
 /*
   Yaruki — punto de entrada de `index.html`. Sin framework, sin bundler:
   este archivo se carga con `<script type="module" src="assets/js/main.js">`,
   permitido por la CSP (`script-src 'self'`) porque es un archivo propio, no
-  un script inline. Los módulos (`theme.js`, por ahora) se resuelven como
-  imports ES nativos, sin paso de build. El teléfono 3D (`stage.js`,
-  `scenes/*.js`) se conecta acá en la etapa 2.
+  un script inline. Los módulos (`theme.js`, `stage.js`, `scenes/*.js`) se
+  resuelven como imports ES nativos, sin paso de build.
 */
 
 inicializarTema();
+inicializarEscenario();
 
 document.querySelectorAll("[data-theme-toggle]").forEach((boton) => {
   boton.addEventListener("click", () => alternarTema());

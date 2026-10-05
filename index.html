@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="assets/css/tokens.css" />
   <link rel="stylesheet" href="assets/css/fonts.css" />
   <link rel="stylesheet" href="assets/css/base.css" />
+  <link rel="stylesheet" href="assets/css/phone.css" />
+  <link rel="stylesheet" href="assets/css/scenes.css" />
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -42,13 +44,28 @@
       </div>
     </header>
 
-    <!--
-      El teléfono 3D (frente/canto/espalda, escenas montadas por JS) es la
-      etapa 2 del plan — acá sólo el contenedor vacío, para que el grid de
-      `.layout-con-stage` (columna de contenido + columna del escenario)
-      ya quede armado desde el esqueleto.
-    -->
-    <div id="stage" class="stage"></div>
+    <div id="stage" class="stage">
+      <div class="escenario-3d">
+        <div class="phone" id="telefono" aria-hidden="true">
+          <div class="phone-cara phone-frente">
+            <span class="phone-isla"></span>
+            <div class="phone-pantalla" id="pantalla-telefono">
+              <!-- Escena montada por assets/js/stage.js -->
+            </div>
+          </div>
+          <span class="phone-canto phone-canto--derecha"></span>
+          <span class="phone-canto phone-canto--izquierda"></span>
+          <div class="phone-cara phone-espalda">
+            <div class="phone-modulo-camaras">
+              <span class="phone-lente"></span>
+              <span class="phone-lente"></span>
+              <span class="phone-flash"></span>
+            </div>
+            <span class="phone-mascota-halo"></span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <main id="contenido">
       <section id="hero" class="seccion seccion-hero">

@@ -1,33 +1,66 @@
 # asistente-landing — sitio de Yaruki
 
 Sitio estático (HTML/CSS/JS, sin paso de build) para `yaruki.hjgr.dev`. Construido
-según `asistente-ia-ops/docs/plan-landing-yaruki.md`. **Este pase cubre la etapa
-1 del plan** (esqueleto, tokens, toggle de tema) sobre la base de las páginas
-legales ya publicadas — el teléfono 3D y el resto de la coreografía (etapas
-2-9) vienen después.
+según `asistente-ia-ops/docs/plan-landing-yaruki.md`. **Este pase cubre las
+etapas 1 y 2 del plan** (esqueleto/tokens + teléfono 3D estático, sección 8) —
+la coreografía ligada al scroll (giro 360°, fases en vivo, demo de tema) es la
+etapa 4 en adelante, todavía sin empezar. Parado en el **PUNTO DE CONTROL 1**
+del plan: no avanza a la etapa 3 sin que el dueño revise.
 
 ## Estructura
 
 ```
 asistente-landing/
-├── index.html              Home: hero, fases del recorrido, cierre, Centro de Privacidad
+├── index.html              Home: hero + teléfono 3D, fases del recorrido, cierre, Centro de Privacidad
 ├── privacidad/index.html   Política de privacidad
 ├── terminos/index.html     Términos y condiciones
 ├── eliminar-cuenta/index.html  Cómo eliminar tu cuenta
 ├── 404.html                Página de error, servida por el handle_errors de Caddy
 ├── assets/
-│   ├── css/  tokens.css (colores/tipografía/espaciado/tema), fonts.css (@font-face),
-│   │         base.css (layout, grid con escenario sticky, componentes compartidos)
-│   ├── js/   config.js (BRAND_NAME/BETA_URL), theme.js (toggle sol/luna), main.js (entrada)
+│   ├── css/
+│   │   ├── tokens.css   Colores/tipografía/espaciado/tema (claro, oscuro, y el `data-theme` del toggle)
+│   │   ├── fonts.css    @font-face
+│   │   ├── base.css     Layout, grid con escenario sticky, componentes compartidos
+│   │   ├── phone.css    El teléfono 3D (marco, bisel, isla, cantos, espalda)
+│   │   └── scenes.css   Contenido de cada escena dentro de la pantalla del teléfono
+│   ├── js/
+│   │   ├── config.js    BRAND_NAME / BETA_URL
+│   │   ├── theme.js     Toggle sol/luna
+│   │   ├── stage.js     Monta la escena + cara del teléfono, modo de inspección `?escena=&cara=`
+│   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
+│   │   ├── main.js      Punto de entrada (`<script type="module">`)
+│   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, llamada, dashboard
+│   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
 │   └── fonts/  .woff2 autoalojados + OFL.txt
 └── README.md
 ```
 
-`phone.css`, `scenes.css`, `assets/js/scenes/`, `assets/js/stage.js` y
-`assets/js/vendor/` de la sección 5.2 del plan no existen todavía en este
-commit: se agregan en la etapa 2 (teléfono 3D) de este mismo pase — ver el
-siguiente commit si ya lo tenés, o la sección de abajo si el repo está más
-adelantado que este README.
+## Modo de inspección del teléfono (sólo desarrollo)
+
+`index.html?escena=<id>&cara=<id>` — ninguno de los dos parámetros tiene UI
+visible, son sólo para QA/capturas:
+- `escena`: `splash` (por defecto) · `login` · `chat` · `elementos` ·
+  `habitos` · `logro` · `llamada` · `dashboard` (ids de `assets/js/scenes/registro.js`).
+- `cara`: `frente` (por defecto, 0°) · `canto` (80°, ver nota abajo) ·
+  `espalda` (180°).
+
+Ejemplo: `index.html?escena=habitos&cara=espalda`. Sin esos parámetros, carga
+en `splash`/`frente`. Implementado en `assets/js/stage.js`
+(`inicializarEscenario()`), que lee `URLSearchParams`, monta el módulo de la
+escena pedida dentro de `#pantalla-telefono` y fija `--rotacion-y` sobre
+`#telefono`. **`canto` usa 80°, no 90° exactos** — a 90° el frente y la
+espalda quedan perfectamente de filo (sin él no se ve el bisel con
+profundidad real); 80° deja una pizca de perspectiva visible, que es lo que
+pide el plan ("≈ 90°"). **El teléfono no tiene `transition` en esta etapa a
+propósito**: competía en una carrera real contra la captura de Chromium
+headless (la screenshot podía llegar a mitad de una animación, con el ángulo
+pedido por `?cara=` a medio aplicar) — la coreografía real ligada al scroll
+(etapa 4) la anima GSAP cuadro a cuadro, no una `transition` de CSS.
+
+Cada escena (`assets/js/scenes/*.js`) expone `id`, `mount(contenedor)`,
+`play()`, `pause()` y `reset()` (plan, 5.3) — en esta etapa `play`/`pause`/
+`reset` son no-ops documentados: sin coreografía de scroll todavía, sólo
+`mount()` hace algo real.
 
 ## BRAND_NAME y BETA_URL
 
@@ -55,6 +88,31 @@ sigue funcionando para esa carga, sólo no sobrevive a un refresh. La demo de
 tema al cargar (decisión 3.5 del plan: tema opuesto al del sistema, pausa,
 regreso) es la etapa 9, todavía no implementada.
 
+## Librerías vendorizadas (`assets/js/vendor/`)
+
+Nada de CDN (regla del plan y de la CSP del droplet, `script-src 'self'`).
+Descargadas con `npm pack <paquete>` y copiados sólo los `.min.js` que hacen
+falta — no quedó ningún `node_modules/`/`package.json` en el repo.
+
+- **GSAP 3.15.0 + ScrollTrigger 3.15.0** (`gsap.min.js`, `ScrollTrigger.min.js`)
+  — **todavía sin usar en el código** (la coreografía que los necesita es la
+  etapa 4), vendorizados ahora porque el plan lo pide como regla general, no
+  atada a una etapa. Licencia: **Standard "No Charge" GSAP License** de
+  Webflow (dueño de GSAP desde la adquisición a GreenSock) — gratuita para
+  uso comercial o no comercial en sitios/apps siempre que la persona que usa
+  el sitio no pague una cuota por acceder a él o a una parte de él (que es el
+  caso de esta landing: pública y gratuita). Texto completo citado y
+  verificado el 2026-10-04 en `assets/js/vendor/LICENSE-GSAP.txt`, fuente
+  <https://gsap.com/standard-license/>.
+- **canvas-confetti 1.9.4** (`canvas-confetti.min.js`) — igual, sin usar
+  todavía (etapa 6, el logro con confeti). Licencia **ISC** (permisiva,
+  equivalente a MIT/BSD-2), texto completo en
+  `assets/js/vendor/LICENSE-canvas-confetti.txt`.
+
+Ninguno de los dos se referencia desde `index.html` todavía — agregarlos
+como `<script src="assets/js/vendor/...">` es trabajo de las etapas que los
+usan, no de este pase.
+
 ## Fuentes autoalojadas
 
 Convertidas de los `.ttf` de `asistente-android/app/src/main/res/font/` con
@@ -78,6 +136,16 @@ la licencia, sólo la atribución exacta).
 3. El badge de App Store en `index.html` queda deshabilitado (decisión 3.2 del
    plan); cuando haya ficha pública de Android, el CTA "Únete a la beta" de la
    portada provisional cambia a "Descárgala en Google Play" (decisión 3.8).
+4. **Texto del hero y el lema sin cerrar por el dueño** — se eligió una
+   propuesta para dejar la página completa, pero el plan pide validarlo
+   explícitamente (sección 4.1). Ver el reporte del punto de control 1 para
+   las propuestas alternativas que quedaron descartadas.
+5. **Elementos no tiene sección de texto propia todavía** — la escena ya
+   existe (`assets/js/scenes/elementos.js`, montable con `?escena=elementos`),
+   pero no está enganchada a ningún `<section>` del recorrido ni coreografiada
+   — ver recomendación de ubicación en el reporte del punto de control 1.
+6. **Teléfono sin `transition`** (ver "Modo de inspección" arriba) — la etapa
+   4 la reemplaza por una coreografía real con GSAP, no hace falta devolverla.
 
 ## Fuentes citadas (verificación, no en la página pública)
 
@@ -216,7 +284,10 @@ No toca Sail ni el worker de colas del backend. Impacto en RAM: despreciable.
 
 ## Capturas de verificación visual
 
-Tomadas con Chromium headless, en claro/oscuro × desktop (1440×900)/móvil
-(390×844), para las 4 páginas. Ver el reporte de la sesión que construyó este
-repo para las rutas exactas (carpeta de scratchpad de esa sesión, no forma
-parte de este repo).
+Tomadas con Chromium headless (`--headless=new`; oscuro con `--force-dark-mode
+--enable-features=WebContentsForceDark`), servido con `python3 -m http.server`.
+Para el PUNTO DE CONTROL 1 (etapas 1-2): el teléfono de frente/canto/espalda
+(`?cara=`), las 8 escenas (`?escena=`) y la página completa en desktop
+(1440×900)/móvil (390×844) — los 3 grupos en claro y oscuro. Rutas exactas en
+el reporte de la sesión que construyó este pase (carpeta de scratchpad de esa
+sesión, no forma parte de este repo).

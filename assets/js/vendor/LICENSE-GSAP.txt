@@ -1,0 +1,89 @@
+GSAP 3.15.0 + ScrollTrigger 3.15.0 — Standard "No Charge" GSAP License
+Vendorizado desde npm (`npm pack gsap@3.15.0`), archivos `dist/gsap.min.js` y
+`dist/ScrollTrigger.min.js` sin modificar.
+
+Fuente de la licencia, verificada el 2026-10-04: https://gsap.com/standard-license/
+(citado tal cual, Webflow es el dueño/sponsor de GSAP desde 2024-2025):
+
+---
+
+Plain English Summary:
+You may use the code at no charge in commercial or non-commercial apps, web
+sites, games, components, and other software as long as end users are not
+charged a fee of any kind to use your product or gain access to any part of
+it. If your client pays you a one-time fee to create the site/product,
+that's perfectly fine and qualifies under the "no charge" license. If end
+users are charged a usage/access/license fee, please sign up for a
+"Business" Club GSAP membership which comes with a comprehensive commercial
+license. See https://gsap.com/pricing/ for details.
+Use at your own risk. No warranties are offered. Please respect the
+copyright.
+
+I. DEFINITIONS
+"GSAP License" means the terms and conditions of this GSAP Software License
+Agreement.
+"GSAP Products" means any Software made available at gsap.com or any
+successor sites, including but not limited to the GSAP animation library and
+related plugins, tools, or extensions.
+"Permitted Uses" means the implementation and/or use of GSAP Products on any
+website, web application, or digital interface by any person or entity
+(which may include, for clarity, those of companies that compete with
+Webflow in other areas of business).
+"Prohibited Uses" means any implementation and/or use of GSAP Products in
+tools that allow users to build visual animations without code that
+encourages, induces, or materially assists in creating a solution that
+competes with Webflow's visual animation building capabilities.
+"Competitive Products" means any software, tool, or service that enables
+users to create, edit, or manage animations through a visual interface or
+builder similar to Webflow.
+
+II. GRANT OF LICENSE
+Subject to the terms and conditions of this GSAP License, Webflow grants you
+a non-exclusive, worldwide license to use, reproduce, display, and implement
+GSAP Products solely for Permitted Uses.
+
+III. RESTRICTIONS
+You may not:
+Use any GSAP Products for any Prohibited Uses without prior written consent;
+Reverse engineer any GSAP Products for the purpose of creating Competitive
+Products;
+Remove or alter any proprietary notices or branding from GSAP Products.
+
+IV. OWNERSHIP AND INTELLECTUAL PROPERTY
+All intellectual property rights in GSAP Products, including but not
+limited to copyright, patents, trademarks, and trade secrets, remain the
+exclusive property of Webflow. This GSAP License does not transfer any
+ownership rights in GSAP Products to you.
+
+V. TERMINATION
+Webflow may terminate this GSAP License and revoke your access in its
+discretion if you fail to comply with any of these terms and conditions.
+Upon termination, you must cease all use of GSAP Products and destroy all
+copies in your possession.
+
+VI. MISCELLANEOUS PROVISIONS
+General: This GSAP License is incorporated into and subject to Webflow's
+Terms of Service available at gsap.com. In the event of any conflict or
+inconsistency between this GSAP License and the Terms of Service, the terms
+of this GSAP License shall govern in relation to your use of any GSAP
+Products.
+Amendments: Webflow reserves the right to update or modify this GSAP
+License at any time by posting the revised terms on gsap.com, provided that
+any such updates or modifications shall not result in any material
+degradation to the security, integrity, or functionality of any GSAP
+Products.
+No Waiver: Failure of Webflow to enforce any provision of this GSAP License
+shall not constitute a waiver of future enforcement of that or any other
+provision.
+
+FAQ (confirmado en la misma página):
+"Can I really use GSAP in commercial projects without paying anything? Yes,
+really! Commercial usage is covered under the standard license. All of GSAP
+including the plugins that were formerly "members-only" like SplitText and
+MorphSVG can be used in commercial projects at no charge."
+
+---
+
+Aplicabilidad a Yaruki: la landing es gratuita para quien la visita (no se
+cobra acceso a ninguna parte del sitio), así que califica como "Permitted
+Use" bajo la licencia "No Charge" sin necesidad de membresía "Business".
