@@ -1,42 +1,59 @@
 # asistente-landing — sitio de Yaruki
 
-Sitio estático (HTML/CSS, sin paso de build) para `yaruki.hjgr.dev`. Construido
-según `asistente-ia-ops/docs/plan-landing-yaruki.md`. **Esta primera versión
-cubre sólo la etapa 10 del plan** (páginas legales) más un `index.html`
-provisional — el scrollytelling y el teléfono 3D de las etapas 1-9 vienen
-después.
+Sitio estático (HTML/CSS/JS, sin paso de build) para `yaruki.hjgr.dev`. Construido
+según `asistente-ia-ops/docs/plan-landing-yaruki.md`. **Este pase cubre la etapa
+1 del plan** (esqueleto, tokens, toggle de tema) sobre la base de las páginas
+legales ya publicadas — el teléfono 3D y el resto de la coreografía (etapas
+2-9) vienen después.
 
 ## Estructura
 
 ```
 asistente-landing/
-├── index.html              Portada provisional: nombre, significado, enlaces legales
+├── index.html              Home: hero, fases del recorrido, cierre, Centro de Privacidad
 ├── privacidad/index.html   Política de privacidad
 ├── terminos/index.html     Términos y condiciones
 ├── eliminar-cuenta/index.html  Cómo eliminar tu cuenta
 ├── 404.html                Página de error, servida por el handle_errors de Caddy
 ├── assets/
-│   ├── css/  tokens.css (colores/tipografía/espaciado), fonts.css (@font-face),
-│   │         base.css (layout y componentes compartidos)
+│   ├── css/  tokens.css (colores/tipografía/espaciado/tema), fonts.css (@font-face),
+│   │         base.css (layout, grid con escenario sticky, componentes compartidos)
+│   ├── js/   config.js (BRAND_NAME/BETA_URL), theme.js (toggle sol/luna), main.js (entrada)
 │   └── fonts/  .woff2 autoalojados + OFL.txt
 └── README.md
 ```
 
-`phone.css`, `scenes.css` y `assets/js/` de la sección 5.2 del plan no existen
-todavía: se agregan en las etapas 1-9 (esqueleto/tokens del home completo,
-teléfono 3D, coreografía, fases A/B/C, demo de tema).
+`phone.css`, `scenes.css`, `assets/js/scenes/`, `assets/js/stage.js` y
+`assets/js/vendor/` de la sección 5.2 del plan no existen todavía en este
+commit: se agregan en la etapa 2 (teléfono 3D) de este mismo pase — ver el
+siguiente commit si ya lo tenés, o la sección de abajo si el repo está más
+adelantado que este README.
 
-## BRAND_NAME
+## BRAND_NAME y BETA_URL
 
-No hay una constante de código (el sitio no tiene build ni JS de plantillas).
-El nombre **"Yaruki"** aparece como texto literal en:
-- `<title>` y el primer `<h1>` de cada página,
-- el `wordmark` del header (`.wordmark` en `base.css`) en las 4 páginas,
-- el pie de página de las 4 páginas,
-- `privacidad/index.html` y `terminos/index.html` (varias menciones en el cuerpo).
+`assets/js/config.js` tiene las dos constantes del plan:
+- `BRAND_NAME = "Yaruki"` — el HTML de cada página sigue escribiendo "Yaruki"
+  literal en el texto visible (título, wordmark, copy); la constante es para
+  lo que genera JS, no reemplaza al texto estático.
+- `BETA_URL = ""` — mientras esté vacía, el botón "Únete a la beta" (hay dos,
+  uno en `#hero` y otro en `#cta`) sale deshabilitado con el chip
+  "Próximamente" al lado y `main.js` no hace nada con él. El día que exista el
+  enlace de prueba cerrada de Google Play, pegarlo ahí: `main.js` activa el/los
+  botón(es) y quita el/los chip(s) solo, sin tocar `index.html`.
 
-Si el nombre cambia, es un buscar-y-reemplazar de "Yaruki" en esos archivos
-(y del lema, si se agrega uno).
+Si el nombre cambia, además de `config.js` es un buscar-y-reemplazar de
+"Yaruki" en el HTML de las 4 páginas (y del lema "las ganas de hacerlo").
+
+## Toggle de tema (`assets/js/theme.js`)
+
+Sol/luna en el header. Sin tocar nada, el sitio sigue `prefers-color-scheme`
+(ver `tokens.css`, bloque `@media`). Tocar el botón fija un `data-theme`
+explícito en `<html>` (`:root[data-theme="dark"]`/`["light"]`, mayor
+especificidad que el `@media`, por eso gana) y lo recuerda en `localStorage`
+(`yaruki-theme`), envuelto en try/catch — sin storage disponible, el toggle
+sigue funcionando para esa carga, sólo no sobrevive a un refresh. La demo de
+tema al cargar (decisión 3.5 del plan: tema opuesto al del sistema, pausa,
+regreso) es la etapa 9, todavía no implementada.
 
 ## Fuentes autoalojadas
 

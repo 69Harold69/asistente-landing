@@ -477,7 +477,7 @@ strong {
   color: var(--color-accent);
 }
 
-.link-card h2 {
+.link-card h3 {
   font-size: var(--text-md);
   margin-bottom: 0.3em;
 }
@@ -486,4 +486,336 @@ strong {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   margin-bottom: 0;
+}
+
+.link-card--disabled {
+  cursor: default;
+}
+
+.link-card--disabled:hover {
+  border-color: var(--color-border-card);
+}
+
+.link-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* ======================================================================
+   Landing completa (etapas 1-2 del plan) — esqueleto, tokens y teléfono.
+   `.hero`/`.hero-mascot`/`.link-grid`/`.link-card` de arriba se mantienen
+   intactos (los usa `404.html`); lo de abajo es exclusivo de `index.html`.
+   ====================================================================== */
+
+/* Toggle de tema (sol/luna) en el header ---------------------------------- */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-card);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.theme-toggle svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.theme-toggle .icono-sol {
+  display: none;
+}
+
+.theme-toggle .icono-luna {
+  display: block;
+}
+
+:root[data-theme="dark"] .theme-toggle .icono-sol {
+  display: block;
+}
+
+:root[data-theme="dark"] .theme-toggle .icono-luna {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme-toggle .icono-sol {
+    display: block;
+  }
+
+  .theme-toggle .icono-luna {
+    display: none;
+  }
+}
+
+:root[data-theme="light"] .theme-toggle .icono-sol {
+  display: none;
+}
+
+:root[data-theme="light"] .theme-toggle .icono-luna {
+  display: block;
+}
+
+.header-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Layout con escenario sticky ---------------------------------------------
+   Grid de 2 columnas desde 1024px: columna de contenido + columna del
+   teléfono (sticky, ver phone.css). Debajo de 1024px, una sola columna —
+   el teléfono se vuelve sticky "normal" arriba del flujo (plan, 5.4). */
+
+.layout-con-stage {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .layout-con-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    align-items: start;
+    gap: var(--space-4);
+    max-width: 78rem;
+    margin: 0 auto;
+    padding: 0 var(--space-3);
+  }
+
+  /*
+    Fila fijada EXPLÍCITA en las 3 (no sólo la columna): el auto-placement
+    "sparse" de Grid no rellena hacia atrás una celda libre una vez que el
+    cursor ya avanzó de fila — con sólo `grid-column` (sin `grid-row`), el
+    cursor queda en fila 2 tras ubicar `.stage` y como la columna de `main`
+    (1) es "anterior" a la columna del cursor, Grid lo manda a la fila 3 en
+    vez de reusar la fila 2 col 1, que sí está libre. Encontrado en vivo:
+    `main` quedaba con un rect real (no 0×0) pero empujado ~930px hacia
+    abajo, fuera de cualquier viewport razonable. `grid-row` explícito en
+    los 3 selectores lo evita de raíz, sin depender de `grid-auto-flow: dense`.
+  */
+  .layout-con-stage > .site-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .layout-con-stage > .site-header .container {
+    max-width: none;
+    padding: 0;
+  }
+
+  .layout-con-stage > main {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .layout-con-stage > .stage {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+/* Secciones narrativas ------------------------------------------------- */
+
+.seccion {
+  padding: var(--space-6) var(--space-3);
+  max-width: 34rem;
+}
+
+@media (min-width: 1024px) {
+  .seccion {
+    padding: var(--space-6) 0;
+    max-width: none;
+  }
+}
+
+.seccion-hero {
+  padding-top: var(--space-4);
+}
+
+.eyebrow-marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-base);
+  color: var(--color-accent);
+  margin: 0 0 var(--space-2);
+}
+
+.titular-hero {
+  font-size: clamp(2rem, 4.6vw, var(--text-2xl));
+  max-width: 18ch;
+  margin-bottom: var(--space-2);
+}
+
+.subtitulo-hero {
+  font-size: var(--text-md);
+  color: var(--color-text-secondary);
+  max-width: 34ch;
+  margin-bottom: var(--space-3);
+}
+
+.significado {
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  max-width: 34ch;
+  margin-bottom: var(--space-4);
+}
+
+.significado .ja {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.cta-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.cta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  flex-wrap: wrap;
+}
+
+.cta-nota {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  max-width: 34ch;
+}
+
+.fase-kicker {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  margin-bottom: var(--space-1);
+}
+
+.fase-titulo {
+  font-size: var(--text-xl);
+  max-width: 16ch;
+}
+
+.fase-texto {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  max-width: 36ch;
+  margin-bottom: var(--space-2);
+}
+
+.fase-texto:last-of-type {
+  margin-bottom: var(--space-3);
+}
+
+.fase-chip-inline {
+  margin-bottom: var(--space-3);
+}
+
+/* En 2 columnas, las fases pares invierten de qué lado "piensan" aunque el
+   teléfono viva fijo en su propia columna — sólo cambia la alineación del
+   bloque de texto, para que la lectura no se sienta siempre pegada a la
+   izquierda (plan, 4.2: "las columnas se alternan"). */
+@media (min-width: 1024px) {
+  .seccion--par {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .seccion--par .fase-texto,
+  .seccion--par .subtitulo-hero,
+  .seccion--par .significado {
+    margin-left: auto;
+  }
+
+  .seccion--par .cta-row {
+    justify-content: flex-end;
+  }
+}
+
+/* Cierre / CTA final ------------------------------------------------------ */
+
+.seccion-cta {
+  text-align: center;
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .seccion-cta {
+    grid-column: 1 / -1;
+    max-width: 40rem;
+    padding-top: 0;
+  }
+}
+
+.seccion-cta .fase-titulo {
+  max-width: none;
+}
+
+.seccion-cta .fase-texto {
+  max-width: 40ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.seccion-cta .cta-row {
+  justify-content: center;
+}
+
+/* Centro de Privacidad y Datos (footer#privacidad, plan 4.7) -------------- */
+
+.privacidad-section {
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-6) 0 var(--space-5);
+}
+
+.privacidad-section .seccion-cta {
+  margin-bottom: 0;
+}
+
+.privacidad-section .link-grid {
+  grid-template-columns: repeat(4, 1fr);
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+@media (max-width: 900px) {
+  .privacidad-section .link-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .privacidad-section .link-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contacto-privacidad {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
 }

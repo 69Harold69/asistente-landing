@@ -59,6 +59,15 @@
 
   /* Transición suave de tema (ver plan, 4.0) */
   --theme-transition: 200ms ease;
+
+  /* Sombra con tinte cálido en claro, neutra en oscuro — ver cada bloque de tema. */
+  --shadow-color: 25deg 30% 20%;
+
+  /* Teléfono 3D (plan, 4.2) */
+  --phone-radius: 44px;
+  --phone-bezel: 10px;
+  --phone-depth: 14px;
+  --phone-width: clamp(216px, 62vw, 296px);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -77,5 +86,49 @@
     --color-success-bg: #1f3b2c;
     --color-warning-bg: #3d3120;
     --color-danger-bg: #3d2323;
+    --shadow-color: 0deg 0% 0%;
   }
+}
+
+/*
+  Tema explícito — toggle del header (plan, 4.0). Mayor especificidad que el
+  bloque de prefers-color-scheme de arriba (selector de atributo vs. :root
+  a secas), así que gana sin pelear por orden de aparición. "light" repite
+  los valores claros a propósito: hace falta para forzar claro en un sistema
+  en oscuro.
+*/
+:root[data-theme="dark"] {
+  --color-bg: #151322;
+  --color-bg-elevated: #1e1b30;
+  --color-text: #f1effb;
+  --color-text-secondary: #a59fc2;
+  --color-accent: #8b7cf0;
+  --color-accent-soft: #332c57;
+  --color-success: #4fbe82;
+  --color-warning: #f0b65b;
+  --color-danger: #f17272;
+  --color-border: #332e4a;
+  --color-border-card: #332e4a;
+  --color-success-bg: #1f3b2c;
+  --color-warning-bg: #3d3120;
+  --color-danger-bg: #3d2323;
+  --shadow-color: 0deg 0% 0%;
+}
+
+:root[data-theme="light"] {
+  --color-bg: #faf7f2;
+  --color-bg-elevated: #ffffff;
+  --color-text: #221f1b;
+  --color-text-secondary: #6b6459;
+  --color-accent: #6c5ce0;
+  --color-accent-soft: #ece9fb;
+  --color-success: #3fa66b;
+  --color-warning: #e8a33d;
+  --color-danger: #e15252;
+  --color-border: #ece6dd;
+  --color-border-card: #ddd4c7;
+  --color-success-bg: #dcf2e4;
+  --color-warning-bg: #fbead1;
+  --color-danger-bg: #fbdede;
+  --shadow-color: 25deg 30% 20%;
 }

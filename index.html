@@ -6,7 +6,7 @@
   <title>Yaruki — las ganas de hacer algo</title>
   <meta
     name="description"
-    content="Yaruki es un asistente personal que organiza tus tareas, notas, listas, eventos y hábitos conversando en lenguaje natural."
+    content="Yaruki es un asistente personal que organiza tus tareas, notas, listas, eventos y hábitos conversando en lenguaje natural, sin cambiar ni borrar nada sin tu confirmación."
   />
   <link rel="stylesheet" href="assets/css/tokens.css" />
   <link rel="stylesheet" href="assets/css/fonts.css" />
@@ -15,40 +15,148 @@
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
-  <header class="site-header">
-    <div class="container">
-      <a class="wordmark" href="/">
-        <span class="punto-vivo punto-vivo--breathe" aria-hidden="true"></span>
-        Yaruki
-      </a>
-      <span class="chip">Beta cerrada en Android</span>
-    </div>
-  </header>
-
-  <main id="contenido">
-    <section class="hero container">
-      <div class="hero-mascot" aria-hidden="true"></div>
-      <h1>Yaruki</h1>
-      <p class="meaning">やる気 — las ganas de hacer algo</p>
-      <p class="pitch">
-        Yaruki es un asistente personal que organiza tus tareas, notas, listas,
-        eventos y hábitos conversando en lenguaje natural, como le escribirías a
-        alguien que te ayuda a llevar el día. Tú decides cada cambio: el
-        asistente nunca modifica ni borra algo sin que lo confirmes.
-      </p>
-      <div class="cta-row">
-        <a class="button button--disabled" aria-disabled="true" href="#cta-beta">Únete a la beta</a>
-        <span class="button button--disabled" aria-disabled="true">Descárgala en App Store</span>
-        <span class="chip">Próximamente</span>
+  <div class="layout-con-stage">
+    <header class="site-header">
+      <div class="container">
+        <a class="wordmark" href="/">
+          <span class="punto-vivo punto-vivo--breathe" aria-hidden="true"></span>
+          Yaruki
+        </a>
+        <div class="header-acciones">
+          <span class="chip">Beta cerrada en Android</span>
+          <button
+            type="button"
+            class="theme-toggle"
+            data-theme-toggle
+            aria-label="Cambiar entre tema claro y oscuro"
+          >
+            <svg class="icono-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.5" />
+              <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8" />
+            </svg>
+            <svg class="icono-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <p class="cta-note" id="cta-beta">
-        Beta cerrada en Android · el enlace para unirte se comparte pronto.
-        Yaruki para iOS está en camino.
-      </p>
-    </section>
+    </header>
 
-    <section class="container" aria-labelledby="legales-titulo">
-      <h2 id="legales-titulo" class="visually-hidden-heading">Información legal</h2>
+    <!--
+      El teléfono 3D (frente/canto/espalda, escenas montadas por JS) es la
+      etapa 2 del plan — acá sólo el contenedor vacío, para que el grid de
+      `.layout-con-stage` (columna de contenido + columna del escenario)
+      ya quede armado desde el esqueleto.
+    -->
+    <div id="stage" class="stage"></div>
+
+    <main id="contenido">
+      <section id="hero" class="seccion seccion-hero">
+        <p class="eyebrow-marca">
+          <span class="punto-vivo" aria-hidden="true"></span>
+          Yaruki · las ganas de hacerlo
+        </p>
+        <h1 class="titular-hero">
+          Organiza tu día hablándole, como le escribirías a alguien de confianza.
+        </h1>
+        <p class="subtitulo-hero">
+          Yaruki convierte lo que le dices en tareas, notas, listas, eventos y
+          hábitos. Nunca cambia ni borra nada sin que tú lo confirmes primero.
+        </p>
+        <p class="significado">
+          <span class="ja">Yaruki (やる気)</span>: las ganas de hacer algo.
+        </p>
+        <div class="cta-row">
+          <div class="cta-item">
+            <a
+              class="button button--disabled"
+              aria-disabled="true"
+              href="#"
+              data-cta-beta
+            >
+              Únete a la beta
+            </a>
+            <span class="chip" data-chip-proximamente-beta>Próximamente</span>
+          </div>
+          <div class="cta-item">
+            <span class="button button--disabled" aria-disabled="true">Descárgala en App Store</span>
+            <span class="chip">Próximamente</span>
+          </div>
+        </div>
+        <p class="cta-nota">Beta cerrada en Android · te unes con tu cuenta de Google.</p>
+      </section>
+
+      <section id="fase-chat" class="seccion">
+        <p class="fase-kicker">Así es como empieza</p>
+        <h2 class="fase-titulo">Háblale como a un amigo</h2>
+        <p class="fase-texto">
+          Escríbele lo que tienes en mente —una tarea, una compra, una idea— y
+          Yaruki lo convierte en algo que puedes organizar: tareas, notas,
+          listas, eventos y hábitos, directo desde la conversación.
+        </p>
+        <p class="fase-texto">
+          Si lo que le pides cambia o borra algo, te lo pregunta antes de
+          hacerlo. Nunca actúa a tus espaldas.
+        </p>
+      </section>
+
+      <section id="fase-habitos" class="seccion seccion--par">
+        <p class="fase-kicker">Y con el tiempo</p>
+        <h2 class="fase-titulo">Hábitos que se ven, no que se imaginan</h2>
+        <p class="fase-texto">
+          Cada día cumplido queda marcado en tu propio mapa de constancia, con
+          tu racha siempre a la vista.
+        </p>
+        <p class="fase-texto fase-chip-inline">
+          Más adelante, Yaruki también va a celebrar contigo cuando tu racha se
+          vuelva fuerte. <span class="chip">Próximamente</span>
+        </p>
+      </section>
+
+      <section id="fase-llamada" class="seccion">
+        <p class="fase-kicker">Más adelante</p>
+        <h2 class="fase-titulo">Un recordatorio que se siente real</h2>
+        <p class="fase-texto fase-chip-inline">
+          Para lo que no puede esperar a que abras la app, Yaruki podrá
+          llamarte — como lo haría alguien que te importa.
+          <span class="chip">Próximamente</span>
+        </p>
+      </section>
+
+      <section id="cta" class="seccion seccion-cta">
+        <p class="fase-kicker">Tu día</p>
+        <h2 class="fase-titulo">Todo en un solo lugar, cuando lo necesites</h2>
+        <p class="fase-texto">
+          El Dashboard te muestra tu racha, tus tareas de hoy y lo que sigue
+          pendiente, de un vistazo — para que decidas qué sigue sin tener que
+          buscarlo.
+        </p>
+        <div class="cta-row">
+          <div class="cta-item">
+            <a
+              class="button button--disabled"
+              aria-disabled="true"
+              href="#"
+              data-cta-beta
+            >
+              Únete a la beta
+            </a>
+            <span class="chip" data-chip-proximamente-beta>Próximamente</span>
+          </div>
+        </div>
+        <p class="cta-nota">Beta cerrada en Android · te unes con tu cuenta de Google.</p>
+      </section>
+    </main>
+  </div>
+
+  <footer id="privacidad" class="privacidad-section">
+    <div class="container seccion-cta">
+      <p class="fase-kicker">Centro de privacidad y datos</p>
+      <h2 class="fase-titulo">Tus datos son tuyos</h2>
+      <p class="fase-texto">
+        Podemos mostrarte exactamente qué guardamos, por qué, y darte una
+        forma de pedir que lo borremos, con o sin la app instalada.
+      </p>
       <div class="link-grid">
         <a class="link-card" href="/privacidad/">
           <span class="link-card-icon" aria-hidden="true">
@@ -57,7 +165,7 @@
               <path d="M8 11V7a4 4 0 0 1 8 0v4" />
             </svg>
           </span>
-          <h2>Política de privacidad</h2>
+          <h3>Política de privacidad</h3>
           <p>Qué datos usamos, para qué, y con quién los compartimos.</p>
         </a>
         <a class="link-card" href="/terminos/">
@@ -67,7 +175,7 @@
               <path d="M10 10h6M10 14h6M10 18h4" />
             </svg>
           </span>
-          <h2>Términos y condiciones</h2>
+          <h3>Términos y condiciones</h3>
           <p>Las reglas de uso de la app y del servicio, en español llano.</p>
         </a>
         <a class="link-card" href="/eliminar-cuenta/">
@@ -76,17 +184,29 @@
               <path d="M6 7h12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
             </svg>
           </span>
-          <h2>Eliminar tu cuenta</h2>
-          <p>Cómo pedirla desde la app o por correo, y qué pasa con tus datos.</p>
+          <h3>Eliminar tu cuenta</h3>
+          <p>Desde la app o por correo. Tienes 30 días para recuperarla antes del borrado definitivo.</p>
         </a>
+        <span class="link-card link-card--disabled">
+          <span class="link-card-head">
+            <span class="link-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+              </svg>
+            </span>
+            <span class="chip">Próximamente</span>
+          </span>
+          <h3>Exportar tus datos</h3>
+          <p>Una copia de todo lo que guardaste, en un archivo que puedas abrir donde quieras.</p>
+        </span>
       </div>
-    </section>
-
-    <p class="status-note">
-      Esta es una página provisional mientras construimos el sitio completo de
-      Yaruki. Las tres páginas legales de arriba ya son la versión vigente.
-    </p>
-  </main>
+      <p class="contacto-privacidad">
+        ¿Dudas sobre tus datos? Escríbenos a
+        <a href="mailto:privacidad@hjgr.dev">privacidad@hjgr.dev</a>.
+      </p>
+    </div>
+  </footer>
 
   <footer class="site-footer">
     <div class="container">
@@ -102,5 +222,7 @@
       </ul>
     </div>
   </footer>
+
+  <script type="module" src="assets/js/main.js"></script>
 </body>
 </html>
