@@ -2,10 +2,12 @@
 
 Sitio estático (HTML/CSS/JS, sin paso de build) para `yaruki.hjgr.dev`. Construido
 según `asistente-ia-ops/docs/plan-landing-yaruki.md`. **Este pase cubre las
-etapas 1 y 2 del plan** (esqueleto/tokens + teléfono 3D estático, sección 8) —
-la coreografía ligada al scroll (giro 360°, fases en vivo, demo de tema) es la
-etapa 4 en adelante, todavía sin empezar. Parado en el **PUNTO DE CONTROL 1**
-del plan: no avanza a la etapa 3 sin que el dueño revise.
+etapas 1 a 4 del plan**: esqueleto/tokens, teléfono 3D, el cruce Splash→Login
+del hero ligado al scroll (etapa 3) y la coreografía completa de vuelo 360°
+entre fases con GSAP + ScrollTrigger (etapa 4) — ver `assets/js/stage.js`.
+Parado en el **PUNTO DE CONTROL 2** del plan: no avanza a la etapa 5 sin que
+el dueño revise. La demo de tema al cargar (decisión 3.5) sigue pendiente,
+etapa 9.
 
 ## Estructura
 
@@ -38,29 +40,64 @@ asistente-landing/
 ## Modo de inspección del teléfono (sólo desarrollo)
 
 `index.html?escena=<id>&cara=<id>` — ninguno de los dos parámetros tiene UI
-visible, son sólo para QA/capturas:
+visible, son sólo para QA/capturas. **Con cualquiera de los dos presentes,
+`stage.js` no arranca GSAP/ScrollTrigger en absoluto** — monta la escena
+pedida una sola vez y fija la cara, estático, igual que en la etapa 2:
 - `escena`: `splash` (por defecto) · `login` · `chat` · `elementos` ·
   `habitos` · `logro` · `llamada` · `dashboard` (ids de `assets/js/scenes/registro.js`).
 - `cara`: `frente` (por defecto, 0°) · `canto` (80°, ver nota abajo) ·
   `espalda` (180°).
 
-Ejemplo: `index.html?escena=habitos&cara=espalda`. Sin esos parámetros, carga
-en `splash`/`frente`. Implementado en `assets/js/stage.js`
-(`inicializarEscenario()`), que lee `URLSearchParams`, monta el módulo de la
-escena pedida dentro de `#pantalla-telefono` y fija `--rotacion-y` sobre
-`#telefono`. **`canto` usa 80°, no 90° exactos** — a 90° el frente y la
-espalda quedan perfectamente de filo (sin él no se ve el bisel con
-profundidad real); 80° deja una pizca de perspectiva visible, que es lo que
-pide el plan ("≈ 90°"). **El teléfono no tiene `transition` en esta etapa a
-propósito**: competía en una carrera real contra la captura de Chromium
-headless (la screenshot podía llegar a mitad de una animación, con el ángulo
-pedido por `?cara=` a medio aplicar) — la coreografía real ligada al scroll
-(etapa 4) la anima GSAP cuadro a cuadro, no una `transition` de CSS.
+Ejemplo: `index.html?escena=habitos&cara=espalda`. **`canto` usa 80°, no 90°
+exactos** — a 90° el frente y la espalda quedan perfectamente de filo (sin él
+no se ve el bisel con profundidad real); 80° deja una pizca de perspectiva
+visible, que es lo que pide el plan ("≈ 90°").
 
-Cada escena (`assets/js/scenes/*.js`) expone `id`, `mount(contenedor)`,
-`play()`, `pause()` y `reset()` (plan, 5.3) — en esta etapa `play`/`pause`/
-`reset` son no-ops documentados: sin coreografía de scroll todavía, sólo
-`mount()` hace algo real.
+## Coreografía de scroll (etapas 3 y 4 — `assets/js/stage.js`)
+
+Sin `?escena=`/`?cara=` en la URL (el caso real, para cualquier visitante),
+`inicializarCoreografia()` arma todo con GSAP + ScrollTrigger (vendorizados,
+ver abajo) y `gsap.matchMedia()` con 2 ramas, elegidas por media query —
+cambiar de una a otra en caliente (resize/cambiar `prefers-reduced-motion` en
+vivo) no reacomoda los valores de rotación/posición que haya dejado la rama
+anterior; no se resuelve en este pase, ver "Pendientes".
+
+- **Escritorio (`min-width:1024px`) + `prefers-reduced-motion: no-preference`:**
+  - **Hero (etapa 3):** la mascota del Splash escala (`transform: scale()`,
+    CSS var no — directo por JS sobre ese `<span>` puntual, ver el porqué en
+    el código) hasta cubrir la pantalla y cruza a Login con opacidad — las
+    2 capas (`.capa-escena`) están montadas desde el arranque,
+    `ScrollTrigger` con `scrub` las cruza según el progreso real del scroll
+    por `#hero`, reversible en los 2 sentidos.
+  - **Fases (etapa 4):** una `ScrollTrigger` por sección (`#fase-chat`,
+    `#fase-elementos`, `#fase-habitos`, `#fase-llamada`, `#cta`), **cada una
+    atada al alto PROPIO de su sección** (`start:"top top", end:"bottom
+    top"`) — no a un tramo fijo de 1 viewport: con secciones más bajas que
+    el viewport (todas lo son acá), un tramo de 1 viewport por vuelo se
+    solapaba con el de la sección siguiente, los dos escribiendo
+    `--rotacion-y` a la vez (bug real, encontrado armando este punto de
+    control, corregido antes de capturar nada). Cada vuelo gira 360°
+    (`--rotacion-y`), "vuela" de lado a lado (`--vuelo-x`, arco `sin(p·π)`,
+    el signo alterna por fase — mismo criterio que `.seccion--par`) y
+    achica un poco a mitad de camino (`--vuelo-escala`); la escena cambia
+    al cruzar el 50% del progreso (cerca de los 180°, de espaldas). La
+    sombra (`#sombra-vuelo`) se estira/atenúa con las mismas 2 propiedades
+    permitidas (`transform`/`opacity`), nunca el `box-shadow` estático.
+  - **Hábitos → logro:** no es una sección aparte (plan 4.4) — reparte el
+    alto PROPIO de `#fase-habitos` en 2 mitades: la primera (`top
+    top`→`center top`) es el vuelo que muestra "habitos"; la segunda
+    (`center top`→`bottom top`) es un cruce de opacidad DE FRENTE (sin
+    girar) hacia "logro".
+- **Móvil (`max-width:1023px`), o quien pidió `prefers-reduced-motion:
+  reduce`:** sin giros ni vuelo — cada sección cruza con un fundido simple
+  (`onEnter`/`onLeaveBack` de ScrollTrigger, reversible al subir) entre la
+  escena de antes y la de después.
+
+Cada escena (`assets/js/scenes/*.js`) sigue exponiendo `id`, `mount(contenedor)`,
+`play()`, `pause()` y `reset()` (plan, 5.3) — `play`/`pause`/`reset` siguen
+siendo no-ops documentados: ninguna escena necesita loop propio todavía (las
+únicas animaciones con loop, el respirar de la mascota y el pulso de la
+llamada, son CSS puro).
 
 ## BRAND_NAME y BETA_URL
 
@@ -95,23 +132,21 @@ Descargadas con `npm pack <paquete>` y copiados sólo los `.min.js` que hacen
 falta — no quedó ningún `node_modules/`/`package.json` en el repo.
 
 - **GSAP 3.15.0 + ScrollTrigger 3.15.0** (`gsap.min.js`, `ScrollTrigger.min.js`)
-  — **todavía sin usar en el código** (la coreografía que los necesita es la
-  etapa 4), vendorizados ahora porque el plan lo pide como regla general, no
-  atada a una etapa. Licencia: **Standard "No Charge" GSAP License** de
-  Webflow (dueño de GSAP desde la adquisición a GreenSock) — gratuita para
-  uso comercial o no comercial en sitios/apps siempre que la persona que usa
-  el sitio no pague una cuota por acceder a él o a una parte de él (que es el
-  caso de esta landing: pública y gratuita). Texto completo citado y
-  verificado el 2026-10-04 en `assets/js/vendor/LICENSE-GSAP.txt`, fuente
-  <https://gsap.com/standard-license/>.
-- **canvas-confetti 1.9.4** (`canvas-confetti.min.js`) — igual, sin usar
-  todavía (etapa 6, el logro con confeti). Licencia **ISC** (permisiva,
-  equivalente a MIT/BSD-2), texto completo en
-  `assets/js/vendor/LICENSE-canvas-confetti.txt`.
-
-Ninguno de los dos se referencia desde `index.html` todavía — agregarlos
-como `<script src="assets/js/vendor/...">` es trabajo de las etapas que los
-usan, no de este pase.
+  — **en uso desde la etapa 4** (`assets/js/stage.js`, toda la coreografía de
+  scroll), cargados como `<script src>` clásico ANTES del `<script
+  type="module">` (así `window.gsap`/`window.ScrollTrigger` ya existen
+  cuando corre `main.js`). Licencia: **Standard "No Charge" GSAP License**
+  de Webflow (dueño de GSAP desde la adquisición a GreenSock) — gratuita
+  para uso comercial o no comercial en sitios/apps siempre que la persona
+  que usa el sitio no pague una cuota por acceder a él o a una parte de él
+  (que es el caso de esta landing: pública y gratuita). Texto completo
+  citado y verificado el 2026-10-04 en `assets/js/vendor/LICENSE-GSAP.txt`,
+  fuente <https://gsap.com/standard-license/>.
+- **canvas-confetti 1.9.4** (`canvas-confetti.min.js`) — todavía sin usar
+  (etapa 6: el confeti real del logro se hace con esto; por ahora la escena
+  `logro` dibuja sus puntos de confeti con `<span>` + CSSOM, ver
+  `assets/js/scenes/logro.js`). Licencia **ISC** (permisiva, equivalente a
+  MIT/BSD-2), texto completo en `assets/js/vendor/LICENSE-canvas-confetti.txt`.
 
 ## Fuentes autoalojadas
 
@@ -136,16 +171,24 @@ la licencia, sólo la atribución exacta).
 3. El badge de App Store en `index.html` queda deshabilitado (decisión 3.2 del
    plan); cuando haya ficha pública de Android, el CTA "Únete a la beta" de la
    portada provisional cambia a "Descárgala en Google Play" (decisión 3.8).
-4. **Texto del hero y el lema sin cerrar por el dueño** — se eligió una
-   propuesta para dejar la página completa, pero el plan pide validarlo
-   explícitamente (sección 4.1). Ver el reporte del punto de control 1 para
-   las propuestas alternativas que quedaron descartadas.
-5. **Elementos no tiene sección de texto propia todavía** — la escena ya
-   existe (`assets/js/scenes/elementos.js`, montable con `?escena=elementos`),
-   pero no está enganchada a ningún `<section>` del recorrido ni coreografiada
-   — ver recomendación de ubicación en el reporte del punto de control 1.
-6. **Teléfono sin `transition`** (ver "Modo de inspección" arriba) — la etapa
-   4 la reemplaza por una coreografía real con GSAP, no hace falta devolverla.
+4. ~~Texto del hero y el lema sin cerrar~~ → **resuelto, punto de control 2:**
+   titular/subtítulo de la opción B + el significado chico arriba (ver
+   "Coreografía de scroll" y el reporte de esa sesión).
+5. ~~Elementos sin sección de texto propia~~ → **resuelto, punto de control
+   2:** `#fase-elementos`, enganchada al recorrido (chat → Elementos →
+   hábitos → llamada → Dashboard) y coreografiada igual que las demás.
+6. **`gsap.matchMedia()` no reacomoda el teléfono al cruzar de rama en
+   caliente** — si alguien cambia el ancho de ventana cruzando los 1024px
+   (o activa/desactiva "reducir movimiento") a mitad de sesión, sin
+   recargar, `--rotacion-y`/`--vuelo-x`/`--vuelo-escala` pueden quedar en el
+   valor que dejó la rama anterior hasta el próximo scroll. No afecta a un
+   visitante real (nadie cruza ese breakpoint sin recargar en el uso
+   normal) ni a ninguna de las capturas pedidas (tamaño de ventana fijo por
+   captura) — señalado, no resuelto en este pase.
+7. **Vuelo probado por scroll programático (Puppeteer) y revisión visual
+   cuadro a cuadro, no por un dedo/mouse real** — el comportamiento con
+   gestos táctiles reales (momentum scroll de iOS/Android) no se validó en
+   este pase.
 
 ## Fuentes citadas (verificación, no en la página pública)
 
@@ -286,8 +329,17 @@ No toca Sail ni el worker de colas del backend. Impacto en RAM: despreciable.
 
 Tomadas con Chromium headless (`--headless=new`; oscuro con `--force-dark-mode
 --enable-features=WebContentsForceDark`), servido con `python3 -m http.server`.
-Para el PUNTO DE CONTROL 1 (etapas 1-2): el teléfono de frente/canto/espalda
-(`?cara=`), las 8 escenas (`?escena=`) y la página completa en desktop
-(1440×900)/móvil (390×844) — los 3 grupos en claro y oscuro. Rutas exactas en
-el reporte de la sesión que construyó este pase (carpeta de scratchpad de esa
+
+- **Punto de control 1** (etapas 1-2): el teléfono de frente/canto/espalda
+  (`?cara=`), las 8 escenas (`?escena=`) y la página completa en desktop
+  (1440×900)/móvil (390×844), en claro y oscuro.
+- **Punto de control 2** (correcciones + etapas 3-4): capturas de cada
+  corrección (claro/oscuro donde aplica) + el hero en desktop/móvil, más un
+  video del scroll completo en desktop (1440×900, bajando y subiendo, con
+  Puppeteer-core apuntando a este mismo `/usr/bin/chromium` — scroll
+  programático con `window.scrollTo`, NO un gesto real, ver "Pendientes") y
+  2 tiras de ~12 cuadros (bajando/subiendo) alrededor de un cruce de fase,
+  para revisar la rotación sin abrir el video.
+
+Rutas exactas en el reporte de cada sesión (carpeta de scratchpad de esa
 sesión, no forma parte de este repo).
