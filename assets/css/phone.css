@@ -269,6 +269,9 @@
      rotado empuja hacia +Z del padre, o sea -D/2 real — ver nota de
      `.phone-frente`. */
   transform: rotateY(180deg) translateZ(calc(var(--phone-depth) / 2));
+  /* Mismo filo de 1px que el frente: sin él, la carcasa blanca no tenía
+     silueta contra el fondo crema. */
+  box-shadow: 0 0 0 1px var(--color-canto);
   display: flex;
   align-items: center;
   justify-content: center;
