@@ -15,22 +15,31 @@
 */
 
 /*
-  Móvil (<1024px, punto de control 2.5, error 1): `position: fixed`, no
-  `sticky` — clavado a una franja fija en la parte de arriba del viewport,
-  SIN compartir columna/fila con el texto (ver el comentario largo en
-  base.css sobre `.layout-con-stage`: un primer intento con grid
-  superpuesto + z-index se descartó porque no hay forma de garantizar que
-  texto de alto variable nunca entre en la franja del teléfono). `#hero`
-  (`.seccion-hero` más abajo) le deja un hueco con `padding-top` sólo en
-  la primera pantalla — de ahí en adelante el resto del contenido ya
-  scrollea por debajo sin tocar nada más, porque la franja es siempre la
-  MISMA región de pantalla, nunca una región de página.
+  Móvil (<1024px, punto de control 2.5 — error 1, 2da vuelta): `position:
+  sticky`, simple, entre `#hero` y `<main>` en el flujo normal (los 3 son
+  hermanos directos de `.layout-con-stage`, que en móvil es sólo
+  `display:block`) — SIN `position:fixed` y sin la franja fija con
+  `padding-top` del primer intento: esa franja sí evitaba que el teléfono
+  tapara al texto mientras scrolleaba DENTRO de su hueco, pero cualquier
+  título que apareciera ANTES de que el hueco de esa sección empezara (o
+  cualquier contenido más alto que el hueco) terminaba pasando por detrás
+  igual — confirmado en capturas reales (`tira-sticky-movil.png`, "Dile lo
+  que tienes que hacer"/"Háblale como a un amigo" tapados).
+
+  Acá la garantía es otra, y es ABSOLUTA en vez de geométrica: `#hero` y
+  `main` llevan `z-index` más alto que `.stage` (ver `.layout-con-stage`
+  en base.css) — un elemento POSICIONADO (`sticky` cuenta) siempre pinta
+  encima del contenido normal de su mismo contexto de apilamiento,
+  pase lo que pase con el orden del documento, así que sin ese `z-index`
+  el teléfono (sticky) ganaba igual. Con el `z-index` dado vuelta, el
+  TEXTO (y cualquier tarjeta/botón opaco) pinta siempre arriba — el
+  teléfono sólo se ve por donde el texto no llega. `.seccion-velo` (más
+  abajo) suma un fondo casi opaco detrás de cada bloque de texto para que
+  nunca se note el teléfono "espiando" entre líneas.
 */
 .stage {
-  position: fixed;
-  top: var(--altura-header-movil, 4.25rem);
-  left: 0;
-  right: 0;
+  position: sticky;
+  top: 0;
   display: flex;
   justify-content: center;
   padding: var(--space-2) 0;
@@ -39,10 +48,7 @@
 
 @media (min-width: 1024px) {
   .stage {
-    position: sticky;
     top: var(--space-3);
-    left: auto;
-    right: auto;
     height: calc(100vh - var(--space-4));
     align-items: center;
     pointer-events: auto;
@@ -85,10 +91,10 @@
    acompaña debajo sin competir por todo el alto de la primera pantalla. */
 @media (max-width: 1023px) {
   .escenario-3d {
-    /* Más chico que antes (era hasta 240px): tiene que caber entero,
-       cómodo, dentro de la franja fija de arriba (`.stage`) sin empujar
-       demasiado abajo el punto donde empieza a leerse el hero. */
-    width: clamp(130px, 32vw, 180px);
+    /* Más chico que en escritorio, nada más por una cuestión de espacio
+       — ya no tiene que caber en ninguna franja fija (esa idea se
+       descartó, ver el comentario largo de `.stage` arriba). */
+    width: clamp(170px, 46vw, 230px);
   }
 }
 

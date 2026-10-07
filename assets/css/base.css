@@ -595,28 +595,49 @@ strong {
 /*
   Layout con escenario sticky.
 
-  Móvil (<1024px, corrección — punto de control 2.5, error 1): flujo de
-  bloque normal para `#hero`/`main` — `.stage` SALE de ese flujo del todo
-  con `position:fixed` (ver phone.css), clavado a una franja fija arriba
-  del viewport. No comparte columna/fila con el texto en ningún momento
-  (a diferencia de un primer intento con grid superpuesto + z-index que
-  se descartó: con texto de alto variable no hay forma de garantizar que
-  nunca coincida con la franja del teléfono — acá directamente no pueden
-  coincidir, el teléfono vive en su propia capa fija). `#hero` lleva un
-  `padding-top` que libera esa franja sólo en la primera pantalla (ver
-  `.seccion-hero` más abajo); de ahí en adelante el contenido ya scrollea
-  por debajo sin necesitar ningún otro ajuste, porque la franja fija del
-  teléfono es siempre la misma región de pantalla, nunca una región de
-  PÁGINA con la que el texto pueda superponerse.
+  Móvil (<1024px, corrección — punto de control 2.5, error 1, 2da vuelta):
+  flujo de bloque normal — `#hero`, `.stage` y `main` son 3 hermanos
+  seguidos (mismo orden que en el HTML). `.stage` es sticky (ver
+  phone.css): aparece una vez en flujo normal, justo debajo del CTA del
+  hero (tal como sugirió el dueño), y se pega arriba apenas seguir
+  scrolleando lo sacaría de pantalla — de ahí se queda pegado durante el
+  resto del recorrido.
+
+  Que quede pegado DETRÁS del texto (nunca tapándolo) es cosa del
+  `z-index`, no de la geometría: `#hero`/`main` van a 2, `.stage` a 1 —
+  un elemento `position:sticky` sin esto pinta SIEMPRE arriba del
+  contenido normal de al lado así el texto venga después en el HTML (así
+  es como define el apilamiento la propia spec de CSS, no es negociable
+  con el orden del documento). Con el `z-index` dado vuelta, el teléfono
+  sólo se ve por donde el texto no llega — `.seccion`/`#hero` suman
+  además un fondo casi opaco (ver más abajo) para que nunca se note
+  "espiando" entre líneas.
 
   Escritorio (≥1024px): grid de 2 columnas — texto a la izquierda,
   `.stage` sticky a la derecha, `grid-row: 2 / 4` para abarcar hero + main
-  y quedar pegado durante todo el recorrido (sin solaparse con el texto,
-  que vive en la OTRA columna).
+  y quedar pegado durante todo el recorrido (acá ni hace falta el
+  `z-index`: viven en columnas separadas, nunca se superponen — se anula
+  abajo sólo por prolijidad).
 */
 
 .layout-con-stage {
   display: block;
+}
+
+.layout-con-stage > #hero,
+.layout-con-stage > main {
+  position: relative;
+  z-index: 2;
+}
+
+.layout-con-stage > .stage {
+  /* Sin `position` acá: `.stage` ya es `position: sticky` (phone.css) —
+     redeclararla a `relative` gana por especificidad (2 clases vs. 1) y
+     pisaba el sticky en seco, dejando el teléfono fluir normal con la
+     página (bug ya cazado una vez: el teléfono "desaparecía" en el
+     cierre porque en realidad scrolleaba fuera de cuadro hacia arriba).
+     `z-index` solo le alcanza porque sticky ya es un valor "positioned". */
+  z-index: 1;
 }
 
 @media (min-width: 1024px) {
@@ -650,16 +671,19 @@ strong {
   .layout-con-stage > #hero {
     grid-column: 1;
     grid-row: 2;
+    z-index: auto;
   }
 
   .layout-con-stage > main {
     grid-column: 1;
     grid-row: 3;
+    z-index: auto;
   }
 
   .layout-con-stage > .stage {
     grid-column: 2;
     grid-row: 2 / 4;
+    z-index: auto;
   }
 }
 
@@ -668,12 +692,22 @@ strong {
 .seccion {
   padding: var(--space-6) var(--space-3);
   max-width: 34rem;
+  /*
+    Velo casi opaco detrás del texto, sólo en móvil (el `z-index` de arriba
+    ya garantiza que el texto SIEMPRE pinta encima del teléfono sticky, así
+    que esto no es lo que evita la superposición — es la terminación fina
+    que pidió el dueño: "un velo... para que no se note" el teléfono
+    espiando entre renglones y en los márgenes de un párrafo corto).
+    `color-mix` en vez de un hex nuevo: sigue el tema sin inventar un token.
+  */
+  background: color-mix(in srgb, var(--color-bg) 94%, transparent);
 }
 
 @media (min-width: 1024px) {
   .seccion {
     padding: var(--space-6) 0;
     max-width: none;
+    background: none;
   }
 }
 
@@ -681,14 +715,6 @@ strong {
   padding-top: var(--space-4);
 }
 
-/* Libera la franja fija del teléfono (ver `.stage` en phone.css) sólo en
-   la primera pantalla — de ahí en adelante el teléfono vive en su propia
-   capa, nunca vuelve a necesitar este hueco (punto de control 2.5, error 1). */
-@media (max-width: 1023px) {
-  .seccion-hero {
-    padding-top: clamp(19rem, 66vw, 27rem);
-  }
-}
 
 .hero-significado {
   font-family: var(--font-display);
@@ -828,6 +854,19 @@ strong {
   margin: 0 auto;
 }
 
+/* Mismo motivo que la versión de escritorio más abajo (`min-height:180vh`)
+   pero para el teléfono más chico de móvil: le da a `position:sticky` el
+   margen que necesita para que el Dashboard aterrice y se quede quieto
+   antes de que `stage.js` lo desvanezca. */
+@media (max-width: 1023px) {
+  #cta {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
 @media (min-width: 1024px) {
   /*
     Punto de control 2.5, error 2: `position:sticky` se "suelta" solo —
@@ -854,6 +893,40 @@ strong {
     grid-column: 1 / -1;
     max-width: 40rem;
     padding-top: 0;
+  }
+
+  /*
+    Punto de control 2.5, error 2 (2da vuelta): `grid-column: 1 / -1` de
+    arriba es en realidad un no-op — `#cta` no es hijo directo de
+    `.layout-con-stage` (el grid), es hijo de `main`, así que esa
+    declaración nunca tuvo efecto: `#cta` siempre ocupó sólo el ancho de
+    la columna 1 (~640px), centrado ahí con `margin:0 auto`. Mientras el
+    teléfono viajaba dentro de su propia columna 2 esto no se notaba —
+    pero ahora que `stage.js` lo centra en el viewport COMPLETO al
+    aterrizar (`offsetCentradoCierre`), ese centro cae adentro de la
+    columna 1 y el texto (centrado en su columna angosta) queda clavado
+    atrás/adelante del cuerpo del teléfono: technically legible (el texto
+    pinta encima por z-index/orden del DOM) pero visualmente atropellado
+    — confirmado recortando una captura real, el título atraviesa el
+    teléfono. El dueño pidió "a los lados, sin solaparse": angostamos y
+    alineamos a la izquierda sólo para `#cta` (no toca `.seccion-cta`
+    del footer, que es un elemento distinto) para que el bloque de texto
+    quede siempre afuera del ancho del teléfono centrado (~296px,
+    572–868px en 1440 de viewport con el `vuelo-x` final).
+  */
+  #cta.seccion-cta {
+    max-width: 22rem;
+    margin: 0;
+    text-align: left;
+  }
+
+  #cta .fase-texto {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  #cta .cta-row {
+    justify-content: flex-start;
   }
 }
 

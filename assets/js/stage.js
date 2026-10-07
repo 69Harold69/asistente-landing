@@ -209,8 +209,24 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       despues: "dashboard",
       invertido: false,
       end: FIN_VUELO_CIERRE,
+      centrarAlFinal: true,
     },
   ];
+
+  /*
+    Cuánto hay que correr el teléfono a la izquierda para que termine en el
+    CENTRO HORIZONTAL DE LA PÁGINA, no sólo centrado dentro de SU columna
+    (la columna 2, que vive del lado derecho — plan 4.2: el Dashboard tiene
+    que "aterrizar al centro", no al centro de su propia columna). Medido
+    una sola vez (la posición horizontal de `.stage` no cambia con el
+    scroll, sólo la vertical vía `sticky`) — en 0 si no hay columna 2 que
+    corregir (escritorio con una sola columna, o si `.stage` no existe).
+  */
+  const offsetCentradoCierre = (() => {
+    if (!stageEl || window.innerWidth < 1024) return 0;
+    const r = stageEl.getBoundingClientRect();
+    return window.innerWidth / 2 - (r.left + r.width / 2);
+  })();
 
   /**
    * Un vuelo entre fases — compartido por escritorio (con desplazamiento
@@ -220,7 +236,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
    * opacidad que ya resuelve `phone.css` vía `abs(sin(--rotacion-y))` — acá
    * sólo hace falta la sombra, que no es CSS puro.
    */
-  function registrarVuelo({ trigger, antes, despues, invertido, end, esCierre }, { conDesplazamiento }) {
+  function registrarVuelo({ trigger, antes, despues, invertido, end, centrarAlFinal }, { conDesplazamiento }) {
     if (!trigger) return null;
     let lado = false;
     return ScrollTrigger.create({
@@ -233,7 +249,14 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
         const a = arco(p);
         telefono.style.setProperty("--rotacion-y", `${p * 360}deg`);
         if (conDesplazamiento) {
-          telefono.style.setProperty("--vuelo-x", `${(invertido ? -1 : 1) * a * 160}px`);
+          // El arco (sube y vuelve a 0) sigue dando el vaivén lateral de
+          // siempre; el cierre SUMA un corrimiento que crece con `p` y en
+          // p=1 (vuelo terminado) deja el teléfono exactamente en
+          // `offsetCentradoCierre` — "aterriza al centro", no al centro de
+          // su columna (error 2, 2da vuelta del punto de control 2.5).
+          const base = (invertido ? -1 : 1) * a * 160;
+          const corrimiento = centrarAlFinal ? offsetCentradoCierre * p : 0;
+          telefono.style.setProperty("--vuelo-x", `${base + corrimiento}px`);
           telefono.style.setProperty("--vuelo-escala", `${1 - a * 0.1}`);
         } else {
           // Móvil: giro 360° EN EL LUGAR (plan 5.4) — sin desplazamiento
@@ -283,41 +306,19 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
    * flotando (el bug reportado). Números absolutos de scroll (no
    * strings): más simple y exacto que encadenar "+=" relativos.
    *
-   * En móvil `.stage` es `position:fixed` (ver phone.css), no `sticky` —
-   * nunca "se suelta solo", así que esa cuenta no aplica: ahí sólo hace
-   * falta un desvanecido simple sobre el último tramo de `#cta`, para que
-   * el teléfono (fijo en su franja de arriba) no se quede flotando sobre
-   * el footer.
+   * Misma cuenta en escritorio y en móvil — los dos usan `.stage`
+   * `position:sticky` ahora (ver phone.css), sólo cambia el `top` (0 en
+   * móvil, `var(--space-3)` en escritorio), leído del CSS real en vez de
+   * asumido, para no duplicar ese número acá.
    */
-  function registrarDesvanecidoDeCierre(trigger, { fijo }) {
-    if (!trigger || !escenario3d) return null;
-    if (fijo) {
-      const rectCta = trigger.getBoundingClientRect();
-      const topPagina = rectCta.top + window.scrollY;
-      const bottomPagina = rectCta.bottom + window.scrollY;
-      return ScrollTrigger.create({
-        trigger,
-        start: topPagina + (bottomPagina - topPagina) * 0.45,
-        // Termina ANTES del borde real (-60px): `.stage` es `fixed` acá, no
-        // `sticky` — si el fundido termina justo en el borde, un scroll
-        // rápido puede mostrar el footer con el teléfono todavía a medio
-        // desvanecer encima (visto real en una captura de este punto de
-        // control). Terminar un poco antes dejar margen de sobra.
-        end: bottomPagina - 60,
-        scrub: 0.3,
-        onUpdate(self) {
-          escenario3d.style.opacity = `${1 - self.progress}`;
-        },
-      });
-    }
-
-    if (!stageEl) return null;
+  function registrarDesvanecidoDeCierre(trigger) {
+    if (!trigger || !escenario3d || !stageEl) return null;
     const rectCta = trigger.getBoundingClientRect();
     const topPagina = rectCta.top + window.scrollY;
     const bottomPagina = rectCta.bottom + window.scrollY;
     const alturaStage = stageEl.getBoundingClientRect().height;
-    const MARGEN_TOP_STICKY = 24; // var(--space-3), el `top` de `.stage` en escritorio
-    const puntoSuelta = bottomPagina - alturaStage - MARGEN_TOP_STICKY;
+    const margenTopSticky = parseFloat(getComputedStyle(stageEl).top) || 0;
+    const puntoSuelta = bottomPagina - alturaStage - margenTopSticky;
     const finVuelo = topPagina + Number(FIN_VUELO_CIERRE.replace("+=", "") || 0);
     // El fundido tiene que TERMINAR en `puntoSuelta` (o un poco antes de
     // caer ahí ya es tarde) — nunca más tarde. Si no hay 260px de sobra
@@ -384,7 +385,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     FASES.forEach((fase) => {
       triggers.push(registrarVuelo(fase, { conDesplazamiento: true }));
     });
-    triggers.push(registrarDesvanecidoDeCierre(secciones.cta, { fijo: false }));
+    triggers.push(registrarDesvanecidoDeCierre(secciones.cta));
 
     if (secciones.habitos) {
       // Sub-cruce hábitos → logro (plan 4.4, punto 3): el logro sigue
@@ -417,7 +418,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     FASES.forEach((fase) => {
       triggers.push(registrarVuelo(fase, { conDesplazamiento: false }));
     });
-    triggers.push(registrarDesvanecidoDeCierre(secciones.cta, { fijo: true }));
+    triggers.push(registrarDesvanecidoDeCierre(secciones.cta));
 
     if (secciones.habitos) {
       triggers.push(
