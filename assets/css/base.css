@@ -595,7 +595,7 @@ strong {
 /*
   Layout con escenario sticky.
 
-  Móvil (<1024px, corrección — punto de control 2.5, error 1, 2da vuelta):
+  Móvil (<1024px, corrección — punto de control 2.5, error 1, 3ra vuelta):
   flujo de bloque normal — `#hero`, `.stage` y `main` son 3 hermanos
   seguidos (mismo orden que en el HTML). `.stage` es sticky (ver
   phone.css): aparece una vez en flujo normal, justo debajo del CTA del
@@ -603,15 +603,21 @@ strong {
   scrolleando lo sacaría de pantalla — de ahí se queda pegado durante el
   resto del recorrido.
 
-  Que quede pegado DETRÁS del texto (nunca tapándolo) es cosa del
-  `z-index`, no de la geometría: `#hero`/`main` van a 2, `.stage` a 1 —
-  un elemento `position:sticky` sin esto pinta SIEMPRE arriba del
-  contenido normal de al lado así el texto venga después en el HTML (así
-  es como define el apilamiento la propia spec de CSS, no es negociable
-  con el orden del documento). Con el `z-index` dado vuelta, el teléfono
-  sólo se ve por donde el texto no llega — `.seccion`/`#hero` suman
-  además un fondo casi opaco (ver más abajo) para que nunca se note
-  "espiando" entre líneas.
+  La garantía ahora es GEOMÉTRICA, no de apilamiento: `.stage` pegado mide
+  sólo `44vh` (phone.css) y lleva fondo SÓLIDO — una franja real, no un
+  velo — y cada sección de texto (`.seccion:not(.seccion-hero)`, más abajo)
+  arranca con `padding-top: 46vh` y mide `min-height: 100vh`: el texto que
+  se está leyendo nunca llega a la altura de la franja, así que no hace
+  falta ningún truco de `z-index` para "ganarle" al teléfono por apilamiento
+  — physically no se tocan. (Dos vueltas atrás esto se resolvía al revés,
+  con el texto pintando ENCIMA del teléfono vía `z-index` + un velo casi
+  opaco sobre el texto — funcionaba contra la superposición pero el dueño
+  lo vio como "el teléfono se esconde, fantasma detrás del texto": pidió
+  explícito el teléfono VISIBLE y chico en su propia franja, no tapado.)
+  Acá sí conviene que `.stage` pinte ARRIBA de lo que pasa por detrás (así
+  la franja sólida tapa prolijo cualquier resto de la sección anterior que
+  siga subiendo, en vez de que un pixel de texto se cuele por encima) — por
+  eso `.stage` lleva más `z-index` que `#hero`/`main`, al revés que antes.
 
   Escritorio (≥1024px): grid de 2 columnas — texto a la izquierda,
   `.stage` sticky a la derecha, `grid-row: 2 / 4` para abarcar hero + main
@@ -627,7 +633,7 @@ strong {
 .layout-con-stage > #hero,
 .layout-con-stage > main {
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 .layout-con-stage > .stage {
@@ -637,7 +643,7 @@ strong {
      página (bug ya cazado una vez: el teléfono "desaparecía" en el
      cierre porque en realidad scrolleaba fuera de cuadro hacia arriba).
      `z-index` solo le alcanza porque sticky ya es un valor "positioned". */
-  z-index: 1;
+  z-index: 2;
 }
 
 @media (min-width: 1024px) {
@@ -692,15 +698,22 @@ strong {
 .seccion {
   padding: var(--space-6) var(--space-3);
   max-width: 34rem;
-  /*
-    Velo casi opaco detrás del texto, sólo en móvil (el `z-index` de arriba
-    ya garantiza que el texto SIEMPRE pinta encima del teléfono sticky, así
-    que esto no es lo que evita la superposición — es la terminación fina
-    que pidió el dueño: "un velo... para que no se note" el teléfono
-    espiando entre renglones y en los márgenes de un párrafo corto).
-    `color-mix` en vez de un hex nuevo: sigue el tema sin inventar un token.
-  */
-  background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+}
+
+/*
+  Separación geométrica del teléfono (franja sticky `44vh`, ver comentario
+  largo de `.layout-con-stage` arriba): cada sección narrativa (no el hero,
+  que todavía no tiene la franja fija) arranca bien por debajo de la franja
+  y mide al menos una pantalla completa, así el bloque de texto que se está
+  leyendo siempre cae en la mitad inferior — nunca hace falta que se
+  solape ni un poco con el teléfono mientras se lee.
+*/
+@media (max-width: 1023px) {
+  .seccion:not(.seccion-hero) {
+    padding-top: 46vh;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
 }
 
 @media (min-width: 1024px) {

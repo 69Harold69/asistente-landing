@@ -15,35 +15,42 @@
 */
 
 /*
-  Móvil (<1024px, punto de control 2.5 — error 1, 2da vuelta): `position:
-  sticky`, simple, entre `#hero` y `<main>` en el flujo normal (los 3 son
-  hermanos directos de `.layout-con-stage`, que en móvil es sólo
-  `display:block`) — SIN `position:fixed` y sin la franja fija con
-  `padding-top` del primer intento: esa franja sí evitaba que el teléfono
-  tapara al texto mientras scrolleaba DENTRO de su hueco, pero cualquier
-  título que apareciera ANTES de que el hueco de esa sección empezara (o
-  cualquier contenido más alto que el hueco) terminaba pasando por detrás
-  igual — confirmado en capturas reales (`tira-sticky-movil.png`, "Dile lo
-  que tienes que hacer"/"Háblale como a un amigo" tapados).
+  Móvil (<1024px, punto de control 2.5 — error 1, 3ra vuelta): `position:
+  sticky`, entre `#hero` y `<main>` en el flujo normal (los 3 son hermanos
+  directos de `.layout-con-stage`, que en móvil es sólo `display:block`):
+  aparece una vez, en flujo, justo debajo del CTA del hero, y se pega
+  arriba apenas seguir scrolleando lo sacaría de pantalla.
 
-  Acá la garantía es otra, y es ABSOLUTA en vez de geométrica: `#hero` y
-  `main` llevan `z-index` más alto que `.stage` (ver `.layout-con-stage`
-  en base.css) — un elemento POSICIONADO (`sticky` cuenta) siempre pinta
-  encima del contenido normal de su mismo contexto de apilamiento,
-  pase lo que pase con el orden del documento, así que sin ese `z-index`
-  el teléfono (sticky) ganaba igual. Con el `z-index` dado vuelta, el
-  TEXTO (y cualquier tarjeta/botón opaco) pinta siempre arriba — el
-  teléfono sólo se ve por donde el texto no llega. `.seccion-velo` (más
-  abajo) suma un fondo casi opaco detrás de cada bloque de texto para que
-  nunca se note el teléfono "espiando" entre líneas.
+  Vuelta anterior: la garantía era de `z-index` (texto siempre pintando
+  ENCIMA del teléfono) + un velo casi opaco sobre el texto. Evitaba la
+  superposición, pero el dueño lo vio como el problema contrario: el
+  teléfono quedaba "escondido, un fantasma detrás del texto" en vez de
+  visible. Pidió lo opuesto — franja chica y VISIBLE arriba, texto abajo,
+  sin que se toquen ni un poco.
+
+  Acá la franja (`height: 44vh`) tiene fondo SÓLIDO (no un velo parcial) y
+  gana el `z-index` (ver `.layout-con-stage` en base.css) — así tapa
+  prolijo cualquier resto de la sección anterior que siga subiendo por
+  detrás. La garantía real contra la superposición es geométrica, no de
+  apilamiento: cada sección de texto arranca con `padding-top: 46vh` (ver
+  `.seccion` en base.css), por debajo de la franja completa — el teléfono
+  nunca llega a estar a la altura del texto que se está leyendo.
 */
 .stage {
   position: sticky;
   top: 0;
   display: flex;
   justify-content: center;
-  padding: var(--space-2) 0;
+  align-items: center;
+  padding: var(--space-1) 0;
   pointer-events: none;
+}
+
+@media (max-width: 1023px) {
+  .stage {
+    height: 44vh;
+    background: var(--color-bg);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -86,15 +93,17 @@
   pointer-events: none;
 }
 
-/* Teléfono más chico en móvil (punto de control 2, mejora 9) — el titular y
-   el CTA van primero (ver orden del DOM en index.html) y el teléfono
-   acompaña debajo sin competir por todo el alto de la primera pantalla. */
+/* Teléfono chico en móvil, a propósito atado a `vh` y no a `vw` (punto de
+   control 2.5, error 1, 3ra vuelta): tiene que caber ENTERO dentro de la
+   franja fija de `.stage` (`height: 44vh`, arriba) con margen — atado al
+   ancho del viewport (como antes) el alto resultante (`aspect-ratio:9/19.5`
+   en `.phone`) no tenía relación con el alto real de la franja y se
+   recortaba o se pasaba según el aparato. 18vh de ancho → ~39vh de alto
+   (×19.5/9), con aire de sobra dentro de los 44vh en los 2 tamaños de
+   prueba (390×844 y 360×740). */
 @media (max-width: 1023px) {
   .escenario-3d {
-    /* Más chico que en escritorio, nada más por una cuestión de espacio
-       — ya no tiene que caber en ninguna franja fija (esa idea se
-       descartó, ver el comentario largo de `.stage` arriba). */
-    width: clamp(170px, 46vw, 230px);
+    width: clamp(120px, 18vh, 170px);
   }
 }
 
