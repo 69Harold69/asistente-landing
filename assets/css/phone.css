@@ -191,73 +191,48 @@
 }
 
 /*
-  Los 4 cantos (ver abajo) comparten la geometría de "caja real" que arma
-  `.phone-frente`/`.phone-espalda`: cada uno está CENTRADO sobre la línea
-  del borde que le toca (no pegado desde adentro), con el grosor repartido
-  mitad para cada lado (`calc(100% - var(--phone-depth) / 2)` en vez de
-  `100%`/`0`) y gira sobre su propio centro (`transform-origin: center`).
-  Antes giraban desde un borde (`transform-origin: left/right center` con
-  `left: 100%`/`right: 100%`), así que al llegar a 90° el canto quedaba
-  corrido medio grosor respecto de dónde terminan el frente (+D/2) y la
-  espalda (-D/2) — la "tira separada, pantalla cortada en diagonal" del
-  punto de control 2 (bug 6). Centrado sobre el borde, al rotar 90° el
-  canto encaja exacto entre las dos caras.
+  Canto (grosor del teléfono). Antes eran 4 tiras planas rectangulares
+  (izquierda/derecha/arriba/abajo): el frente y la espalda tienen
+  `border-radius` de 44px, así que en cualquier ángulo intermedio las
+  esquinas de las tiras asomaban como esquinas cuadradas.
 
-  `opacity: abs(sin(...))`: sin esto el canto se ve como una línea fina a
-  los lados del teléfono de frente/de espaldas (bug 5) — un borde con
-  grosor real SÍ debería notarse apenas en escorzo, pero acá se notaba
-  demasiado por el color de relleno. `sin(0deg)`/`sin(180deg)` = 0 (cerca
-  de frente/espalda, invisible) y `sin(90deg)` = 1 (de canto, visible al
-  100%) — sigue el ángulo real del teléfono en vez de un valor fijo, así
-  que funciona igual con `?cara=` (estático) que con la coreografía de
-  scroll de la etapa 4 (`--rotacion-y` cambiando en vivo).
+  Ahora el cuerpo es una pila de N capas con el MISMO contorno redondeado
+  que las caras (mismo tamaño, mismo radio), repartidas a lo largo de Z
+  entre la espalda (-D/2) y el frente (+D/2). Vista de lado, la unión de
+  las capas forma un canto continuo que sigue la curva de las esquinas.
+  Las capas son opacas y rellenas a propósito: con capas de sólo borde, cerca
+  de 90° el borde proyectado (b·cos θ) queda más fino que la separación
+  entre capas (Δz·sin θ) y aparecen rayas.
+
+  `stage.js` genera las capas y les pone `--z` (posición en Z, px) y `--luz`/
+  `--sombra` (porcentajes de mezcla): el centro del canto es un poco más claro
+  y los extremos más oscuros, como un marco de bordes redondeados.
+  Sólo se muestran (`data-canto="visible"` en `.phone`) cuando el teléfono
+  está girado: de frente o de espaldas quedarían tapadas por las caras y sólo
+  sumarían capas de composición.
 */
 .phone-canto {
   position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  display: none;
+  pointer-events: none;
+}
+
+.phone[data-canto="visible"] .phone-canto {
+  display: block;
+}
+
+.phone-capa {
+  position: absolute;
+  inset: 0;
   border-radius: var(--phone-radius);
-  background: linear-gradient(
-    90deg,
-    hsl(var(--shadow-color) / 0.3),
-    var(--color-border-card) 45%,
-    hsl(var(--shadow-color) / 0.3)
+  background: color-mix(
+    in oklab,
+    color-mix(in oklab, var(--color-canto), #fff calc(var(--luz, 0) * 1%)),
+    #000 calc(var(--sombra, 0) * 1%)
   );
-  opacity: abs(sin(var(--rotacion-y, 0deg)));
-}
-
-.phone-canto--derecha,
-.phone-canto--izquierda {
-  top: 0;
-  height: 100%;
-  width: var(--phone-depth);
-  transform-origin: center center;
-}
-
-.phone-canto--derecha {
-  left: calc(100% - var(--phone-depth) / 2);
-  transform: rotateY(90deg);
-}
-
-.phone-canto--izquierda {
-  right: calc(100% - var(--phone-depth) / 2);
-  transform: rotateY(-90deg);
-}
-
-.phone-canto--arriba,
-.phone-canto--abajo {
-  left: 0;
-  width: 100%;
-  height: var(--phone-depth);
-  transform-origin: center center;
-}
-
-.phone-canto--arriba {
-  top: calc(var(--phone-depth) / -2);
-  transform: rotateX(90deg);
-}
-
-.phone-canto--abajo {
-  bottom: calc(var(--phone-depth) / -2);
-  transform: rotateX(-90deg);
+  transform: translateZ(calc(var(--z, 0) * 1px));
 }
 
 .phone-espalda {

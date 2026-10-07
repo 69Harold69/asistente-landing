@@ -23,7 +23,7 @@ asistente-landing/
 │   │   ├── tokens.css   Colores/tipografía/espaciado/tema (claro, oscuro, y el `data-theme` del toggle)
 │   │   ├── fonts.css    @font-face
 │   │   ├── base.css     Layout, grid con escenario sticky, componentes compartidos
-│   │   ├── phone.css    El teléfono 3D (marco, bisel, isla, cantos, espalda)
+│   │   ├── phone.css    El teléfono 3D (marco, bisel, isla, canto en capas, espalda)
 │   │   └── scenes.css   Contenido de cada escena dentro de la pantalla del teléfono
 │   ├── js/
 │   │   ├── config.js    BRAND_NAME / BETA_URL
@@ -47,6 +47,8 @@ pedida una sola vez y fija la cara, estático, igual que en la etapa 2:
   `habitos` · `logro` · `llamada` · `dashboard` (ids de `assets/js/scenes/registro.js`).
 - `cara`: `frente` (por defecto, 0°) · `canto` (80°, ver nota abajo) ·
   `espalda` (180°).
+- `angulo`: cualquier ángulo en grados (p. ej. `?angulo=120`), gana sobre
+  `cara`. Sirve para revisar el canto en ángulos intermedios.
 
 Ejemplo: `index.html?escena=habitos&cara=espalda`. **`canto` usa 80°, no 90°
 exactos** — a 90° el frente y la espalda quedan perfectamente de filo (sin él

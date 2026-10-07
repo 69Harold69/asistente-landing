@@ -33,14 +33,55 @@ const ROTACION_POR_CARA = { frente: 0, canto: 80, espalda: 180 };
 const ESCENA_POR_DEFECTO = "splash";
 const CARA_POR_DEFECTO = "frente";
 
+/** Capas del canto (ver `.phone-canto` en phone.css). 14 px de grosor / 12 capas ≈ 1.2 px entre capas. */
+const CAPAS_CANTO = 12;
+/** Debajo de este |sen θ| (≈1.5°) el canto mide menos de medio pixel: se oculta. */
+const UMBRAL_CANTO = 0.025;
+
 function leerParametrosDeInspeccion() {
   const params = new URLSearchParams(window.location.search);
   const escena = params.get("escena");
   const cara = params.get("cara");
+  const angulo = Number.parseFloat(params.get("angulo"));
   return {
     escena: escena && ESCENAS[escena] ? escena : null,
     cara: cara && cara in ROTACION_POR_CARA ? cara : null,
+    angulo: Number.isFinite(angulo) ? angulo : null,
   };
+}
+
+/**
+ * Genera las capas del canto: N contornos redondeados repartidos en Z entre
+ * la espalda (-D/2) y el frente (+D/2), sin tocar ninguno de los dos planos
+ * (medio paso de margen en cada extremo, para que no peleen en profundidad
+ * con las caras). El tono sigue un perfil de seno: más claro al centro,
+ * más oscuro hacia las caras — se lee como un marco con bordes redondeados.
+ */
+function construirCanto(telefono) {
+  const canto = telefono.querySelector(".phone-canto");
+  if (!canto || canto.childElementCount) return;
+  const grosor = parseFloat(getComputedStyle(telefono).getPropertyValue("--phone-depth")) || 14;
+  const fragmento = document.createDocumentFragment();
+  for (let i = 0; i < CAPAS_CANTO; i++) {
+    const t = (i + 0.5) / CAPAS_CANTO;
+    const centro = Math.sin(t * Math.PI);
+    const capa = document.createElement("span");
+    capa.className = "phone-capa";
+    capa.style.setProperty("--z", (t - 0.5) * grosor);
+    capa.style.setProperty("--luz", Math.round(centro * 22));
+    capa.style.setProperty("--sombra", Math.round((1 - centro) * 26));
+    fragmento.appendChild(capa);
+  }
+  canto.appendChild(fragmento);
+}
+
+/** Aplica el ángulo y muestra el canto sólo cuando aporta (lejos de 0° y 180°). */
+function fijarRotacion(telefono, grados) {
+  telefono.style.setProperty("--rotacion-y", `${grados}deg`);
+  const visible = Math.abs(Math.sin((grados * Math.PI) / 180)) > UMBRAL_CANTO;
+  if (visible !== (telefono.dataset.canto === "visible")) {
+    telefono.dataset.canto = visible ? "visible" : "oculto";
+  }
 }
 
 /** Aplica el ancho real de cada `[data-progreso]` vía CSSOM (no `style=""` en el HTML). */
@@ -66,9 +107,11 @@ export function inicializarEscenario() {
   const sombraVuelo = document.getElementById("sombra-vuelo");
   if (!telefono || !pantalla) return;
 
-  const { escena, cara } = leerParametrosDeInspeccion();
-  if (escena || cara) {
-    inicializarModoInspeccion(telefono, pantalla, escena, cara);
+  construirCanto(telefono);
+
+  const { escena, cara, angulo } = leerParametrosDeInspeccion();
+  if (escena || cara || angulo !== null) {
+    inicializarModoInspeccion(telefono, pantalla, escena, cara, angulo);
     return;
   }
 
@@ -83,11 +126,11 @@ export function inicializarEscenario() {
   inicializarCoreografia(telefono, pantalla, sombraVuelo);
 }
 
-function inicializarModoInspeccion(telefono, pantalla, escena, cara) {
+function inicializarModoInspeccion(telefono, pantalla, escena, cara, angulo) {
   montarEnCapa(pantalla, escena ?? ESCENA_POR_DEFECTO);
   const idCara = cara ?? CARA_POR_DEFECTO;
-  telefono.style.setProperty("--rotacion-y", `${ROTACION_POR_CARA[idCara]}deg`);
-  telefono.dataset.cara = idCara;
+  fijarRotacion(telefono, angulo ?? ROTACION_POR_CARA[idCara]);
+  telefono.dataset.cara = angulo !== null ? `${angulo}` : idCara;
 }
 
 /**
@@ -243,9 +286,8 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
    * Un vuelo entre fases — compartido por escritorio (con desplazamiento
    * lateral) y móvil (en el lugar, `conDesplazamiento:false`): gira 360°,
    * cambia de escena cerca de los 180° (de espaldas) y, si `invertido`,
-   * alterna el lado del arco. `sincronizarCanto`/la sombra siguen la MISMA
-   * opacidad que ya resuelve `phone.css` vía `abs(sin(--rotacion-y))` — acá
-   * sólo hace falta la sombra, que no es CSS puro.
+   * alterna el lado del arco. `fijarRotacion` muestra/oculta las capas del
+   * canto según el ángulo; la sombra de vuelo se escala acá mismo.
    */
   function registrarVuelo({ trigger, antes, despues, invertido, end, centrarAlFinal }, { conDesplazamiento }) {
     if (!trigger) return null;
@@ -258,7 +300,11 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       onUpdate(self) {
         const p = self.progress;
         const a = arco(p);
-        telefono.style.setProperty("--rotacion-y", `${p * 360}deg`);
+        fijarRotacion(telefono, p * 360);
+        // `will-change` sólo mientras el teléfono está en pleno vuelo: fuera
+        // de eso el navegador puede soltar la capa promovida.
+        const enVuelo = p > 0 && p < 1;
+        telefono.style.willChange = enVuelo ? "transform" : "auto";
         if (conDesplazamiento) {
           // El arco (sube y vuelve a 0) sigue dando el vaivén lateral de
           // siempre; el cierre SUMA un corrimiento que crece con `p` y en
