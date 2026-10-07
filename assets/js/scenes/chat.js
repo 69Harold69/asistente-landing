@@ -263,9 +263,44 @@ function construirTimeline() {
   return tl;
 }
 
+function prefiereMovimientoReducido() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/**
+ * Estado final estático de UN escenario, sin tecleo/espera/loop — lo que
+ * se ve bajo `prefers-reduced-motion` (regla general de la parte B: "sin
+ * loops agresivos, estados legibles estáticos"). El tecleo carácter a
+ * carácter y el encadenado infinito de escenarios son justo el tipo de
+ * loop que esa regla pide evitar acá.
+ */
+function mostrarEstadoEstatico() {
+  if (!refs) return;
+  const escenario = elegirEscenario();
+  refs.cuerpo.innerHTML = "";
+  refs.inputTexto.textContent = "";
+  refs.inputCaja.classList.remove("ps-input--dictando");
+  gsap.set(".ps-chip-voz", { opacity: 0 });
+
+  const burbuja = crearBurbujaUsuario();
+  burbuja.textContent = escenario.texto;
+
+  if (escenario.confirmar) {
+    const el = crearConfirmacion(escenario.confirmar.pregunta);
+    el.querySelector(".ps-confirm-row").outerHTML = '<div class="ps-confirmado">Confirmado ✓</div>';
+  } else {
+    crearTarjeta(escenario.tarjeta);
+  }
+}
+
 export function play() {
   activo = true;
   if (timelineActivo) timelineActivo.kill();
+  if (prefiereMovimientoReducido()) {
+    timelineActivo = null;
+    mostrarEstadoEstatico();
+    return null;
+  }
   timelineActivo = construirTimeline();
   timelineActivo.play(0);
   return timelineActivo;

@@ -477,12 +477,27 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       );
     }
 
+    /*
+      Bug real encontrado verificando `prefers-reduced-motion` (checkpoint
+      2.5, parte B): con `start:"top center"` el punto de disparo real es
+      `trigger.top - mitad del viewport` (~450px con un viewport de
+      900px) — un offset FIJO, no relativo al alto de la propia sección.
+      `llamada` mide ~410px (menos que ese offset): su punto de disparo y
+      el de `cta` (la fase siguiente) quedaban invertidos en el eje de
+      scroll, así que un solo salto de scroll cruzaba los 2 a la vez y
+      "llamada" nunca llegaba a pintarse — pasaba derecho de "logro" a
+      "dashboard" (confirmado con un dump del estado de las capas en cada
+      punto). `"top top"` dispara justo en `trigger.top` (offset 0) — src
+      el mismo truco que ya usan los vuelos reales de las ramas A/C — así
+      el orden de disparo entre fases consecutivas queda garantizado sin
+      importar cuán corta sea cualquiera de ellas.
+    */
     FASES.forEach(({ trigger, antes, despues }) => {
       if (!trigger) return;
       triggers.push(
         ScrollTrigger.create({
           trigger,
-          start: "top center",
+          start: "top top",
           onEnter: () => capas.irA(despues, { animar: true }),
           onLeaveBack: () => capas.irA(antes, { animar: true }),
         })
@@ -490,10 +505,16 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     });
 
     if (secciones.habitos) {
+      // Mismo bug, mismo arreglo: `"bottom center"` podía caer más allá
+      // del propio final de `habitos` si era más baja que medio
+      // viewport. `"center top"` es relativo al alto PROPIO de la
+      // sección (mitad de `habitos`, nunca más allá de su propio final) —
+      // mismo criterio que ya usa `registrarSubCruceHabitosLogro` para
+      // las ramas con movimiento.
       triggers.push(
         ScrollTrigger.create({
           trigger: secciones.habitos,
-          start: "bottom center",
+          start: "center top",
           onEnter: () => capas.irA("logro", { animar: true }),
           onLeaveBack: () => capas.irA("habitos", { animar: true }),
         })
