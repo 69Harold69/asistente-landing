@@ -1,0 +1,91 @@
+/*
+  Fuentes de la portada (index.html): los mismos 7 pesos que `fonts.css`,
+  pero recortados al rango latino que usa el sitio (Latin-1, puntuación
+  general, flechas, ✓) con `fonttools subset` — Baloo 2 trae además todo el
+  devanagari, y así los 7 archivos bajan de 431 KB a 109 KB. Los originales
+  en `assets/fonts/` quedan intactos (los usan las páginas legales).
+  Mismo origen y licencia SIL OFL (`assets/fuentes/OFL.txt`, sin nombres
+  reservados, así que los recortes conservan el nombre de la familia).
+*/
+
+@font-face {
+  font-family: "Baloo 2";
+  src: url("../fuentes/baloo2-semibold-latin.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Baloo 2";
+  src: url("../fuentes/baloo2-bold-latin.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Baloo 2";
+  src: url("../fuentes/baloo2-extrabold-latin.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("../fuentes/manrope-regular-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("../fuentes/manrope-medium-latin.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("../fuentes/manrope-semibold-latin.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("../fuentes/manrope-bold-latin.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+  Respaldo métrico mientras cargan las fuentes (`font-display: swap`): Arial
+  ajustado para ocupar lo mismo que la fuente real y que el cambio no mueva
+  el layout (CLS). Ratios medidos con fonttools sobre los propios textos del
+  hero: Baloo 2 ExtraBold mide 94.5% de Arial Bold; Manrope Regular, 103.8%
+  de Arial. ascent/descent = métricas hhea de cada fuente / size-adjust.
+*/
+@font-face {
+  font-family: "Baloo 2 Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("Arial");
+  font-weight: 600 800;
+  size-adjust: 94.5%;
+  ascent-override: 114%;
+  descent-override: 55.4%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Manrope Fallback";
+  src: local("Arial"), local("ArialMT"), local("Liberation Sans");
+  size-adjust: 103.8%;
+  ascent-override: 102.7%;
+  descent-override: 28.9%;
+  line-gap-override: 0%;
+}

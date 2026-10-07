@@ -14,11 +14,21 @@
     content="Dile lo que tienes que hacer. Yaruki se encarga de anotarlo — tareas, notas, listas, eventos y hábitos, por conversación."
   />
   <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#151322" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+  <!-- Fuentes del primer pantallazo: titular (Baloo 2 800) y subtítulo (Manrope 400, el LCP) -->
+  <link rel="preload" href="assets/fuentes/baloo2-extrabold-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fuentes/manrope-regular-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="assets/css/tokens.css" />
-  <link rel="stylesheet" href="assets/css/fonts.css" />
+  <link rel="stylesheet" href="assets/css/fuentes-portada.css" />
   <link rel="stylesheet" href="assets/css/base.css" />
   <link rel="stylesheet" href="assets/css/phone.css" />
   <link rel="stylesheet" href="assets/css/scenes.css" />
+  <script defer src="assets/js/vendor/gsap.min.js"></script>
+  <script defer src="assets/js/vendor/ScrollTrigger.min.js"></script>
+  <script defer src="assets/js/vendor/canvas-confetti.min.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -266,10 +276,5 @@
       </div>
     </div>
   </footer>
-
-  <script src="assets/js/vendor/gsap.min.js"></script>
-  <script src="assets/js/vendor/ScrollTrigger.min.js"></script>
-  <script src="assets/js/vendor/canvas-confetti.min.js"></script>
-  <script type="module" src="assets/js/main.js"></script>
 </body>
 </html>
