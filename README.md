@@ -21,19 +21,22 @@ asistente-landing/
 ├── assets/
 │   ├── css/
 │   │   ├── tokens.css   Colores/tipografía/espaciado/tema (claro, oscuro, y el `data-theme` del toggle)
-│   │   ├── fonts.css    @font-face
+│   │   ├── fonts.css    @font-face de las páginas legales y 404 (assets/fonts/)
+│   │   ├── fuentes-portada.css  @font-face de la portada (recortes latinos de assets/fuentes/)
 │   │   ├── base.css     Layout, grid con escenario sticky, componentes compartidos
 │   │   ├── phone.css    El teléfono 3D (marco, bisel, isla, canto en capas, espalda)
 │   │   └── scenes.css   Contenido de cada escena dentro de la pantalla del teléfono
 │   ├── js/
 │   │   ├── config.js    BRAND_NAME / BETA_URL
 │   │   ├── theme.js     Toggle sol/luna
-│   │   ├── stage.js     Monta la escena + cara del teléfono, modo de inspección `?escena=&cara=`
+│   │   ├── stage.js     Coreografía de scroll y modo de inspección `?escena=&cara=&angulo=`
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
 │   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, llamada, dashboard
 │   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
-│   └── fonts/  .woff2 autoalojados + OFL.txt
+│   ├── fonts/     .woff2 completos + OFL.txt (páginas legales)
+│   ├── fuentes/   los mismos pesos recortados al rango latino + OFL.txt (portada)
+│   └── img/       favicon.svg
 └── README.md
 ```
 
@@ -55,51 +58,41 @@ exactos** — a 90° el frente y la espalda quedan perfectamente de filo (sin é
 no se ve el bisel con profundidad real); 80° deja una pizca de perspectiva
 visible, que es lo que pide el plan ("≈ 90°").
 
-## Coreografía de scroll (etapas 3 y 4 — `assets/js/stage.js`)
+## Coreografía de scroll (`assets/js/stage.js`)
 
-Sin `?escena=`/`?cara=` en la URL (el caso real, para cualquier visitante),
-`inicializarCoreografia()` arma todo con GSAP + ScrollTrigger (vendorizados,
-ver abajo) y `gsap.matchMedia()` con 2 ramas, elegidas por media query —
-cambiar de una a otra en caliente (resize/cambiar `prefers-reduced-motion` en
-vivo) no reacomoda los valores de rotación/posición que haya dejado la rama
-anterior; no se resuelve en este pase, ver "Pendientes".
+Sin parámetros de inspección, `inicializarCoreografia()` arma todo con GSAP +
+ScrollTrigger y `gsap.matchMedia()` con 3 ramas:
 
-- **Escritorio (`min-width:1024px`) + `prefers-reduced-motion: no-preference`:**
-  - **Hero (etapa 3):** la mascota del Splash escala (`transform: scale()`,
-    CSS var no — directo por JS sobre ese `<span>` puntual, ver el porqué en
-    el código) hasta cubrir la pantalla y cruza a Login con opacidad — las
-    2 capas (`.capa-escena`) están montadas desde el arranque,
-    `ScrollTrigger` con `scrub` las cruza según el progreso real del scroll
-    por `#hero`, reversible en los 2 sentidos.
-  - **Fases (etapa 4):** una `ScrollTrigger` por sección (`#fase-chat`,
-    `#fase-elementos`, `#fase-habitos`, `#fase-llamada`, `#cta`), **cada una
-    atada al alto PROPIO de su sección** (`start:"top top", end:"bottom
-    top"`) — no a un tramo fijo de 1 viewport: con secciones más bajas que
-    el viewport (todas lo son acá), un tramo de 1 viewport por vuelo se
-    solapaba con el de la sección siguiente, los dos escribiendo
-    `--rotacion-y` a la vez (bug real, encontrado armando este punto de
-    control, corregido antes de capturar nada). Cada vuelo gira 360°
-    (`--rotacion-y`), "vuela" de lado a lado (`--vuelo-x`, arco `sin(p·π)`,
-    el signo alterna por fase — mismo criterio que `.seccion--par`) y
-    achica un poco a mitad de camino (`--vuelo-escala`); la escena cambia
-    al cruzar el 50% del progreso (cerca de los 180°, de espaldas). La
-    sombra (`#sombra-vuelo`) se estira/atenúa con las mismas 2 propiedades
-    permitidas (`transform`/`opacity`), nunca el `box-shadow` estático.
-  - **Hábitos → logro:** no es una sección aparte (plan 4.4) — reparte el
-    alto PROPIO de `#fase-habitos` en 2 mitades: la primera (`top
-    top`→`center top`) es el vuelo que muestra "habitos"; la segunda
-    (`center top`→`bottom top`) es un cruce de opacidad DE FRENTE (sin
-    girar) hacia "logro".
-- **Móvil (`max-width:1023px`), o quien pidió `prefers-reduced-motion:
-  reduce`:** sin giros ni vuelo — cada sección cruza con un fundido simple
-  (`onEnter`/`onLeaveBack` de ScrollTrigger, reversible al subir) entre la
-  escena de antes y la de después.
+- **Escritorio (≥1024px) con movimiento:** el teléfono vuela de lado a lado
+  (arco de ±160px, escala 0.9 a mitad de vuelo) girando 360° en Y entre cada
+  fase; la escena cambia al 50% del progreso (de espaldas).
+- **Móvil (<1024px) con movimiento:** el mismo giro 360°, en el lugar, con el
+  teléfono en la franja sticky de 44vh. En horizontal (alto ≤520px) el layout
+  pasa a 2 columnas.
+- **`prefers-reduced-motion: reduce`:** sin giros ni vuelo; cada fase cruza
+  con un fundido discreto cuando su sección llega a la mitad del viewport.
 
-Cada escena (`assets/js/scenes/*.js`) sigue exponiendo `id`, `mount(contenedor)`,
-`play()`, `pause()` y `reset()` (plan, 5.3) — `play`/`pause`/`reset` siguen
-siendo no-ops documentados: ninguna escena necesita loop propio todavía (las
-únicas animaciones con loop, el respirar de la mascota y el pulso de la
-llamada, son CSS puro).
+**Sincronía texto ↔ teléfono (`TRAMOS`):** cada sección mide al menos una
+pantalla y cada vuelo termina ANTES de que su texto llegue al centro
+(escritorio: `top 55%`→`top 5%`; móvil: `top 85%`→`top 25%`, y el primer
+vuelo arranca recién cuando el teléfono se pega arriba). Así el teléfono ya
+muestra la escena de la que habla el texto mientras se lee.
+**Hero:** la mascota del Splash escala y cruza a Login entre el scroll 0 y el
+75% del tramo previo al primer vuelo. **Hábitos → logro (`TRAMOS_LOGRO`):**
+la sección mide 160vh: primero el heatmap quieto, después un cruce de opacidad
+de frente a "logro". **Cierre:** el Dashboard aterriza al centro de la página,
+queda quieto mientras se lee el CTA y sube con la página cuando el sticky se
+suelta (`#cta` mide 150vh en escritorio).
+
+**Canto:** 12 capas con el contorno redondeado del marco, repartidas en Z
+entre la espalda y el frente (`construirCanto`), visibles sólo cuando
+|sen θ| > 0.025 (`fijarRotacion`). `will-change: transform` sólo durante un
+vuelo.
+
+**Escenas (`assets/js/scenes/*.js`):** cada una expone `id`, `mount`,
+`play`, `pause` y `reset` (plan 5.3); `stage.js` llama `play`/`pause` en cada
+cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
+100cqw/360), con los dp/sp reales del código Compose de la app.
 
 ## BRAND_NAME y BETA_URL
 
@@ -151,6 +144,16 @@ falta — no quedó ningún `node_modules/`/`package.json` en el repo.
   MIT/BSD-2), texto completo en `assets/js/vendor/LICENSE-canvas-confetti.txt`.
 
 ## Fuentes autoalojadas
+
+**Portada:** usa `assets/fuentes/*-latin.woff2`, recortes de los mismos 7
+pesos hechos con `fonttools subset` (rango: U+0000-00FF, U+0131, U+0152-0153,
+U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122,
+U+2190-2193, U+2212, U+2713, U+2022; `--layout-features='*'`). De 431 KB a
+109 KB. Si se agrega texto con caracteres fuera de ese rango, regenerarlos
+desde `assets/fonts/` con el mismo comando. Las páginas legales siguen con
+los originales de `assets/fonts/` vía `fonts.css`.
+
+**Originales (`assets/fonts/`):**
 
 Convertidas de los `.ttf` de `asistente-android/app/src/main/res/font/` con
 `woff2_compress` (paquete `woff2` del sistema; no se usó `fonttools` porque no
