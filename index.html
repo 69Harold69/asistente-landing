@@ -35,7 +35,8 @@
           type="button"
           class="theme-toggle"
           data-theme-toggle
-          aria-label="Cambiar entre tema claro y oscuro"
+          aria-label="Tema oscuro"
+          aria-pressed="false"
         >
           <svg class="icono-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="12" r="4.5" />
@@ -56,9 +57,9 @@
       el teléfono (franja sticky) y luego las secciones. En escritorio el
       grid de `.layout-con-stage` (base.css) ubica cada pieza por fila/columna.
     -->
-    <section id="hero" class="seccion seccion-hero">
-      <p class="hero-significado">Yaruki (やる気): las ganas de hacer algo</p>
-      <h1 class="titular-hero">
+    <section id="hero" class="seccion seccion-hero" aria-labelledby="titular">
+      <p class="hero-significado">Yaruki (<span lang="ja">やる気</span>): las ganas de hacer algo</p>
+      <h1 class="titular-hero" id="titular">
         <span class="frase">Dile lo que tienes que hacer.</span>
         <span class="frase">Yaruki se encarga de anotarlo.</span>
       </h1>
@@ -70,8 +71,8 @@
         <div class="cta-item">
           <a
             class="button button--disabled"
+            role="link"
             aria-disabled="true"
-            href="#"
             data-cta-beta
           >
             Únete a la beta
@@ -79,7 +80,7 @@
           <span class="chip" data-chip-proximamente-beta>Próximamente</span>
         </div>
         <div class="cta-item">
-          <span class="button button--disabled" aria-disabled="true">Descárgala en App Store</span>
+          <span class="button button--disabled" role="link" aria-disabled="true">Descárgala en App Store</span>
           <span class="chip">Próximamente</span>
         </div>
       </div>
@@ -173,8 +174,8 @@
           <div class="cta-item">
             <a
               class="button button--disabled"
+              role="link"
               aria-disabled="true"
-              href="#"
               data-cta-beta
             >
               Únete a la beta
@@ -188,10 +189,10 @@
   </main>
 
   <footer class="pie">
-    <section id="privacidad" class="privacidad-section">
+    <section id="privacidad" class="privacidad-section" aria-labelledby="titulo-privacidad">
       <div class="container seccion-cta">
         <p class="fase-kicker">Centro de privacidad y datos</p>
-        <h2 class="fase-titulo">Tus datos son tuyos</h2>
+        <h2 class="fase-titulo" id="titulo-privacidad">Tus datos son tuyos</h2>
         <p class="fase-texto">
           Podemos mostrarte exactamente qué guardamos, por qué, y darte una
           forma de pedir que lo borremos, con o sin la app instalada.

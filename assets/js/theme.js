@@ -52,3 +52,23 @@ export function alternarTema() {
   guardarTema(siguiente);
   return siguiente;
 }
+
+/** Tema efectivo ahora mismo: el explícito o, si no hay, el del sistema. */
+export function temaEfectivo() {
+  return temaExplicitoActual() ?? (prefiereOscuroElSistema() ? "dark" : "light");
+}
+
+/**
+ * Mantiene `aria-pressed` del toggle ("Tema oscuro", botón de alternar)
+ * igual al tema que se ve — también durante la demo de tema y si cambia el
+ * tema del sistema con la página abierta.
+ */
+export function sincronizarToggle(botones) {
+  const aplicar = () => {
+    const oscuro = temaEfectivo() === "dark";
+    botones.forEach((b) => b.setAttribute("aria-pressed", String(oscuro)));
+  };
+  aplicar();
+  new MutationObserver(aplicar).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", aplicar);
+}

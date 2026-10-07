@@ -40,14 +40,28 @@ a:hover {
 
 :focus-visible {
   outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline-offset: 3px;
 }
+
+/* Sin `border-radius` en el foco: el contorno sigue la forma del propio
+   elemento (píldora, tarjeta, círculo). Antes se forzaba 4px y el foco de
+   un botón píldora o de una tarjeta cambiaba su forma. */
 
 .skip-link {
   position: absolute;
-  left: -999px;
-  top: auto;
+  left: var(--space-2);
+  top: var(--space-2);
+  z-index: 100;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  font-weight: 600;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
 }
 
 .visually-hidden-heading {
@@ -56,16 +70,6 @@ a:hover {
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
-}
-
-.skip-link:focus-visible {
-  position: fixed;
-  left: var(--space-2);
-  top: var(--space-2);
-  z-index: 100;
-  background: var(--color-bg-elevated);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
 }
 
 h1,
@@ -217,7 +221,7 @@ strong {
   padding: 0.3em 0.9em;
   border-radius: var(--radius-pill);
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-on-accent-soft);
   white-space: nowrap;
 }
 
