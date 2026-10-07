@@ -26,12 +26,12 @@ function guardarTema(tema) {
   }
 }
 
-function prefiereOscuroElSistema() {
+export function prefiereOscuroElSistema() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
 /** Tema explícito ya fijado en <html>, o null si todavía sigue el sistema. */
-function temaExplicitoActual() {
+export function temaExplicitoActual() {
   const valor = document.documentElement.getAttribute("data-theme");
   return valor === "light" || valor === "dark" ? valor : null;
 }

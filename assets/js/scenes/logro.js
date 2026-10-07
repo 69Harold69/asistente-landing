@@ -12,17 +12,17 @@ import { iconoTrofeo } from "../icons.js";
 
 export const id = "logro";
 
-const CONFETIS = [
-  { top: "16%", left: "18%", size: 9, opacity: 0.85 },
-  { top: "26%", left: "78%", size: 7, opacity: 0.6 },
-  { top: "70%", left: "14%", size: 8, opacity: 0.55 },
-  { top: "64%", left: "82%", size: 6, opacity: 0.7 },
-  { top: "10%", left: "52%", size: 6, opacity: 0.5 },
-];
+let refs = null;
+let confetiPropio = null;
+
+function prefiereMovimientoReducido() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 export function mount(contenedor) {
   contenedor.innerHTML = `
     <div class="escena ps-logro">
+      <canvas class="ps-confeti-canvas" aria-hidden="true"></canvas>
       <div class="ps-logro-modal">
         <div class="ps-logro-badge" aria-hidden="true">${iconoTrofeo()}</div>
         <strong>Vas muy bien</strong>
@@ -31,28 +31,45 @@ export function mount(contenedor) {
       </div>
     </div>
   `;
-
-  // Puntos de confeti: posición/tamaño inline vía CSSOM (asignación directa
-  // a `element.style`), no un atributo `style=""` en el HTML — la CSP del
-  // sitio prohíbe el segundo, no el primero (ver README).
-  const escena = contenedor.querySelector(".ps-logro");
-  CONFETIS.forEach((c) => {
-    const punto = document.createElement("span");
-    punto.className = "ps-confeti";
-    punto.setAttribute("aria-hidden", "true");
-    punto.style.top = c.top;
-    punto.style.left = c.left;
-    punto.style.width = `${c.size}px`;
-    punto.style.height = `${c.size}px`;
-    punto.style.opacity = String(c.opacity);
-    escena.appendChild(punto);
-  });
+  refs = { canvas: contenedor.querySelector(".ps-confeti-canvas") };
+  confetiPropio = null;
 }
 
+/**
+ * Confeti real (`canvas-confetti`, vendorizado — `assets/js/vendor/`, ver
+ * `index.html` y `LICENSE-canvas-confetti.txt`), no los puntos CSS
+ * estáticos de antes. `confetti.create(canvas, {resize:true})` da una
+ * instancia ACOTADA a este `<canvas>` (del tamaño de la pantallita del
+ * teléfono, no de toda la ventana) — la llamada por defecto del paquete
+ * crea un canvas propio a pantalla completa, que acá se saldría del
+ * mockup. Se crea una sola vez por montaje y se reusa en cada `play()`
+ * (reinicia el burst) en vez de crear un canvas nuevo cada vez.
+ *
+ * `prefers-reduced-motion`: sin burst — el modal (trofeo + texto) se ve
+ * igual de completo, sólo sin el efecto, como pide la regla general.
+ */
 export function play() {
+  if (!refs || !window.confetti) return null;
+  if (prefiereMovimientoReducido()) return null;
+  if (!confetiPropio) {
+    confetiPropio = window.confetti.create(refs.canvas, { resize: true, useWorker: false });
+  }
+  confetiPropio({
+    particleCount: 60,
+    spread: 70,
+    startVelocity: 32,
+    gravity: 1.1,
+    ticks: 160,
+    origin: { x: 0.5, y: 0.35 },
+    colors: ["#6c5ce7", "#a29bfe", "#ffd166", "#ff8fa3"],
+  });
   return null;
 }
 
-export function pause() {}
+export function pause() {
+  if (confetiPropio) confetiPropio.reset();
+}
 
-export function reset() {}
+export function reset() {
+  pause();
+}

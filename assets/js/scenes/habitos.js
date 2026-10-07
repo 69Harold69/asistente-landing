@@ -33,6 +33,13 @@ function celdas() {
   }).join("");
 }
 
+let refs = null;
+let demora = null;
+
+function prefiereMovimientoReducido() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 export function mount(contenedor) {
   contenedor.innerHTML = `
     <div class="escena ps-habitos ps-pad">
@@ -52,12 +59,41 @@ export function mount(contenedor) {
       </div>
     </div>
   `;
+  refs = { switch: contenedor.querySelector(".ps-switch") };
 }
 
+/**
+ * El switch "Cumplido hoy" se activa solo a los ~2-3s de entrar a la
+ * sección (plan, parte B) — no es que el visitante lo toque, es una
+ * demo de que así se ve un hábito ya cumplido hoy. Arranca "apagado" en
+ * `mount()` (ver `scenes.css`) para que haya algo que animar; `pause()`
+ * cancela el temporizador si la sección queda atrás antes de que dispare
+ * (scroll rápido) — si no, el switch se prendería solo, fuera de
+ * pantalla, y el sub-cruce a "logro" (stage.js) lo encontraría ya
+ * prendido la próxima vez sin haberse "visto" prender.
+ */
 export function play() {
-  return null;
+  if (!refs) return null;
+  if (demora) demora.kill();
+  if (prefiereMovimientoReducido()) {
+    refs.switch.classList.add("ps-switch--on");
+    return null;
+  }
+  refs.switch.classList.remove("ps-switch--on");
+  demora = gsap.delayedCall(2.2, () => {
+    refs.switch.classList.add("ps-switch--on");
+  });
+  return demora;
 }
 
-export function pause() {}
+export function pause() {
+  if (demora) {
+    demora.kill();
+    demora = null;
+  }
+}
 
-export function reset() {}
+export function reset() {
+  pause();
+  if (refs) refs.switch.classList.remove("ps-switch--on");
+}

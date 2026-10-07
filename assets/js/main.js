@@ -1,4 +1,5 @@
 import { inicializarTema, alternarTema } from "./theme.js";
+import { mostrarDemoDeTemaSiCorresponde } from "./theme-demo.js";
 import { inicializarEscenario } from "./stage.js";
 import { BETA_URL } from "./config.js";
 
@@ -12,6 +13,7 @@ import { BETA_URL } from "./config.js";
 
 inicializarTema();
 inicializarEscenario();
+mostrarDemoDeTemaSiCorresponde();
 
 document.querySelectorAll("[data-theme-toggle]").forEach((boton) => {
   boton.addEventListener("click", () => alternarTema());
