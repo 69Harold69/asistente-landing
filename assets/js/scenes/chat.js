@@ -1,4 +1,4 @@
-import { iconoTrazo, iconoMic } from "../icons.js";
+import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js";
 
 /**
  * Chat vivo (etapa 5, plan 4.3 y sección 2) — pool de 6 escenarios, uno al
@@ -23,11 +23,13 @@ const ESCENARIOS = [
   {
     id: "lista",
     texto: "Agrega leche, pan y huevos a mi lista del súper",
+    respuesta: "Listo, armé tu lista del súper.",
     tarjeta: { icono: "listas", tipo: "LISTA", titulo: "Súper", detalle: "0 de 3 hechos", accion: "Ver lista" },
   },
   {
     id: "evento",
     texto: "Reunión de diseño mañana a las 10",
+    respuesta: "Agendé la reunión para mañana.",
     tarjeta: {
       icono: "eventos",
       tipo: "EVENTO",
@@ -39,11 +41,13 @@ const ESCENARIOS = [
   {
     id: "habito",
     texto: "Quiero leer 20 minutos diarios",
+    respuesta: "Va, empiezo a seguir tu hábito.",
     tarjeta: { icono: "habitos", tipo: "HÁBITO", titulo: "Leer 20 minutos", detalle: "Diario", accion: "Ver hábito" },
   },
   {
     id: "nota",
     texto: "Anota la idea del regalo para mamá",
+    respuesta: "Guardé la idea en tus notas.",
     tarjeta: { icono: "notas", tipo: "NOTA", titulo: "Idea: regalo para mamá", detalle: null, accion: "Ver nota" },
   },
   {
@@ -55,6 +59,7 @@ const ESCENARIOS = [
     id: "dictado",
     texto: "Recuérdame llamar al dentista",
     dictado: true,
+    respuesta: "Te lo anoté para hoy.",
     tarjeta: { icono: "tareas", tipo: "TAREA", titulo: "Llamar al dentista", detalle: "Hoy", accion: "Ver tarea" },
   },
 ];
@@ -67,31 +72,37 @@ let activo = false;
 export function mount(contenedor) {
   contenedor.innerHTML = `
     <div class="escena ps-chat">
-      <div class="ps-chat-header">
-        <span class="ps-dot" aria-hidden="true"></span>
-        <span>Chat</span>
+      <div class="ps-topbar">
+        <span class="ps-topbar-titulo">Chat</span>
+        <span class="ps-topbar-accion">Nueva conversación</span>
       </div>
-      <div class="ps-chat-body"></div>
-      <div class="ps-chat-input">
-        <div class="ps-input">
-          <span class="ps-input-texto"></span><span class="ps-cursor" aria-hidden="true"></span>
+      <div class="ps-chat-cuerpo"></div>
+      <div class="ps-chat-entrada">
+        <div class="ps-campo">
+          <span class="ps-placeholder">Escribe un mensaje...</span>
+          <span class="ps-entrada-texto"></span><span class="ps-cursor" aria-hidden="true"></span>
           <span class="ps-onda-voz" aria-hidden="true">
             <span class="ps-onda-barra"></span><span class="ps-onda-barra"></span>
             <span class="ps-onda-barra"></span><span class="ps-onda-barra"></span>
             <span class="ps-onda-barra"></span>
           </span>
         </div>
-        <span class="ps-chip-voz">Voz · Próximamente</span>
-        <span class="ps-mic-btn" aria-hidden="true">${iconoMic()}</span>
+        <span class="ps-boton-icono" aria-hidden="true">${iconoMic().replace("<svg ", '<svg class="ps-icono-mic" ')}${iconoEnviar()}</span>
       </div>
+      <span class="ps-chip-voz">Voz · Próximamente</span>
     </div>
   `;
   refs = {
-    cuerpo: contenedor.querySelector(".ps-chat-body"),
-    inputTexto: contenedor.querySelector(".ps-input-texto"),
-    inputCaja: contenedor.querySelector(".ps-input"),
+    cuerpo: contenedor.querySelector(".ps-chat-cuerpo"),
+    entrada: contenedor.querySelector(".ps-chat-entrada"),
+    inputTexto: contenedor.querySelector(".ps-entrada-texto"),
+    inputCaja: contenedor.querySelector(".ps-campo"),
+    placeholder: contenedor.querySelector(".ps-placeholder"),
+    cursor: contenedor.querySelector(".ps-cursor"),
     chipVoz: contenedor.querySelector(".ps-chip-voz"),
+    barras: contenedor.querySelectorAll(".ps-onda-barra"),
   };
+  escribirEnEntrada("");
 }
 
 function elegirEscenario() {
@@ -107,62 +118,92 @@ function entrar(el, { y = 10 } = {}) {
   return gsap.to(el, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" });
 }
 
+/** Texto del campo de entrada: placeholder si está vacío, swap mic→enviar si no. */
+function escribirEnEntrada(texto) {
+  refs.inputTexto.textContent = texto;
+  const conTexto = texto.length > 0;
+  refs.placeholder.hidden = conTexto;
+  refs.cursor.hidden = !conTexto;
+  refs.entrada.classList.toggle("ps-chat-entrada--con-texto", conTexto);
+}
+
 function crearBurbujaUsuario() {
   const el = document.createElement("div");
-  el.className = "ps-bubble ps-bubble--user";
-  refs.cuerpo.appendChild(el);
+  el.className = "ps-burbuja ps-burbuja--usuario";
   return el;
 }
 
 function crearBurbujaPensando() {
   const el = document.createElement("div");
-  el.className = "ps-bubble ps-bubble--assistant ps-bubble--pensando";
-  el.textContent = "Pensando...";
-  refs.cuerpo.appendChild(el);
+  el.className = "ps-burbuja ps-burbuja--asistente ps-burbuja--pensando";
+  el.innerHTML = '<span class="ps-spinner" aria-hidden="true"></span>Pensando...';
   return el;
 }
 
-function crearTarjeta(tarjeta) {
+/** Respuesta del asistente con su tarjeta rica adentro, como `BurbujaAsistente`. */
+function crearTarjeta(escenario) {
+  const { tarjeta } = escenario;
   const el = document.createElement("div");
-  el.className = "ps-rich-card";
+  el.className = "ps-burbuja ps-burbuja--asistente";
   el.innerHTML = `
-    <div class="ps-rich-card-head">
+    ${escenario.respuesta}
+    <div class="ps-tarjeta">
       ${iconoTrazo(tarjeta.icono)}
-      <span class="ps-rich-card-tipo">${tarjeta.tipo}</span>
+      <div class="ps-tarjeta-texto">
+        <span class="ps-tarjeta-tipo">${tarjeta.tipo}</span>
+        <span class="ps-tarjeta-titulo">${tarjeta.titulo}</span>
+        ${tarjeta.detalle ? `<span class="ps-tarjeta-detalle">${tarjeta.detalle}</span>` : ""}
+        <span class="ps-tarjeta-accion">${tarjeta.accion} →</span>
+      </div>
     </div>
-    <div class="ps-rich-card-titulo">${tarjeta.titulo}</div>
-    ${tarjeta.detalle ? `<div class="ps-rich-card-detalle">${tarjeta.detalle}</div>` : ""}
-    <div class="ps-rich-card-link">${tarjeta.accion} →</div>
   `;
-  refs.cuerpo.appendChild(el);
   return el;
 }
 
 function crearConfirmacion(pregunta) {
   const el = document.createElement("div");
-  el.className = "ps-bubble ps-bubble--assistant";
+  el.className = "ps-burbuja ps-burbuja--asistente";
   el.innerHTML = `
     ${pregunta}
-    <div class="ps-confirm-row">
-      <span class="ps-chip-btn ps-chip-btn--primary">Confirmar</span>
-      <span class="ps-chip-btn ps-chip-btn--outline">Rechazar</span>
+    <div class="ps-confirmar-fila">
+      <span class="ps-btn ps-btn--primario">Confirmar</span>
+      <span class="ps-btn ps-btn--contorno">Rechazar</span>
     </div>
   `;
-  refs.cuerpo.appendChild(el);
   return el;
 }
 
-/** Vacía el cuerpo del chat con un fade corto (no de golpe) antes de un escenario nuevo. */
-function vaciarCuerpo(tl) {
+/** Máximo de burbujas en el DOM: las viejas ya quedaron fuera de cuadro, arriba. */
+const MAX_BURBUJAS = 8;
+
+/**
+ * Agrega una burbuja al final del historial como en un chat real: el cuerpo
+ * está anclado abajo (`justify-content: flex-end`), así que las burbujas
+ * anteriores suben. FLIP con `offsetTop` (medidas de layout, sin la
+ * transformación 3D del teléfono): se mide antes y después y se anima sólo
+ * `y` desde la diferencia, para que suban deslizándose en vez de saltar.
+ */
+function agregarAlHistorial(el) {
   const previos = Array.from(refs.cuerpo.children);
-  if (previos.length === 0) return;
-  tl.to(previos, { opacity: 0, y: -8, duration: 0.25, stagger: 0.04 });
-  tl.call(() => {
-    refs.cuerpo.innerHTML = "";
-  });
+  const antes = previos.map((n) => n.offsetTop);
+  refs.cuerpo.appendChild(el);
+  if (!prefiereMovimientoReducido()) {
+    previos.forEach((n, i) => {
+      const delta = antes[i] - n.offsetTop;
+      if (delta) gsap.fromTo(n, { y: delta }, { y: 0, duration: 0.4, ease: "power3.out", overwrite: "auto" });
+    });
+  }
+  while (refs.cuerpo.children.length > MAX_BURBUJAS) refs.cuerpo.firstElementChild.remove();
+  return el;
 }
 
-function construirTimeline() {
+/** Reemplaza una burbuja (p. ej. "Pensando..." por la respuesta) sin mover el resto. */
+function reemplazarEnHistorial(viejo, nuevo) {
+  viejo.replaceWith(nuevo);
+  return nuevo;
+}
+
+function construirTimeline(espera = 0.9) {
   const escenario = elegirEscenario();
   const tl = gsap.timeline({
     repeat: 0,
@@ -174,17 +215,16 @@ function construirTimeline() {
     },
   });
 
-  vaciarCuerpo(tl);
-  gsap.set(refs.inputCaja, { className: "ps-input" });
-  refs.inputTexto.textContent = "";
+  refs.inputCaja.classList.remove("ps-campo--dictando");
+  escribirEnEntrada("");
+  tl.to({}, { duration: espera }); // respiro entre un intercambio y el siguiente
 
   if (escenario.dictado) {
     // Ondas de voz en vez de tecleo — mismo recorrido de ahí en más.
-    tl.call(() => refs.inputCaja.classList.add("ps-input--dictando"));
-    tl.to(".ps-chip-voz", { opacity: 1, duration: 0.2 }, "<");
-    const barras = refs.cuerpo.ownerDocument.querySelectorAll(".ps-onda-barra");
+    tl.call(() => refs.inputCaja.classList.add("ps-campo--dictando"));
+    tl.to(refs.chipVoz, { opacity: 1, duration: 0.2 }, "<");
     tl.to(
-      barras,
+      refs.barras,
       {
         scaleY: () => 0.4 + Math.random() * 1.4,
         duration: 0.22,
@@ -195,9 +235,10 @@ function construirTimeline() {
       "<"
     );
     tl.call(() => {
-      refs.inputCaja.classList.remove("ps-input--dictando");
-      gsap.set(".ps-chip-voz", { opacity: 0 });
+      refs.inputCaja.classList.remove("ps-campo--dictando");
+      escribirEnEntrada(escenario.texto);
     });
+    tl.to(refs.chipVoz, { opacity: 0, duration: 0.2 }, "<");
   } else {
     // Tecleo real, carácter a carácter — proxy numérico + onUpdate (no hay
     // forma de "animar" texttContent con transform/opacity, es la única
@@ -208,7 +249,7 @@ function construirTimeline() {
       duration: Math.min(1.6, 0.045 * escenario.texto.length),
       ease: "none",
       onUpdate() {
-        refs.inputTexto.textContent = escenario.texto.slice(0, Math.round(proxy.n));
+        escribirEnEntrada(escenario.texto.slice(0, Math.round(proxy.n)));
       },
     });
   }
@@ -216,16 +257,17 @@ function construirTimeline() {
   tl.to({}, { duration: 0.2 }); // pausa corta antes de "enviar"
 
   tl.call(() => {
-    refs.inputTexto.textContent = "";
+    escribirEnEntrada("");
     const burbuja = crearBurbujaUsuario();
     burbuja.textContent = escenario.texto;
+    agregarAlHistorial(burbuja);
     entrar(burbuja);
   });
   tl.to({}, { duration: 0.55 });
 
   let pensando;
   tl.call(() => {
-    pensando = crearBurbujaPensando();
+    pensando = agregarAlHistorial(crearBurbujaPensando());
     entrar(pensando, { y: 6 });
   });
   tl.to({}, { duration: 0.9 });
@@ -233,29 +275,28 @@ function construirTimeline() {
   if (escenario.confirmar) {
     let burbujaConfirmar;
     tl.call(() => {
-      pensando.remove();
       burbujaConfirmar = crearConfirmacion(escenario.confirmar.pregunta);
-      entrar(burbujaConfirmar);
+      reemplazarEnHistorial(pensando, burbujaConfirmar);
+      entrar(burbujaConfirmar, { y: 4 });
     });
     tl.to({}, { duration: 1.1 });
     // Se "toca" Confirmar — mismo feedback táctil que un :active real (achica/vuelve).
     tl.call(() => {
-      const boton = burbujaConfirmar.querySelector(".ps-chip-btn--primary");
+      const boton = burbujaConfirmar.querySelector(".ps-btn--primario");
       gsap.to(boton, { scale: 0.92, duration: 0.1, yoyo: true, repeat: 1 });
     });
     tl.to({}, { duration: 0.35 });
     tl.call(() => {
-      const fila = burbujaConfirmar.querySelector(".ps-confirm-row");
+      const fila = burbujaConfirmar.querySelector(".ps-confirmar-fila");
       fila.outerHTML = '<div class="ps-confirmado">Confirmado ✓</div>';
     });
-    tl.to({}, { duration: 2.6 });
+    tl.to({}, { duration: 2.2 });
   } else {
     let tarjeta;
     tl.call(() => {
-      pensando.remove();
-      tarjeta = crearTarjeta(escenario.tarjeta);
-      gsap.set(tarjeta, { opacity: 0, y: 10, scale: 0.97 });
-      gsap.to(tarjeta, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "back.out(1.6)" });
+      tarjeta = reemplazarEnHistorial(pensando, crearTarjeta(escenario));
+      gsap.set(tarjeta, { opacity: 0, y: 10, scale: 0.98, transformOrigin: "left bottom" });
+      gsap.to(tarjeta, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power3.out" });
     });
     tl.to({}, { duration: 2.6 });
   }
@@ -276,21 +317,26 @@ function prefiereMovimientoReducido() {
  */
 function mostrarEstadoEstatico() {
   if (!refs) return;
-  const escenario = elegirEscenario();
   refs.cuerpo.innerHTML = "";
-  refs.inputTexto.textContent = "";
-  refs.inputCaja.classList.remove("ps-input--dictando");
-  gsap.set(".ps-chip-voz", { opacity: 0 });
+  escribirEnEntrada("");
+  refs.inputCaja.classList.remove("ps-campo--dictando");
+  gsap.set(refs.chipVoz, { opacity: 0 });
+  sembrarIntercambio();
+}
 
+/** Un intercambio ya terminado (mensaje + respuesta), agregado de una, sin animar. */
+function sembrarIntercambio() {
+  const escenario = elegirEscenario();
   const burbuja = crearBurbujaUsuario();
   burbuja.textContent = escenario.texto;
-
+  let respuesta;
   if (escenario.confirmar) {
-    const el = crearConfirmacion(escenario.confirmar.pregunta);
-    el.querySelector(".ps-confirm-row").outerHTML = '<div class="ps-confirmado">Confirmado ✓</div>';
+    respuesta = crearConfirmacion(escenario.confirmar.pregunta);
+    respuesta.querySelector(".ps-confirmar-fila").outerHTML = '<div class="ps-confirmado">Confirmado ✓</div>';
   } else {
-    crearTarjeta(escenario.tarjeta);
+    respuesta = crearTarjeta(escenario);
   }
+  refs.cuerpo.append(burbuja, respuesta);
 }
 
 export function play() {
@@ -301,6 +347,9 @@ export function play() {
     mostrarEstadoEstatico();
     return null;
   }
+  // Al entrar la conversación ya tiene un intercambio previo: el chat se ve
+  // vivo desde el primer cuadro, y el siguiente mensaje se suma debajo.
+  if (refs && refs.cuerpo.childElementCount === 0) sembrarIntercambio();
   timelineActivo = construirTimeline();
   timelineActivo.play(0);
   return timelineActivo;
@@ -320,7 +369,7 @@ export function reset() {
   idEscenarioAnterior = null;
   if (refs) {
     refs.cuerpo.innerHTML = "";
-    refs.inputTexto.textContent = "";
-    refs.inputCaja.classList.remove("ps-input--dictando");
+    escribirEnEntrada("");
+    refs.inputCaja.classList.remove("ps-campo--dictando");
   }
 }

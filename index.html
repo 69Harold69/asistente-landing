@@ -23,48 +23,44 @@
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
-  <div class="layout-con-stage">
-    <header class="site-header">
-      <div class="container">
-        <a class="wordmark" href="/">
-          <span class="punto-vivo punto-vivo--breathe" aria-hidden="true"></span>
-          Yaruki
-        </a>
-        <div class="header-acciones">
-          <span class="chip chip-beta-header">Beta cerrada en Android</span>
-          <button
-            type="button"
-            class="theme-toggle"
-            data-theme-toggle
-            aria-label="Cambiar entre tema claro y oscuro"
-          >
-            <svg class="icono-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="4.5" />
-              <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8" />
-            </svg>
-            <svg class="icono-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" />
-            </svg>
-          </button>
-        </div>
+  <header class="site-header">
+    <div class="container">
+      <a class="wordmark" href="/">
+        <span class="punto-vivo punto-vivo--breathe" aria-hidden="true"></span>
+        Yaruki
+      </a>
+      <div class="header-acciones">
+        <span class="chip chip-beta-header">Beta cerrada en Android</span>
+        <button
+          type="button"
+          class="theme-toggle"
+          data-theme-toggle
+          aria-label="Cambiar entre tema claro y oscuro"
+        >
+          <svg class="icono-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.5" />
+            <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8" />
+          </svg>
+          <svg class="icono-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" />
+          </svg>
+        </button>
       </div>
-    </header>
+    </div>
+  </header>
+
+  <main id="contenido" class="layout-con-stage">
 
     <!--
-      #hero vive FUERA de <main> a propósito (desvío anotado en el reporte del
-      punto de control 2): en móvil el layout es flujo normal de bloque, y el
-      orden real en pantalla es el orden del DOM — con #hero como hermano de
-      #stage (en vez de hijo de <main>), el titular+CTA quedan arriba y el
-      teléfono abajo sin necesitar JS. En escritorio, el grid de abajo
-      (`.layout-con-stage`, ver base.css) posiciona cada uno por `grid-row`/
-      `grid-column` explícitos, así que el orden del DOM deja de importarle a
-      esa vista — #stage igual queda sticky a la derecha, span en las filas
-      del hero Y de <main> para seguir pegado durante todo el recorrido.
+      Orden del DOM = orden en móvil (flujo de bloque): titular + CTA, luego
+      el teléfono (franja sticky) y luego las secciones. En escritorio el
+      grid de `.layout-con-stage` (base.css) ubica cada pieza por fila/columna.
     -->
     <section id="hero" class="seccion seccion-hero">
       <p class="hero-significado">Yaruki (やる気): las ganas de hacer algo</p>
       <h1 class="titular-hero">
-        Dile lo que tienes que hacer. Yaruki se encarga de anotarlo.
+        <span class="frase">Dile lo que tienes que hacer.</span>
+        <span class="frase">Yaruki se encarga de anotarlo.</span>
       </h1>
       <p class="subtitulo-hero">
         Un asistente personal que organiza tareas, notas, listas, eventos y
@@ -114,7 +110,7 @@
       </div>
     </div>
 
-    <main id="contenido">
+    <div class="secciones">
       <section id="fase-chat" class="seccion">
         <p class="fase-kicker">Así es como empieza</p>
         <h2 class="fase-titulo">Háblale como a un amigo</h2>
@@ -134,7 +130,7 @@
         <h2 class="fase-titulo">Todo lo que le dijiste, organizado solo</h2>
         <p class="fase-texto">
           Cada tarea, nota, lista, evento y hábito que mencionaste en el chat
-          aparece junto, en un solo lugar — sin que tengas que ordenarlo vos.
+          aparece junto, en un solo lugar — sin que tengas que ordenarlo tú.
         </p>
         <p class="fase-texto">
           Tocas cualquier tarjeta y vas directo al detalle, igual que si lo
@@ -188,83 +184,85 @@
         </div>
         <p class="cta-nota">Beta cerrada en Android · te unes con tu cuenta de Google.</p>
       </section>
-    </main>
-  </div>
+    </div>
+  </main>
 
-  <footer id="privacidad" class="privacidad-section">
-    <div class="container seccion-cta">
-      <p class="fase-kicker">Centro de privacidad y datos</p>
-      <h2 class="fase-titulo">Tus datos son tuyos</h2>
-      <p class="fase-texto">
-        Podemos mostrarte exactamente qué guardamos, por qué, y darte una
-        forma de pedir que lo borremos, con o sin la app instalada.
-      </p>
-      <div class="link-grid">
-        <a class="link-card" href="/privacidad/">
-          <span class="link-card-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="5" y="11" width="14" height="10" rx="2" />
-              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-            </svg>
-          </span>
-          <h3>Política de privacidad</h3>
-          <p>Qué datos usamos, para qué, y con quién los compartimos.</p>
-        </a>
-        <a class="link-card" href="/terminos/">
-          <span class="link-card-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M7 3h8l3 3v15H7z" />
-              <path d="M10 10h6M10 14h6M10 18h4" />
-            </svg>
-          </span>
-          <h3>Términos y condiciones</h3>
-          <p>Las reglas de uso de la app y del servicio, en español llano.</p>
-        </a>
-        <a class="link-card" href="/eliminar-cuenta/">
-          <span class="link-card-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 7h12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
-            </svg>
-          </span>
-          <h3>Eliminar tu cuenta</h3>
-          <p>Desde la app o por correo. Tienes 30 días para recuperarla antes del borrado definitivo.</p>
-        </a>
-        <span class="link-card link-card--disabled">
-          <span class="link-card-head">
+  <footer class="pie">
+    <section id="privacidad" class="privacidad-section">
+      <div class="container seccion-cta">
+        <p class="fase-kicker">Centro de privacidad y datos</p>
+        <h2 class="fase-titulo">Tus datos son tuyos</h2>
+        <p class="fase-texto">
+          Podemos mostrarte exactamente qué guardamos, por qué, y darte una
+          forma de pedir que lo borremos, con o sin la app instalada.
+        </p>
+        <div class="link-grid">
+          <a class="link-card" href="/privacidad/">
             <span class="link-card-icon" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
-                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                <rect x="5" y="11" width="14" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
               </svg>
             </span>
-            <span class="chip">Próximamente</span>
+            <h3>Política de privacidad</h3>
+            <p>Qué datos usamos, para qué, y con quién los compartimos.</p>
+          </a>
+          <a class="link-card" href="/terminos/">
+            <span class="link-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 3h8l3 3v15H7z" />
+                <path d="M10 10h6M10 14h6M10 18h4" />
+              </svg>
+            </span>
+            <h3>Términos y condiciones</h3>
+            <p>Las reglas de uso de la app y del servicio, en español llano.</p>
+          </a>
+          <a class="link-card" href="/eliminar-cuenta/">
+            <span class="link-card-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 7h12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
+              </svg>
+            </span>
+            <h3>Eliminar tu cuenta</h3>
+            <p>Desde la app o por correo. Tienes 30 días para recuperarla antes del borrado definitivo.</p>
+          </a>
+          <span class="link-card link-card--disabled">
+            <span class="link-card-head">
+              <span class="link-card-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+                  <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                </svg>
+              </span>
+              <span class="chip">Próximamente</span>
+            </span>
+            <h3>Exportar tus datos</h3>
+            <p>Una copia de todo lo que guardaste, en un archivo que puedas abrir donde quieras.</p>
           </span>
-          <h3>Exportar tus datos</h3>
-          <p>Una copia de todo lo que guardaste, en un archivo que puedas abrir donde quieras.</p>
-        </span>
-      </div>
-      <p class="contacto-privacidad">
-        ¿Dudas sobre tus datos? Escríbenos a
-        <a href="mailto:privacidad@hjgr.dev">privacidad@hjgr.dev</a>.
-      </p>
-    </div>
-  </footer>
-
-  <footer class="site-footer">
-    <div class="container">
-      <div>
-        <p class="lema-footer">Yaruki · las ganas de hacerlo</p>
-        <p>
-          Yaruki es un proyecto de Harold de Jesús García Ramírez, Guadalajara,
-          Jalisco, México.
+        </div>
+        <p class="contacto-privacidad">
+          ¿Dudas sobre tus datos? Escríbenos a
+          <a href="mailto:privacidad@hjgr.dev">privacidad@hjgr.dev</a>.
         </p>
       </div>
-      <ul class="footer-links">
-        <li><a href="/privacidad/">Privacidad</a></li>
-        <li><a href="/terminos/">Términos</a></li>
-        <li><a href="/eliminar-cuenta/">Eliminar cuenta</a></li>
-        <li><a href="mailto:privacidad@hjgr.dev">privacidad@hjgr.dev</a></li>
-      </ul>
+    </section>
+  
+    <div class="site-footer">
+      <div class="container">
+        <div>
+          <p class="lema-footer">Yaruki · las ganas de hacerlo</p>
+          <p>
+            Yaruki es un proyecto de Harold de Jesús García Ramírez, Guadalajara,
+            Jalisco, México.
+          </p>
+        </div>
+        <ul class="footer-links">
+          <li><a href="/privacidad/">Privacidad</a></li>
+          <li><a href="/terminos/">Términos</a></li>
+          <li><a href="/eliminar-cuenta/">Eliminar cuenta</a></li>
+          <li><a href="mailto:privacidad@hjgr.dev">privacidad@hjgr.dev</a></li>
+        </ul>
+      </div>
     </div>
   </footer>
 

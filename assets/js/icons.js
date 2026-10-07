@@ -85,3 +85,37 @@ export function iconoTrofeo() {
     `</svg>`
   );
 }
+
+/** "Send" relleno de Material (`Icons.AutoMirrored.Filled.Send` en ChatScreen.kt). */
+export function iconoEnviar() {
+  return `<svg class="ps-icono-enviar" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 20.4 21.85 12 3.4 3.6 3.39 10.1 16 12 3.39 13.9z"/></svg>`;
+}
+
+/** Barra de estado genérica de Android: hora a la izquierda, wifi y batería a la derecha. */
+export function barraDeEstado() {
+  return (
+    `<div class="ps-status" aria-hidden="true"><span>9:41</span><span class="ps-status-iconos">` +
+    `<svg viewBox="0 0 16 12"><path d="M8 12 0 3.6A11.6 11.6 0 0 1 8 .5a11.6 11.6 0 0 1 8 3.1z"/></svg>` +
+    `<svg viewBox="0 0 24 12"><path d="M3 0h16a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V3a3 3 0 0 1 3-3zm0 1.5A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h16A1.5 1.5 0 0 0 20.5 9V3A1.5 1.5 0 0 0 19 1.5z"/>` +
+    `<rect x="3" y="3" width="12.5" height="6" rx="1"/><path d="M23 4v4a1.6 1.6 0 0 0 0-4z"/></svg>` +
+    `</span></div>`
+  );
+}
+
+/**
+ * Barra inferior de `BottomNavBar.kt`: Inicio, Elementos, FAB central "+"
+ * (nuevo chat), Notif. y Perfil. `activo` resalta el destino de la escena.
+ */
+export function barraDeNavegacion(activo) {
+  const item = (id, icono, etiqueta) =>
+    `<div class="ps-nav-item${id === activo ? " ps-nav-item--activo" : ""}">${icono}<span>${etiqueta}</span></div>`;
+  return (
+    `<div class="ps-navbar" aria-hidden="true">` +
+    item("inicio", iconoTrazo("home"), "Inicio") +
+    item("elementos", iconoTrazo("listas"), "Elementos") +
+    `<div class="ps-nav-fab">${iconoTrazo("mas")}</div>` +
+    item("notificaciones", iconoTrazo("campana"), "Notif.") +
+    item("perfil", iconoPersona(), "Perfil") +
+    `</div>`
+  );
+}

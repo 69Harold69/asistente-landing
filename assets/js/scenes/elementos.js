@@ -1,4 +1,4 @@
-import { iconoTrazo } from "../icons.js";
+import { iconoTrazo, barraDeNavegacion } from "../icons.js";
 
 /**
  * Elementos — pedido explícito del dueño (corrección 2026-10-04 a la
@@ -23,41 +23,26 @@ function prefiereMovimientoReducido() {
 }
 
 export function mount(contenedor) {
+  const tile = (titulo, icono, kpi, progreso) => `
+    <div class="ps-tile">
+      <div class="ps-tile-titulo">${titulo}</div>
+      <div class="ps-tile-icono">${iconoTrazo(icono)}</div>
+      <div class="ps-tile-kpi">${kpi}</div>
+      <div class="ps-tile-ranura">${
+        progreso === null ? "" : `<div class="ps-barra"><div class="ps-barra-relleno" data-progreso="${progreso}"></div></div>`
+      }</div>
+    </div>`;
   contenedor.innerHTML = `
     <div class="escena ps-elementos">
       <div class="ps-elementos-head">
-        <h2 class="ps-title">Elementos</h2>
+        <h2 class="ps-titulo">Elementos</h2>
       </div>
       <div class="ps-elementos-grid">
-        <div class="ps-tile">
-          <div class="ps-tile-titulo">TAREAS</div>
-          <div class="ps-tile-icono">${iconoTrazo("tareas")}</div>
-          <div class="ps-tile-kpi">2/5 hoy</div>
-          <div class="ps-tile-bar-slot">
-            <div class="ps-bar"><div class="ps-bar-fill" data-progreso="0.4"></div></div>
-          </div>
-        </div>
-        <div class="ps-tile">
-          <div class="ps-tile-titulo">HÁBITOS</div>
-          <div class="ps-tile-icono">${iconoTrazo("habitos")}</div>
-          <div class="ps-tile-kpi">2/3 hoy</div>
-          <div class="ps-tile-bar-slot">
-            <div class="ps-bar"><div class="ps-bar-fill" data-progreso="0.67"></div></div>
-          </div>
-        </div>
-        <div class="ps-tile">
-          <div class="ps-tile-titulo">LISTAS</div>
-          <div class="ps-tile-icono">${iconoTrazo("listas")}</div>
-          <div class="ps-tile-kpi">3 activas</div>
-          <div class="ps-tile-bar-slot"></div>
-        </div>
-        <div class="ps-tile">
-          <div class="ps-tile-titulo">NOTAS</div>
-          <div class="ps-tile-icono">${iconoTrazo("notas")}</div>
-          <div class="ps-tile-kpi">4 notas</div>
-          <div class="ps-tile-bar-slot"></div>
-        </div>
-        <div class="ps-tile ps-tile--wide">
+        ${tile("TAREAS", "tareas", "2/5 hoy", 0.4)}
+        ${tile("HÁBITOS", "habitos", "2/3 hoy", 0.67)}
+        ${tile("LISTAS", "listas", "3 activas", null)}
+        ${tile("NOTAS", "notas", "4 notas", null)}
+        <div class="ps-tile ps-tile--ancha">
           <div class="ps-tile-icono">${iconoTrazo("eventos")}</div>
           <div>
             <div class="ps-tile-titulo">PRÓXIMOS EVENTOS</div>
@@ -65,11 +50,12 @@ export function mount(contenedor) {
           </div>
         </div>
       </div>
+      ${barraDeNavegacion("elementos")}
     </div>
   `;
   refs = {
     tiles: Array.from(contenedor.querySelectorAll(".ps-tile")),
-    barras: Array.from(contenedor.querySelectorAll(".ps-bar-fill")),
+    barras: Array.from(contenedor.querySelectorAll(".ps-barra-relleno")),
   };
 }
 

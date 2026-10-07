@@ -1,4 +1,5 @@
 import { ESCENAS } from "./scenes/registro.js";
+import { barraDeEstado } from "./icons.js";
 
 /**
  * Escenario del teléfono 3D — orquestador real (plan, 4.1/4.2/5.3/5.4).
@@ -33,7 +34,7 @@ const ROTACION_POR_CARA = { frente: 0, canto: 80, espalda: 180 };
 const ESCENA_POR_DEFECTO = "splash";
 const CARA_POR_DEFECTO = "frente";
 
-/** Capas del canto (ver `.phone-canto` en phone.css). 14 px de grosor / 12 capas ≈ 1.2 px entre capas. */
+/** Capas del canto (ver `.phone-canto` en phone.css). ~15 px de grosor / 12 capas ≈ 1.2 px entre capas. */
 const CAPAS_CANTO = 12;
 /** Debajo de este |sen θ| (≈1.5°) el canto mide menos de medio pixel: se oculta. */
 const UMBRAL_CANTO = 0.025;
@@ -60,14 +61,14 @@ function leerParametrosDeInspeccion() {
 function construirCanto(telefono) {
   const canto = telefono.querySelector(".phone-canto");
   if (!canto || canto.childElementCount) return;
-  const grosor = parseFloat(getComputedStyle(telefono).getPropertyValue("--phone-depth")) || 14;
   const fragmento = document.createDocumentFragment();
   for (let i = 0; i < CAPAS_CANTO; i++) {
     const t = (i + 0.5) / CAPAS_CANTO;
     const centro = Math.sin(t * Math.PI);
     const capa = document.createElement("span");
     capa.className = "phone-capa";
-    capa.style.setProperty("--z", (t - 0.5) * grosor);
+    // Fracción del grosor (-0.5…0.5); phone.css la multiplica por --phone-depth.
+    capa.style.setProperty("--z", (t - 0.5).toFixed(4));
     capa.style.setProperty("--luz", Math.round(centro * 22));
     capa.style.setProperty("--sombra", Math.round((1 - centro) * 26));
     fragmento.appendChild(capa);
@@ -98,6 +99,7 @@ function montarEnCapa(capa, id) {
   const escena = ESCENAS[id];
   if (!escena) return;
   escena.mount(capa);
+  capa.querySelector(".escena")?.insertAdjacentHTML("afterbegin", barraDeEstado());
   aplicarBarrasDeProgreso(capa);
 }
 
@@ -199,10 +201,49 @@ function arco(p) {
   return Math.sin(p * Math.PI);
 }
 
+/*
+  Tramos de scroll de cada vuelo, como "borde de la sección / punto del
+  viewport" de ScrollTrigger. Cada sección narrativa mide al menos una
+  pantalla (base.css), así que un tramo de medio viewport nunca se solapa con
+  el de la sección vecina.
+
+  El vuelo termina ANTES de que el texto de su sección llegue al centro de la
+  pantalla: el teléfono ya muestra la escena de la que habla el texto
+  mientras se lee. (Antes el vuelo arrancaba con la sección arriba del todo,
+  "top top", y el teléfono iba una sección atrasado respecto del texto.)
+*/
+const TRAMOS = {
+  escritorio: { inicio: "top 55%", fin: "top 5%", finCierre: "top top" },
+  // En móvil el texto arranca 46vh debajo del borde de su sección (base.css).
+  movil: { inicio: "top 85%", fin: "top 25%", finCierre: "top 20%" },
+};
+/*
+  En móvil el teléfono vive EN FLUJO entre el hero y el chat, y se pega
+  arriba recién cuando la sección del chat llega a ~44% del viewport (justo
+  debajo de la franja). El primer vuelo arranca ahí, nunca con el teléfono
+  todavía a medio entrar en pantalla.
+*/
+const TRAMO_CHAT_MOVIL = { inicio: "top 44%", fin: "top top" };
+/*
+  Sub-cruce hábitos → logro (la sección de hábitos mide 160vh): primero un
+  tramo con el heatmap quieto mientras se lee el primer párrafo, después el
+  cruce a logro con el segundo párrafo ("Más adelante… Próximamente") en
+  pantalla. En móvil el texto arranca 46vh más abajo, por eso es otro tramo.
+*/
+const TRAMOS_LOGRO = {
+  escritorio: { inicio: "top -25%", fin: "top -55%" },
+  movil: { inicio: "top 8%", fin: "top -22%" },
+};
+
+/** Posición de scroll (px) en la que `el.top` toca `pct` del viewport. */
+function scrollDonde(el, pct) {
+  return el.getBoundingClientRect().top + window.scrollY - (pct / 100) * window.innerHeight;
+}
+
 function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   gsap.registerPlugin(ScrollTrigger);
   const capas = crearAdministradorDeCapas(pantalla, "splash");
-  const escenario3d = telefono.closest(".escenario-3d");
+  const stageEl = telefono.closest(".stage");
 
   const secciones = {
     hero: document.getElementById("hero"),
@@ -216,86 +257,46 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   // Cadena de fases: cada una sabe de qué escena viene y a cuál va. El
   // flag `invertido` alterna el lado hacia el que "vuela" el teléfono —
   // mismo criterio que `.seccion--par` (columnas alternadas, plan 4.2).
-  //
-  // Cada vuelo usa el alto PROPIO de su sección (`start:"top top", end:
-  // "bottom top"`) en vez de un tramo de 1 viewport (`"top bottom"→"top
-  // top"`): con secciones más bajas que el viewport (todas lo son acá),
-  // un tramo de 1 viewport por vuelo se solapaba con el vuelo de la
-  // siguiente sección — los dos peleando por `--rotacion-y` a la vez. Atado
-  // al alto real de la sección, nunca se solapa con el vecino (son
-  // contiguos, no superpuestos). Hábitos y el cierre (`cta`) son la
-  // excepción: reparten su propio alto en 2 mitades — hábitos para el
-  // sub-cruce a "logro" (plan 4.4), `cta` para que el Dashboard ATERRICE y
-  // se quede quieto el resto de la sección en vez de seguir girando hasta
-  // que el sticky se suelta (bug real, punto de control 2.5, error 2).
-  const stageEl = telefono.closest(".stage");
-
-  /*
-    El cierre (`#cta`) no reparte su alto a la mitad como hábitos — usa sólo
-    el primer 30% para el vuelo (el resto de la sección es a propósito más
-    alta de lo que ocupa su propio texto, `min-height` en base.css, para
-    darle a `position:sticky` el margen que necesita antes de soltarse
-    solo — ver `registrarDesvanecidoDeCierre`). 30% de una sección bien alta
-    todavía es un tramo de vuelo cómodo.
-  */
-  const FIN_VUELO_CIERRE = secciones.cta ? `+=${Math.round(secciones.cta.getBoundingClientRect().height * 0.22)}` : "bottom top";
-
   const FASES = [
-    { trigger: secciones.chat, antes: "login", despues: "chat", invertido: false, end: "bottom top" },
-    {
-      trigger: secciones.elementos,
-      antes: "chat",
-      despues: "elementos",
-      invertido: true,
-      end: "bottom top",
-    },
-    {
-      trigger: secciones.habitos,
-      antes: "elementos",
-      despues: "habitos",
-      invertido: false,
-      end: "center top",
-    },
-    { trigger: secciones.llamada, antes: "logro", despues: "llamada", invertido: true, end: "bottom top" },
-    {
-      trigger: secciones.cta,
-      antes: "llamada",
-      despues: "dashboard",
-      invertido: false,
-      end: FIN_VUELO_CIERRE,
-      centrarAlFinal: true,
-    },
+    { trigger: secciones.chat, antes: "login", despues: "chat", invertido: false },
+    { trigger: secciones.elementos, antes: "chat", despues: "elementos", invertido: true },
+    { trigger: secciones.habitos, antes: "elementos", despues: "habitos", invertido: false },
+    { trigger: secciones.llamada, antes: "logro", despues: "llamada", invertido: true },
+    { trigger: secciones.cta, antes: "llamada", despues: "dashboard", invertido: false, cierre: true },
   ];
 
   /*
-    Cuánto hay que correr el teléfono a la izquierda para que termine en el
-    CENTRO HORIZONTAL DE LA PÁGINA, no sólo centrado dentro de SU columna
-    (la columna 2, que vive del lado derecho — plan 4.2: el Dashboard tiene
-    que "aterrizar al centro", no al centro de su propia columna). Medido
-    una sola vez (la posición horizontal de `.stage` no cambia con el
-    scroll, sólo la vertical vía `sticky`) — en 0 si no hay columna 2 que
-    corregir (escritorio con una sola columna, o si `.stage` no existe).
+    Cuánto hay que correr el teléfono para que el Dashboard aterrice en el
+    CENTRO HORIZONTAL DE LA PÁGINA y no sólo de su columna (plan 4.6). Se
+    recalcula en cada refresh de ScrollTrigger (resize).
   */
-  const offsetCentradoCierre = (() => {
-    if (!stageEl || window.innerWidth < 1024) return 0;
+  let offsetCentradoCierre = 0;
+  function medirCentradoCierre() {
+    if (!stageEl || window.innerWidth < 1024) {
+      offsetCentradoCierre = 0;
+      return;
+    }
     const r = stageEl.getBoundingClientRect();
-    return window.innerWidth / 2 - (r.left + r.width / 2);
-  })();
+    offsetCentradoCierre = window.innerWidth / 2 - (r.left + r.width / 2);
+  }
+  medirCentradoCierre();
+  ScrollTrigger.addEventListener("refreshInit", medirCentradoCierre);
 
   /**
    * Un vuelo entre fases — compartido por escritorio (con desplazamiento
-   * lateral) y móvil (en el lugar, `conDesplazamiento:false`): gira 360°,
-   * cambia de escena cerca de los 180° (de espaldas) y, si `invertido`,
-   * alterna el lado del arco. `fijarRotacion` muestra/oculta las capas del
-   * canto según el ángulo; la sombra de vuelo se escala acá mismo.
+   * lateral) y móvil (en el lugar): gira 360°, cambia de escena cerca de
+   * los 180° (de espaldas) y, si `invertido`, alterna el lado del arco.
+   * `fijarRotacion` muestra/oculta las capas del canto según el ángulo; la
+   * sombra de vuelo se escala acá mismo.
    */
-  function registrarVuelo({ trigger, antes, despues, invertido, end, centrarAlFinal }, { conDesplazamiento }) {
+  function registrarVuelo({ trigger, antes, despues, invertido, cierre }, { conDesplazamiento, tramo }) {
     if (!trigger) return null;
     let lado = false;
+    const propio = tramoDe(trigger, tramo);
     return ScrollTrigger.create({
       trigger,
-      start: "top top",
-      end,
+      start: propio.inicio,
+      end: cierre ? tramo.finCierre : propio.fin,
       scrub: 0.4,
       onUpdate(self) {
         const p = self.progress;
@@ -303,21 +304,17 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
         fijarRotacion(telefono, p * 360);
         // `will-change` sólo mientras el teléfono está en pleno vuelo: fuera
         // de eso el navegador puede soltar la capa promovida.
-        const enVuelo = p > 0 && p < 1;
-        telefono.style.willChange = enVuelo ? "transform" : "auto";
+        telefono.style.willChange = p > 0 && p < 1 ? "transform" : "auto";
         if (conDesplazamiento) {
-          // El arco (sube y vuelve a 0) sigue dando el vaivén lateral de
-          // siempre; el cierre SUMA un corrimiento que crece con `p` y en
-          // p=1 (vuelo terminado) deja el teléfono exactamente en
-          // `offsetCentradoCierre` — "aterriza al centro", no al centro de
-          // su columna (error 2, 2da vuelta del punto de control 2.5).
+          // Arco lateral de ±160px y escala 0.9 a mitad del vuelo (aprobados);
+          // el cierre suma un corrimiento que en p=1 deja el teléfono en el
+          // centro de la página.
           const base = (invertido ? -1 : 1) * a * 160;
-          const corrimiento = centrarAlFinal ? offsetCentradoCierre * p : 0;
+          const corrimiento = cierre ? offsetCentradoCierre * p : 0;
           telefono.style.setProperty("--vuelo-x", `${base + corrimiento}px`);
           telefono.style.setProperty("--vuelo-escala", `${1 - a * 0.1}`);
         } else {
-          // Móvil: giro 360° EN EL LUGAR (plan 5.4) — sin desplazamiento
-          // lateral, el teléfono ya ocupa casi todo el ancho disponible.
+          // Móvil: giro 360° EN EL LUGAR (plan 5.4).
           telefono.style.setProperty("--vuelo-x", "0px");
           telefono.style.setProperty("--vuelo-escala", `${1 - a * 0.06}`);
         }
@@ -330,9 +327,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
           lado = pasoAlDespues;
           capas.irA(lado ? despues : antes, { animar: false });
           // El sub-cruce hábitos→logro necesita su destino montado en la
-          // capa inactiva justo cuando el vuelo termina de mostrar
-          // "habitos" — nunca antes (pisaría otra escena todavía en
-          // pantalla) ni más tarde (el cruce arrancaría en blanco).
+          // capa inactiva justo cuando el vuelo termina de mostrar "habitos".
           if (lado && despues === "habitos") {
             capas.prepararCruce("logro");
           }
@@ -341,77 +336,27 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     });
   }
 
-  /**
-   * Cierre del recorrido (`#cta`, error 2 del punto de control 2.5).
-   *
-   * `position:sticky` no se queda pegado hasta el final exacto de su
-   * contenedor por diseño de la propia especificación: se suelta solo en
-   * cuanto, dentro de lo que le queda de contenedor (acá, el resto de
-   * `grid-row: 2/4` — hero + main), no entra ya el alto completo de
-   * `.stage`. Con el teléfono (~650px renderizados) más alto que el `#cta`
-   * real (~400px de texto), eso pasaba ANTES de que la sección arrancara
-   * — el teléfono venía "arrastrándose" (ya no pegado, sólo seguía el
-   * scroll normal) desde la llamada, y el vuelo nunca llegaba a mostrarse
-   * quieto. `min-height` en `#cta` (base.css) le da a esta sección alto de
-   * sobra para que el punto donde `sticky` se suelta caiga DESPUÉS de que
-   * el Dashboard ya aterrizó.
-   *
-   * Esta función mide esa geometría real (alto de `.stage`, borde de
-   * `#cta`) para calcular el punto exacto donde se suelta y hace que el
-   * desvanecido TERMINE justo ahí — así lo que pase después (el
-   * "arrastre" en sí) ya es invisible, nunca un canto solo con su sombra
-   * flotando (el bug reportado). Números absolutos de scroll (no
-   * strings): más simple y exacto que encadenar "+=" relativos.
-   *
-   * Misma cuenta en escritorio y en móvil — los dos usan `.stage`
-   * `position:sticky` ahora (ver phone.css), sólo cambia el `top` (0 en
-   * móvil, `var(--space-3)` en escritorio), leído del CSS real en vez de
-   * asumido, para no duplicar ese número acá.
-   */
-  function registrarDesvanecidoDeCierre(trigger) {
-    if (!trigger || !escenario3d || !stageEl) return null;
-    const rectCta = trigger.getBoundingClientRect();
-    const topPagina = rectCta.top + window.scrollY;
-    const bottomPagina = rectCta.bottom + window.scrollY;
-    const alturaStage = stageEl.getBoundingClientRect().height;
-    const margenTopSticky = parseFloat(getComputedStyle(stageEl).top) || 0;
-    const puntoSuelta = bottomPagina - alturaStage - margenTopSticky;
-    const finVuelo = topPagina + Number(FIN_VUELO_CIERRE.replace("+=", "") || 0);
-    // El fundido tiene que TERMINAR en `puntoSuelta` (o un poco antes de
-    // caer ahí ya es tarde) — nunca más tarde. Si no hay 260px de sobra
-    // entre el vuelo y `puntoSuelta`, se acorta el fundido en vez de
-    // arrancarlo antes de que el vuelo termine.
-    const finDesvanecido = Math.max(puntoSuelta, finVuelo + 80);
-    const inicioDesvanecido = Math.max(finVuelo + 20, finDesvanecido - 260);
-
-    return ScrollTrigger.create({
-      trigger,
-      start: inicioDesvanecido,
-      end: finDesvanecido,
-      scrub: 0.3,
-      onUpdate(self) {
-        escenario3d.style.opacity = `${1 - self.progress}`;
-      },
-    });
-  }
+  /*
+    Cierre: el Dashboard aterriza al centro (fin del último vuelo, a 0°) y
+    se queda quieto mientras se lee el CTA; cuando `position:sticky` se
+    suelta, el teléfono sube junto con la página y entra el footer. Antes se
+    desvanecía justo antes de soltarse (para no dejar ver un canto flotando
+    a medio giro), y eso dejaba casi una pantalla en blanco; al aterrizar
+    de frente ya no hay canto que esconder.
+  */
 
   /**
-   * Sub-cruce hábitos → logro (plan 4.4, punto 3) factorizado — lo usan
-   * las 2 ramas con movimiento (escritorio y móvil), antes repetido
-   * literal. Además del cruce continuo de opacidad (`fijarCruce`, ya
-   * existía), ahora también arranca/pausa el loop propio de cada escena
-   * al cruzar la mitad del tramo — mismo criterio de "lado" que
-   * `registrarVuelo` — para que el confetti de `logro` no dispare antes
-   * de que el sub-cruce lo haya revelado, y el switch de `habitos` no
-   * siga corriendo de fondo una vez tapado.
+   * Sub-cruce hábitos → logro (plan 4.4, punto 3): cruce continuo de
+   * opacidad, y el loop de cada escena arranca/pausa al cruzar la mitad, para
+   * que el confeti no dispare antes de verse ni el switch siga de fondo.
    */
-  function registrarSubCruceHabitosLogro() {
+  function registrarSubCruceHabitosLogro(tramoLogro) {
     if (!secciones.habitos) return null;
     let enLogro = false;
     return ScrollTrigger.create({
       trigger: secciones.habitos,
-      start: "center top",
-      end: "bottom top",
+      start: tramoLogro.inicio,
+      end: tramoLogro.fin,
       scrub: 0.3,
       onUpdate(self) {
         capas.fijarCruce(self.progress);
@@ -430,35 +375,36 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     });
   }
 
-  const mm = gsap.matchMedia();
+  /*
+    Hero: Splash respira → al scrollear, la mascota escala hasta cubrir la
+    pantalla → cruza a Login (etapa 3), reversible. Arranca en el scroll 0 y
+    termina un poco antes de que empiece el primer vuelo (login → chat), para
+    que el Login alcance a verse quieto. Cruce continuo
+    (prepararCruce/fijarCruce): `capas.estado` no cambia de roles durante el
+    hero, así que el primer vuelo encuentra el escenario como lo dejó.
+  */
+  /** Tramo de una fase: el general de la rama, salvo el chat en móvil. */
+  function tramoDe(trigger, tramo) {
+    return trigger === secciones.chat && tramo === TRAMOS.movil ? TRAMO_CHAT_MOVIL : tramo;
+  }
 
-  // ---- Hero (compartido): Splash respira → al scrollear, la mascota
-  // escala hasta cubrir la pantalla → cruza a Login (etapa 3), reversible.
-  // Cruce CONTINUO (prepararCruce/fijarCruce): `capas.estado` no cambia de
-  // roles durante todo el hero, así que el primer vuelo (login→chat)
-  // encuentra el escenario exactamente como lo dejó. Se usa en las 2 ramas
-  // con movimiento ok (escritorio y móvil) — sólo la rama sin movimiento
-  // (más abajo) lo reemplaza por un cruce discreto sin escala.
-  function registrarHero() {
-    if (!secciones.hero) return [];
+  function registrarHero(tramo) {
+    if (!secciones.hero || !secciones.chat) return [];
     const puntoMascota = capas.estado.actual.querySelector(".ps-dot");
     if (puntoMascota) {
-      // Esta instancia puntual deja de "respirar" por CSS: la escala la
-      // controla el scroll acá, y las 2 animaciones peleando por
-      // `transform` en el mismo elemento parpadean.
+      // La escala la controla el scroll: sin la animación CSS de "respirar"
+      // peleando por `transform` en el mismo elemento.
       puntoMascota.style.animation = "none";
     }
     capas.prepararCruce("login");
+    const pctInicioChat = parseFloat(tramoDe(secciones.chat, tramo).inicio.split(" ")[1]);
     const st = ScrollTrigger.create({
-      trigger: secciones.hero,
-      start: "top top",
-      end: "bottom top",
+      start: 0,
+      end: () => Math.max(120, scrollDonde(secciones.chat, pctInicioChat) * 0.75),
       scrub: 0.3,
       onUpdate(self) {
         const p = self.progress;
-        // La mascota cubre la pantalla bastante antes del final del tramo
-        // (p≈0.6) para que el cruce a Login no quede apretado contra el
-        // borde de la sección.
+        // La mascota cubre la pantalla en p≈0.6; el cruce a Login va de 0.5 a 1.
         const pEscala = Math.min(p / 0.6, 1);
         const pCruce = Math.max((p - 0.5) / 0.5, 0);
         if (puntoMascota) {
@@ -470,103 +416,62 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     return [st];
   }
 
-  // ---- Rama A: escritorio + con movimiento ok -------------------------------
-  mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
-    const triggers = [...registrarHero()];
-
-    FASES.forEach((fase) => {
-      triggers.push(registrarVuelo(fase, { conDesplazamiento: true }));
-    });
-    triggers.push(registrarDesvanecidoDeCierre(secciones.cta));
-
-    triggers.push(registrarSubCruceHabitosLogro());
-
+  function registrarRecorrido({ conDesplazamiento, tramo, tramoLogro }) {
+    const triggers = [...registrarHero(tramo)];
+    FASES.forEach((fase) => triggers.push(registrarVuelo(fase, { conDesplazamiento, tramo })));
+    triggers.push(registrarSubCruceHabitosLogro(tramoLogro));
     return () => triggers.filter(Boolean).forEach((t) => t.kill());
-  });
+  }
 
-  // ---- Rama C: móvil + con movimiento ok -------------------------------------
-  // Mismo mecanismo que escritorio (vuelo real, 360°, cambio de escena de
-  // espaldas) pero EN EL LUGAR — sin desplazamiento lateral ni achique tan
-  // marcado (plan 5.4: "el cambio de fase es un giro en el lugar"). El
-  // teléfono ya queda sticky arriba por CSS (`.stage`, ver base.css/phone.css).
-  mm.add("(max-width: 1023px) and (prefers-reduced-motion: no-preference)", () => {
-    const triggers = [...registrarHero()];
+  const mm = gsap.matchMedia();
 
-    FASES.forEach((fase) => {
-      triggers.push(registrarVuelo(fase, { conDesplazamiento: false }));
-    });
-    triggers.push(registrarDesvanecidoDeCierre(secciones.cta));
+  // ---- Escritorio + con movimiento: vuelo lateral con giro 360°.
+  mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () =>
+    registrarRecorrido({ conDesplazamiento: true, tramo: TRAMOS.escritorio, tramoLogro: TRAMOS_LOGRO.escritorio })
+  );
 
-    triggers.push(registrarSubCruceHabitosLogro());
+  // ---- Móvil + con movimiento: el mismo giro 360°, en el lugar (plan 5.4).
+  mm.add("(max-width: 1023px) and (prefers-reduced-motion: no-preference)", () =>
+    registrarRecorrido({ conDesplazamiento: false, tramo: TRAMOS.movil, tramoLogro: TRAMOS_LOGRO.movil })
+  );
 
-    return () => triggers.filter(Boolean).forEach((t) => t.kill());
-  });
-
-  // ---- Rama B: quien pidió menos movimiento (cualquier ancho) ---------------
+  // ---- Quien pidió menos movimiento (cualquier ancho): crossfades discretos,
+  // sin giros ni vuelo. Cada fase cambia cuando su sección llega a la mitad
+  // del viewport; como cada sección mide al menos una pantalla, el orden de
+  // disparo entre fases vecinas está garantizado.
   mm.add("(prefers-reduced-motion: reduce)", () => {
     const triggers = [];
-
     if (secciones.hero) {
-      // `"bottom center"` y no `"center center"`: con un viewport alto (o
-      // un hero corto) el CENTRO del hero puede estar ya a la altura del
-      // centro del viewport al cargar con scroll 0 — el trigger disparaba
-      // `onEnter` de entrada y Login tapaba el Splash antes de que la
-      // persona scrolleara ni un pixel. El BORDE DE ABAJO del hero sólo
-      // llega ahí después de scrollear de verdad.
       triggers.push(
         ScrollTrigger.create({
           trigger: secciones.hero,
-          start: "bottom center",
+          start: "bottom 80%",
           onEnter: () => capas.irA("login", { animar: true }),
           onLeaveBack: () => capas.irA("splash", { animar: true }),
         })
       );
     }
-
-    /*
-      Bug real encontrado verificando `prefers-reduced-motion` (checkpoint
-      2.5, parte B): con `start:"top center"` el punto de disparo real es
-      `trigger.top - mitad del viewport` (~450px con un viewport de
-      900px) — un offset FIJO, no relativo al alto de la propia sección.
-      `llamada` mide ~410px (menos que ese offset): su punto de disparo y
-      el de `cta` (la fase siguiente) quedaban invertidos en el eje de
-      scroll, así que un solo salto de scroll cruzaba los 2 a la vez y
-      "llamada" nunca llegaba a pintarse — pasaba derecho de "logro" a
-      "dashboard" (confirmado con un dump del estado de las capas en cada
-      punto). `"top top"` dispara justo en `trigger.top` (offset 0) — src
-      el mismo truco que ya usan los vuelos reales de las ramas A/C — así
-      el orden de disparo entre fases consecutivas queda garantizado sin
-      importar cuán corta sea cualquiera de ellas.
-    */
     FASES.forEach(({ trigger, antes, despues }) => {
       if (!trigger) return;
       triggers.push(
         ScrollTrigger.create({
           trigger,
-          start: "top top",
+          start: "top 50%",
           onEnter: () => capas.irA(despues, { animar: true }),
           onLeaveBack: () => capas.irA(antes, { animar: true }),
         })
       );
     });
-
     if (secciones.habitos) {
-      // Mismo bug, mismo arreglo: `"bottom center"` podía caer más allá
-      // del propio final de `habitos` si era más baja que medio
-      // viewport. `"center top"` es relativo al alto PROPIO de la
-      // sección (mitad de `habitos`, nunca más allá de su propio final) —
-      // mismo criterio que ya usa `registrarSubCruceHabitosLogro` para
-      // las ramas con movimiento.
       triggers.push(
         ScrollTrigger.create({
           trigger: secciones.habitos,
-          start: "center top",
+          start: "top -15%",
           onEnter: () => capas.irA("logro", { animar: true }),
           onLeaveBack: () => capas.irA("habitos", { animar: true }),
         })
       );
     }
-
     return () => triggers.forEach((t) => t.kill());
   });
 }

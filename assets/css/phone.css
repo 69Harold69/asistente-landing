@@ -67,6 +67,11 @@
 }
 
 .escenario-3d {
+  /* Proporciones del teléfono como fracción del ancho: a 296px dan el
+     radio de 44px, el bisel de 10px y ~15px de grosor del plan (4.2). */
+  --phone-radius: calc(var(--phone-width) * 0.149);
+  --phone-bezel: calc(var(--phone-width) * 0.034);
+  --phone-depth: calc(var(--phone-width) * 0.05);
   position: relative;
   perspective: 1600px;
   width: var(--phone-width);
@@ -103,7 +108,23 @@
    prueba (390×844 y 360×740). */
 @media (max-width: 1023px) {
   .escenario-3d {
-    width: clamp(120px, 18vh, 170px);
+    --phone-width: clamp(120px, 18vh, 170px);
+  }
+}
+
+/*
+  Teléfono en horizontal (p. ej. 844×390): la franja de 44vh mediría ~170px
+  y el teléfono no entraría. Ahí el layout pasa a 2 columnas como en
+  escritorio (base.css) y el teléfono se dimensiona por el alto disponible.
+*/
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
+  .stage {
+    height: 100vh;
+    background: none;
+  }
+
+  .escenario-3d {
+    --phone-width: calc((100vh - 2.5rem) * 0.4615);
   }
 }
 
@@ -139,9 +160,14 @@
 
 .phone-frente {
   background: var(--color-bg-elevated);
+  /* Filo exterior de 1px con el color del canto: en claro el marco blanco
+     sobre el fondo crema casi no tenía silueta. Sombra en dos capas (una
+     corta de contacto y una larga y suave), más creíble que una sola. */
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 44px 80px -32px hsl(var(--shadow-color) / 0.5);
+    0 0 0 1px var(--color-canto),
+    0 1px 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 2px 6px -2px hsl(var(--shadow-color) / 0.18),
+    0 40px 70px -36px hsl(var(--shadow-color) / 0.45);
   padding: var(--phone-bezel);
   /*
     Empuja el frente a +D/2 en Z — junto con la espalda en -D/2 (ver abajo),
@@ -155,12 +181,14 @@
 
 .phone-isla {
   position: absolute;
-  top: calc(var(--phone-bezel) * 0.85);
+  /* Centrada en la barra de estado de las escenas (36dp ≈ 9.3% del ancho,
+     ver `.ps-status` en scenes.css); todo en fracción del ancho para que
+     no quede gorda en el teléfono chico de móvil. */
+  top: calc(var(--phone-bezel) + var(--phone-width) * 0.0135);
   left: 50%;
   transform: translateX(-50%);
-  width: 28%;
-  max-width: 92px;
-  height: 20px;
+  width: 24%;
+  height: calc(var(--phone-width) * 0.066);
   border-radius: 999px;
   background: #050505;
   z-index: 5;
@@ -232,7 +260,7 @@
     color-mix(in oklab, var(--color-canto), #fff calc(var(--luz, 0) * 1%)),
     #000 calc(var(--sombra, 0) * 1%)
   );
-  transform: translateZ(calc(var(--z, 0) * 1px));
+  transform: translateZ(calc(var(--z, 0) * var(--phone-depth)));
 }
 
 .phone-espalda {

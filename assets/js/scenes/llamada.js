@@ -25,17 +25,20 @@ function prefiereMovimientoReducido() {
 export function mount(contenedor) {
   contenedor.innerHTML = `
     <div class="escena ps-llamada">
-      <span class="ps-llamada-titular">Yaruki te está llamando</span>
-      <div class="ps-pulso-wrap">
-        <span class="ps-pulso-anillo" aria-hidden="true"></span>
-        <span class="ps-pulso-anillo" aria-hidden="true"></span>
-        <span class="ps-pulso-anillo" aria-hidden="true"></span>
-        <span class="ps-dot" aria-hidden="true"></span>
+      <div class="ps-llamada-arriba">
+        <span class="ps-llamada-titular">Llamada entrante</span>
+        <span class="ps-llamada-nombre">Yaruki</span>
+        <div class="ps-pulso">
+          <span class="ps-pulso-anillo" aria-hidden="true"></span>
+          <span class="ps-pulso-anillo" aria-hidden="true"></span>
+          <span class="ps-pulso-anillo" aria-hidden="true"></span>
+          <span class="ps-dot" aria-hidden="true"></span>
+        </div>
+        <span class="ps-llamada-sub">Recordatorio: reunión en 15 minutos</span>
       </div>
-      <span class="ps-llamada-sub">Recordatorio: reunión en 15 minutos</span>
       <div class="ps-llamada-acciones">
-        <span class="ps-call-btn ps-call-btn--rechazar" aria-hidden="true">${iconoTelefono()}</span>
-        <span class="ps-call-btn ps-call-btn--aceptar" aria-hidden="true">${iconoTelefono()}</span>
+        <span class="ps-boton-llamada ps-boton-llamada--colgar" aria-hidden="true">${iconoTelefono()}</span>
+        <span class="ps-boton-llamada ps-boton-llamada--contestar" aria-hidden="true">${iconoTelefono()}</span>
       </div>
     </div>
   `;

@@ -170,10 +170,12 @@ strong {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: var(--text-base);
-  padding: 0.85em 1.6em;
+  line-height: 1.2;
+  padding: 0.95em 1.6em;
   border-radius: var(--radius-pill);
   text-decoration: none;
   border: 1px solid transparent;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .button--primary {
@@ -197,7 +199,9 @@ strong {
 }
 
 .button--disabled {
-  background: var(--color-accent-soft);
+  background: transparent;
+  border-color: var(--color-border-card);
+  border-style: dashed;
   color: var(--color-text-secondary);
   cursor: not-allowed;
   pointer-events: none;
@@ -209,6 +213,7 @@ strong {
   font-family: var(--font-body);
   font-weight: 600;
   font-size: var(--text-sm);
+  line-height: 1.4;
   padding: 0.3em 0.9em;
   border-radius: var(--radius-pill);
   background: var(--color-accent-soft);
@@ -470,8 +475,18 @@ strong {
   color: var(--color-text);
 }
 
+.link-card {
+  transition: border-color 160ms ease, transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
 .link-card:hover {
   border-color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a.link-card:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .link-card .link-card-icon {
@@ -531,6 +546,11 @@ strong {
   background: var(--color-bg-elevated);
   color: var(--color-text);
   flex-shrink: 0;
+}
+
+.theme-toggle {
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
 }
 
 .theme-toggle:hover {
@@ -593,37 +613,20 @@ strong {
 }
 
 /*
-  Layout con escenario sticky.
+  Layout con escenario sticky (`<main class="layout-con-stage">`).
 
-  Móvil (<1024px, corrección — punto de control 2.5, error 1, 3ra vuelta):
-  flujo de bloque normal — `#hero`, `.stage` y `main` son 3 hermanos
-  seguidos (mismo orden que en el HTML). `.stage` es sticky (ver
-  phone.css): aparece una vez en flujo normal, justo debajo del CTA del
-  hero (tal como sugirió el dueño), y se pega arriba apenas seguir
-  scrolleando lo sacaría de pantalla — de ahí se queda pegado durante el
-  resto del recorrido.
+  Móvil (<1024px): flujo de bloque — `#hero`, `.stage` y `.secciones` son 3
+  hermanos seguidos. `.stage` es sticky (phone.css): aparece en flujo debajo
+  del CTA del hero y se pega arriba como una franja de 44vh con fondo sólido.
+  La separación con el texto es geométrica: cada sección narrativa arranca
+  con `padding-top: 46vh` (más abajo), así que el texto que se lee nunca
+  queda a la altura de la franja. `.stage` pinta encima (`z-index`) para tapar
+  prolijo lo que sigue subiendo por detrás.
 
-  La garantía ahora es GEOMÉTRICA, no de apilamiento: `.stage` pegado mide
-  sólo `44vh` (phone.css) y lleva fondo SÓLIDO — una franja real, no un
-  velo — y cada sección de texto (`.seccion:not(.seccion-hero)`, más abajo)
-  arranca con `padding-top: 46vh` y mide `min-height: 100vh`: el texto que
-  se está leyendo nunca llega a la altura de la franja, así que no hace
-  falta ningún truco de `z-index` para "ganarle" al teléfono por apilamiento
-  — physically no se tocan. (Dos vueltas atrás esto se resolvía al revés,
-  con el texto pintando ENCIMA del teléfono vía `z-index` + un velo casi
-  opaco sobre el texto — funcionaba contra la superposición pero el dueño
-  lo vio como "el teléfono se esconde, fantasma detrás del texto": pidió
-  explícito el teléfono VISIBLE y chico en su propia franja, no tapado.)
-  Acá sí conviene que `.stage` pinte ARRIBA de lo que pasa por detrás (así
-  la franja sólida tapa prolijo cualquier resto de la sección anterior que
-  siga subiendo, en vez de que un pixel de texto se cuele por encima) — por
-  eso `.stage` lleva más `z-index` que `#hero`/`main`, al revés que antes.
-
-  Escritorio (≥1024px): grid de 2 columnas — texto a la izquierda,
-  `.stage` sticky a la derecha, `grid-row: 2 / 4` para abarcar hero + main
-  y quedar pegado durante todo el recorrido (acá ni hace falta el
-  `z-index`: viven en columnas separadas, nunca se superponen — se anula
-  abajo sólo por prolijidad).
+  Escritorio (≥1024px): grid de 2 columnas — texto a la izquierda y `.stage`
+  sticky a la derecha, abarcando hero + secciones (`grid-row: 1 / 3`) para
+  quedar pegado durante todo el recorrido. Filas explícitas: el
+  auto-placement de Grid no rellena hacia atrás una celda libre.
 */
 
 .layout-con-stage {
@@ -631,65 +634,76 @@ strong {
 }
 
 .layout-con-stage > #hero,
-.layout-con-stage > main {
+.layout-con-stage > .secciones {
   position: relative;
   z-index: 1;
 }
 
 .layout-con-stage > .stage {
-  /* Sin `position` acá: `.stage` ya es `position: sticky` (phone.css) —
-     redeclararla a `relative` gana por especificidad (2 clases vs. 1) y
-     pisaba el sticky en seco, dejando el teléfono fluir normal con la
-     página (bug ya cazado una vez: el teléfono "desaparecía" en el
-     cierre porque en realidad scrolleaba fuera de cuadro hacia arriba).
-     `z-index` solo le alcanza porque sticky ya es un valor "positioned". */
+  /* Sin `position` acá: `.stage` ya es sticky (phone.css) y redeclararla
+     la pisaría por especificidad. */
   z-index: 2;
 }
 
 @media (min-width: 1024px) {
+  .site-header .container,
+  .layout-con-stage {
+    max-width: 78rem;
+  }
+
   .layout-con-stage {
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
     align-items: start;
-    gap: var(--space-4);
-    max-width: 78rem;
+    column-gap: var(--space-4);
     margin: 0 auto;
     padding: 0 var(--space-3);
   }
 
-  /*
-    Fila fijada EXPLÍCITA en los 4 (no sólo la columna): el auto-placement
-    "sparse" de Grid no rellena hacia atrás una celda libre una vez que el
-    cursor ya avanzó de fila (bug real encontrado en el punto de control 1:
-    `main` quedaba empujado ~930px hacia abajo). `grid-row` explícito evita
-    depender de `grid-auto-flow: dense`.
-  */
-  .layout-con-stage > .site-header {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-
-  .layout-con-stage > .site-header .container {
-    max-width: none;
-    padding: 0;
-  }
-
   .layout-con-stage > #hero {
+    grid-column: 1;
+    grid-row: 1;
+    z-index: auto;
+  }
+
+  .layout-con-stage > .secciones {
     grid-column: 1;
     grid-row: 2;
     z-index: auto;
   }
 
-  .layout-con-stage > main {
-    grid-column: 1;
-    grid-row: 3;
+  .layout-con-stage > .stage {
+    grid-column: 2;
+    grid-row: 1 / 3;
     z-index: auto;
+  }
+}
+
+/* Teléfono en horizontal: 2 columnas, el teléfono a la derecha (phone.css). */
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
+  .layout-con-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-3);
+    padding-right: var(--space-3);
+  }
+
+  .layout-con-stage > #hero,
+  .layout-con-stage > .secciones {
+    grid-column: 1;
+  }
+
+  .layout-con-stage > #hero {
+    grid-row: 1;
+  }
+
+  .layout-con-stage > .secciones {
+    grid-row: 2;
   }
 
   .layout-con-stage > .stage {
     grid-column: 2;
-    grid-row: 2 / 4;
-    z-index: auto;
+    grid-row: 1 / 3;
   }
 }
 
@@ -697,166 +711,189 @@ strong {
 
 .seccion {
   padding: var(--space-6) var(--space-3);
-  max-width: 34rem;
+  max-width: 36rem;
 }
 
 /*
-  Separación geométrica del teléfono (franja sticky `44vh`, ver comentario
-  largo de `.layout-con-stage` arriba): cada sección narrativa (no el hero,
-  que todavía no tiene la franja fija) arranca bien por debajo de la franja
-  y mide al menos una pantalla completa, así el bloque de texto que se está
-  leyendo siempre cae en la mitad inferior — nunca hace falta que se
-  solape ni un poco con el teléfono mientras se lee.
+  Móvil: cada sección (no el hero) arranca debajo de la franja del teléfono
+  y mide al menos una pantalla, así el texto que se lee cae siempre en la
+  mitad inferior. Hábitos mide más: además de su vuelo tiene el sub-cruce a
+  "logro" (stage.js, TRAMO_LOGRO).
 */
 @media (max-width: 1023px) {
   .seccion:not(.seccion-hero) {
     padding-top: 46vh;
     min-height: 100vh;
-    box-sizing: border-box;
+  }
+
+  #fase-habitos {
+    min-height: 160vh;
   }
 }
 
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
+  .seccion:not(.seccion-hero) {
+    padding-top: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+/*
+  Escritorio: cada sección ocupa una pantalla con el texto centrado en
+  vertical, a la altura del teléfono sticky — así lo que dice el texto y lo
+  que muestra el teléfono coinciden mientras se lee (stage.js, TRAMOS).
+*/
 @media (min-width: 1024px) {
   .seccion {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     padding: var(--space-6) 0;
-    max-width: none;
-    background: none;
+  }
+
+  #fase-habitos {
+    min-height: 160vh;
+  }
+
+  /* Fases pares: el bloque de texto se corre hacia el teléfono (plan 4.2,
+     "las columnas se alternan"), pero el texto sigue alineado a la
+     izquierda — un párrafo alineado a la derecha se lee peor. */
+  .seccion--par {
+    margin-left: auto;
   }
 }
 
 .seccion-hero {
   padding-top: var(--space-4);
+  padding-bottom: var(--space-5);
 }
 
+@media (min-width: 1024px) {
+  .seccion-hero {
+    /* El primer pantallazo completo es el hero, centrado con el teléfono. */
+    min-height: calc(100vh - 6rem);
+    max-width: 40rem;
+    padding: var(--space-4) 0 var(--space-6);
+  }
+}
 
 .hero-significado {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: var(--text-sm);
+  font-size: 1rem;
+  line-height: 1.4;
   color: var(--color-text-secondary);
   margin: 0 0 var(--space-2);
 }
 
 .titular-hero {
-  font-size: clamp(2rem, 4.6vw, var(--text-2xl));
-  max-width: 18ch;
-  margin-bottom: var(--space-2);
-}
-
-.subtitulo-hero {
-  font-size: var(--text-md);
-  color: var(--color-text-secondary);
-  max-width: 34ch;
+  font-size: var(--text-display);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.012em;
+  max-width: 13ch;
   margin-bottom: var(--space-3);
 }
 
+/* Una frase por bloque: el corte de línea cae entre las dos oraciones y
+   cada una se reparte pareja ("Dile lo que tienes / que hacer."). */
+.titular-hero .frase {
+  display: block;
+  text-wrap: balance;
+}
+
+@media (max-width: 480px) {
+  .titular-hero {
+    max-width: none;
+  }
+}
+
+.subtitulo-hero {
+  font-size: var(--text-entrada);
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  max-width: 30rem;
+  margin-bottom: var(--space-4);
+  text-wrap: pretty;
+}
+
+/*
+  CTA: cada botón lleva su chip "Próximamente" como insignia ENCIMA de la
+  esquina (sugerencia del dueño para móvil, ahora en todos los anchos): no
+  ocupa espacio en el renglón, así que los dos botones del hero entran en
+  una sola fila en escritorio y en una fila cada uno en el móvil más angosto.
+*/
 .cta-row {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-3) var(--space-3);
   flex-wrap: wrap;
   margin-bottom: var(--space-2);
 }
 
-.cta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.6em;
-  flex-wrap: wrap;
+/* Aire arriba para las insignias "Próximamente" de la portada. */
+.layout-con-stage .cta-row {
+  padding-top: 0.75rem;
 }
 
-/*
-  El botón de App Store + su chip "Próximamente" no entraban en un renglón
-  en móvil angosto (punto de control 2.5, mejora 5) — el chip se iba a una
-  línea aparte. Un botón/chip más compactos no alcanzaban ni en los 360px
-  de un iPhone de gama media (probado real con capturas): "Descárgala en
-  App Store" ya ocupa casi todo el ancho disponible por sí solo. Solución
-  que SÍ garantiza un renglón a cualquier ancho — la que sugirió el dueño:
-  el chip pasa a ser una insignia ENCIMA del botón (`position:absolute`,
-  no ocupa espacio en el renglón), en vez de competir por el mismo
-  espacio horizontal.
-*/
-@media (max-width: 480px) {
-  .cta-item {
-    position: relative;
-    display: inline-flex;
-    gap: 0;
-  }
+.cta-item {
+  position: relative;
+  display: inline-flex;
+}
 
-  .cta-item .chip {
-    position: absolute;
-    top: -0.9em;
-    right: -0.6em;
-    font-size: 0.6875rem;
-    padding: 0.2em 0.6em;
-    box-shadow: 0 0 0 2px var(--color-bg);
-  }
+.cta-item .chip {
+  position: absolute;
+  top: -0.8rem;
+  right: -0.5rem;
+  font-size: 0.75rem;
+  padding: 0.2em 0.65em;
+  box-shadow: 0 0 0 3px var(--color-bg);
 }
 
 .cta-nota {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  max-width: 34ch;
+  margin: 0;
+  text-wrap: balance;
 }
 
 .fase-kicker {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: var(--text-sm);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  line-height: 1.4;
   color: var(--color-accent);
   margin-bottom: var(--space-1);
 }
 
 .fase-titulo {
-  font-size: var(--text-xl);
-  max-width: 16ch;
+  font-size: var(--text-titulo);
+  line-height: 1.1;
+  letter-spacing: -0.008em;
+  max-width: 18ch;
+  margin-bottom: var(--space-3);
+  text-wrap: balance;
 }
 
 .fase-texto {
   font-size: var(--text-base);
+  line-height: 1.65;
   color: var(--color-text-secondary);
-  max-width: 36ch;
+  max-width: 32rem;
   margin-bottom: var(--space-2);
+  text-wrap: pretty;
 }
 
-.fase-texto:last-of-type {
-  margin-bottom: var(--space-3);
+.fase-texto:last-child {
+  margin-bottom: 0;
 }
 
-.fase-chip-inline {
-  margin-bottom: var(--space-3);
-}
-
-/* En 2 columnas, las fases pares invierten de qué lado "piensan" aunque el
-   teléfono viva fijo en su propia columna — sólo cambia la alineación del
-   bloque de texto, para que la lectura no se sienta siempre pegada a la
-   izquierda (plan, 4.2: "las columnas se alternan"). */
-@media (min-width: 1024px) {
-  .seccion--par {
-    margin-left: auto;
-    text-align: right;
-  }
-
-  /*
-    `text-align:right` en la sección sólo alinea el TEXTO dentro de cada
-    caja — no mueve la caja en sí. `.fase-titulo`/`.fase-kicker` tienen su
-    propio `max-width` (acotan el largo de línea) y, sin `margin-left:auto`
-    acá, esa caja se queda pegada a la izquierda mientras el texto de
-    adentro aparece alineado a la derecha: la etiqueta/título a la
-    izquierda y el párrafo (que sí tenía el margin) a la derecha —
-    inconsistente (bug real, punto de control 2.5). Un solo selector para
-    los 4 — toda caja de texto de una fase par se empuja pareja.
-  */
-  .seccion--par .fase-kicker,
-  .seccion--par .fase-titulo,
-  .seccion--par .fase-texto,
-  .seccion--par .subtitulo-hero {
-    margin-left: auto;
-  }
-
-  .seccion--par .cta-row {
-    justify-content: flex-end;
-  }
+.fase-chip-inline .chip {
+  margin-left: 0.25em;
+  vertical-align: 0.1em;
 }
 
 /* Cierre / CTA final ------------------------------------------------------ */
@@ -865,82 +902,6 @@ strong {
   text-align: center;
   max-width: 40rem;
   margin: 0 auto;
-}
-
-/* Mismo motivo que la versión de escritorio más abajo (`min-height:180vh`)
-   pero para el teléfono más chico de móvil: le da a `position:sticky` el
-   margen que necesita para que el Dashboard aterrice y se quede quieto
-   antes de que `stage.js` lo desvanezca. */
-@media (max-width: 1023px) {
-  #cta {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-}
-
-@media (min-width: 1024px) {
-  /*
-    Punto de control 2.5, error 2: `position:sticky` se "suelta" solo —
-    deja de estar pegado en cuanto no queda, dentro de su contenedor
-    (hero + main), alto suficiente para que el teléfono (≈650px de alto
-    renderizado) quepa completo antes del final. Con el `#cta` real
-    (~400px) eso pasaba ANTES de que la sección arrancara: el teléfono ya
-    estaba "soltándose" (ver `stageTop` negativo en las pruebas) durante
-    toda la llamada y el cierre — el vuelo nunca llegaba a mostrar el
-    Dashboard quieto, salía girando. `min-height` le da a esta sección el
-    margen que el `sticky` necesita para quedarse pegado durante el vuelo
-    Y un tramo quieto después, antes de soltarse — `stage.js` calcula el
-    resto de los tiempos (vuelo/quieto/desvanecido) a partir del alto real
-    de esta sección, no de un número fijo.
-  */
-  #cta {
-    min-height: 180vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-
-  .seccion-cta {
-    grid-column: 1 / -1;
-    max-width: 40rem;
-    padding-top: 0;
-  }
-
-  /*
-    Punto de control 2.5, error 2 (2da vuelta): `grid-column: 1 / -1` de
-    arriba es en realidad un no-op — `#cta` no es hijo directo de
-    `.layout-con-stage` (el grid), es hijo de `main`, así que esa
-    declaración nunca tuvo efecto: `#cta` siempre ocupó sólo el ancho de
-    la columna 1 (~640px), centrado ahí con `margin:0 auto`. Mientras el
-    teléfono viajaba dentro de su propia columna 2 esto no se notaba —
-    pero ahora que `stage.js` lo centra en el viewport COMPLETO al
-    aterrizar (`offsetCentradoCierre`), ese centro cae adentro de la
-    columna 1 y el texto (centrado en su columna angosta) queda clavado
-    atrás/adelante del cuerpo del teléfono: technically legible (el texto
-    pinta encima por z-index/orden del DOM) pero visualmente atropellado
-    — confirmado recortando una captura real, el título atraviesa el
-    teléfono. El dueño pidió "a los lados, sin solaparse": angostamos y
-    alineamos a la izquierda sólo para `#cta` (no toca `.seccion-cta`
-    del footer, que es un elemento distinto) para que el bloque de texto
-    quede siempre afuera del ancho del teléfono centrado (~296px,
-    572–868px en 1440 de viewport con el `vuelo-x` final).
-  */
-  #cta.seccion-cta {
-    max-width: 22rem;
-    margin: 0;
-    text-align: left;
-  }
-
-  #cta .fase-texto {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  #cta .cta-row {
-    justify-content: flex-start;
-  }
 }
 
 .seccion-cta .fase-titulo {
@@ -955,6 +916,46 @@ strong {
 
 .seccion-cta .cta-row {
   justify-content: center;
+}
+
+.seccion-cta .cta-row + .cta-nota {
+  margin-top: var(--space-1);
+}
+
+@media (max-width: 1023px) {
+  #cta {
+    justify-content: center;
+  }
+}
+
+/*
+  Escritorio: el cierre es más alto que una pantalla (150vh) a propósito —
+  le da a `position:sticky` margen para que el Dashboard aterrice al centro
+  y se quede quieto un tramo antes de soltarse y subir con la página.
+  El texto va arriba de la sección y angosto, alineado a la izquierda, para
+  quedar siempre a un lado del teléfono centrado (sin solaparse).
+*/
+@media (min-width: 1024px) {
+  #cta {
+    min-height: 150vh;
+    justify-content: flex-start;
+    padding-top: 22vh;
+  }
+
+  #cta.seccion-cta {
+    max-width: 21rem;
+    margin: 0;
+    text-align: left;
+  }
+
+  #cta .fase-texto {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  #cta .cta-row {
+    justify-content: flex-start;
+  }
 }
 
 /* Centro de Privacidad y Datos (footer#privacidad, plan 4.7) -------------- */

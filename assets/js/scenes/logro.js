@@ -24,7 +24,7 @@ export function mount(contenedor) {
     <div class="escena ps-logro">
       <canvas class="ps-confeti-canvas" aria-hidden="true"></canvas>
       <div class="ps-logro-modal">
-        <div class="ps-logro-badge" aria-hidden="true">${iconoTrofeo()}</div>
+        <div class="ps-logro-insignia" aria-hidden="true">${iconoTrofeo()}</div>
         <strong>Vas muy bien</strong>
         <p>Cuando tu constancia sea lo bastante fuerte, Yaruki te lo va a hacer saber.</p>
         <span class="ps-chip-proximamente">Próximamente</span>

@@ -40,6 +40,10 @@
   --text-lg: 1.6rem;
   --text-xl: 2.1rem;
   --text-2xl: 2.8rem;
+  /* Escala fluida de la portada: titular del hero y títulos de sección. */
+  --text-display: clamp(1.95rem, 1.15rem + 3.5vw, 4rem);
+  --text-titulo: clamp(1.85rem, 1.35rem + 1.4vw, 2.6rem);
+  --text-entrada: clamp(1.125rem, 1.05rem + 0.3vw, 1.3rem);
 
   /* Espaciado */
   --space-1: 0.5rem;
@@ -64,11 +68,12 @@
   /* Sombra con tinte cálido en claro, neutra en oscuro — ver cada bloque de tema. */
   --shadow-color: 25deg 30% 20%;
 
-  /* Teléfono 3D (plan, 4.2) */
-  --phone-radius: 44px;
-  --phone-bezel: 10px;
-  --phone-depth: 14px;
-  --phone-width: clamp(216px, 62vw, 296px);
+  /* Teléfono 3D (plan, 4.2). Radio, bisel y grosor se derivan del ancho
+     en `.escenario-3d` (phone.css), para que el teléfono chico de móvil
+     tenga las mismas proporciones que el de escritorio. */
+  /* Ancho acotado también por el alto del viewport: en una laptop de 720px
+     de alto el teléfono (proporción 9:19.5) tiene que entrar completo. */
+  --phone-width: min(clamp(216px, 62vw, 296px), (100vh - 8rem) * 0.4615);
 }
 
 @media (prefers-color-scheme: dark) {
