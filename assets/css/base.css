@@ -592,10 +592,28 @@ strong {
   }
 }
 
-/* Layout con escenario sticky ---------------------------------------------
-   Grid de 2 columnas desde 1024px: columna de contenido + columna del
-   teléfono (sticky, ver phone.css). Debajo de 1024px, una sola columna —
-   el teléfono se vuelve sticky "normal" arriba del flujo (plan, 5.4). */
+/*
+  Layout con escenario sticky.
+
+  Móvil (<1024px, corrección — punto de control 2.5, error 1): flujo de
+  bloque normal para `#hero`/`main` — `.stage` SALE de ese flujo del todo
+  con `position:fixed` (ver phone.css), clavado a una franja fija arriba
+  del viewport. No comparte columna/fila con el texto en ningún momento
+  (a diferencia de un primer intento con grid superpuesto + z-index que
+  se descartó: con texto de alto variable no hay forma de garantizar que
+  nunca coincida con la franja del teléfono — acá directamente no pueden
+  coincidir, el teléfono vive en su propia capa fija). `#hero` lleva un
+  `padding-top` que libera esa franja sólo en la primera pantalla (ver
+  `.seccion-hero` más abajo); de ahí en adelante el contenido ya scrollea
+  por debajo sin necesitar ningún otro ajuste, porque la franja fija del
+  teléfono es siempre la misma región de pantalla, nunca una región de
+  PÁGINA con la que el texto pueda superponerse.
+
+  Escritorio (≥1024px): grid de 2 columnas — texto a la izquierda,
+  `.stage` sticky a la derecha, `grid-row: 2 / 4` para abarcar hero + main
+  y quedar pegado durante todo el recorrido (sin solaparse con el texto,
+  que vive en la OTRA columna).
+*/
 
 .layout-con-stage {
   display: block;
@@ -618,13 +636,6 @@ strong {
     cursor ya avanzó de fila (bug real encontrado en el punto de control 1:
     `main` quedaba empujado ~930px hacia abajo). `grid-row` explícito evita
     depender de `grid-auto-flow: dense`.
-
-    `#hero` vive FUERA de `<main>` en el HTML (ver comentario en index.html)
-    para que el móvil (flujo de bloque normal, sin grid) muestre
-    titular+CTA arriba y el teléfono debajo sin JS — acá en escritorio eso
-    se deshace: `#hero` y `<main>` son dos filas separadas en la misma
-    columna 1 (fila 2 y 3), y `.stage` las abarca a las DOS (`grid-row: 2 / 4`)
-    para quedar pegado durante todo el recorrido, no sólo durante el hero.
   */
   .layout-con-stage > .site-header {
     grid-column: 1 / -1;
@@ -670,6 +681,15 @@ strong {
   padding-top: var(--space-4);
 }
 
+/* Libera la franja fija del teléfono (ver `.stage` en phone.css) sólo en
+   la primera pantalla — de ahí en adelante el teléfono vive en su propia
+   capa, nunca vuelve a necesitar este hueco (punto de control 2.5, error 1). */
+@media (max-width: 1023px) {
+  .seccion-hero {
+    padding-top: clamp(19rem, 66vw, 27rem);
+  }
+}
+
 .hero-significado {
   font-family: var(--font-display);
   font-weight: 600;
@@ -704,6 +724,34 @@ strong {
   align-items: center;
   gap: 0.6em;
   flex-wrap: wrap;
+}
+
+/*
+  El botón de App Store + su chip "Próximamente" no entraban en un renglón
+  en móvil angosto (punto de control 2.5, mejora 5) — el chip se iba a una
+  línea aparte. Un botón/chip más compactos no alcanzaban ni en los 360px
+  de un iPhone de gama media (probado real con capturas): "Descárgala en
+  App Store" ya ocupa casi todo el ancho disponible por sí solo. Solución
+  que SÍ garantiza un renglón a cualquier ancho — la que sugirió el dueño:
+  el chip pasa a ser una insignia ENCIMA del botón (`position:absolute`,
+  no ocupa espacio en el renglón), en vez de competir por el mismo
+  espacio horizontal.
+*/
+@media (max-width: 480px) {
+  .cta-item {
+    position: relative;
+    display: inline-flex;
+    gap: 0;
+  }
+
+  .cta-item .chip {
+    position: absolute;
+    top: -0.9em;
+    right: -0.6em;
+    font-size: 0.6875rem;
+    padding: 0.2em 0.6em;
+    box-shadow: 0 0 0 2px var(--color-bg);
+  }
 }
 
 .cta-nota {
@@ -750,6 +798,18 @@ strong {
     text-align: right;
   }
 
+  /*
+    `text-align:right` en la sección sólo alinea el TEXTO dentro de cada
+    caja — no mueve la caja en sí. `.fase-titulo`/`.fase-kicker` tienen su
+    propio `max-width` (acotan el largo de línea) y, sin `margin-left:auto`
+    acá, esa caja se queda pegada a la izquierda mientras el texto de
+    adentro aparece alineado a la derecha: la etiqueta/título a la
+    izquierda y el párrafo (que sí tenía el margin) a la derecha —
+    inconsistente (bug real, punto de control 2.5). Un solo selector para
+    los 4 — toda caja de texto de una fase par se empuja pareja.
+  */
+  .seccion--par .fase-kicker,
+  .seccion--par .fase-titulo,
   .seccion--par .fase-texto,
   .seccion--par .subtitulo-hero {
     margin-left: auto;
@@ -769,6 +829,27 @@ strong {
 }
 
 @media (min-width: 1024px) {
+  /*
+    Punto de control 2.5, error 2: `position:sticky` se "suelta" solo —
+    deja de estar pegado en cuanto no queda, dentro de su contenedor
+    (hero + main), alto suficiente para que el teléfono (≈650px de alto
+    renderizado) quepa completo antes del final. Con el `#cta` real
+    (~400px) eso pasaba ANTES de que la sección arrancara: el teléfono ya
+    estaba "soltándose" (ver `stageTop` negativo en las pruebas) durante
+    toda la llamada y el cierre — el vuelo nunca llegaba a mostrar el
+    Dashboard quieto, salía girando. `min-height` le da a esta sección el
+    margen que el `sticky` necesita para quedarse pegado durante el vuelo
+    Y un tramo quieto después, antes de soltarse — `stage.js` calcula el
+    resto de los tiempos (vuelo/quieto/desvanecido) a partir del alto real
+    de esta sección, no de un número fijo.
+  */
+  #cta {
+    min-height: 180vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
   .seccion-cta {
     grid-column: 1 / -1;
     max-width: 40rem;
@@ -800,6 +881,17 @@ strong {
 
 .privacidad-section .seccion-cta {
   margin-bottom: 0;
+  /*
+    Pisa el `max-width: 40rem` de `.seccion-cta` (pensado para un párrafo de
+    cierre, no para una cuadrícula de 4 tarjetas) — con esa clase puesta
+    acá también (mismo `<div class="container seccion-cta">`), las 2 reglas
+    tienen la misma especificidad y gana la última declarada en el archivo;
+    esta, más específica (`.privacidad-section .seccion-cta`), gana
+    siempre. Sin esto, las 4 tarjetas de abajo quedaban apretadas en 640px
+    — "Eliminar tu cuenta" se partía palabra por palabra (bug real, punto
+    de control 2.5).
+  */
+  max-width: 64rem;
 }
 
 .privacidad-section .link-grid {

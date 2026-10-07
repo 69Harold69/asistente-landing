@@ -14,19 +14,38 @@
   un `rem` de respaldo en el mismo `clamp()`.
 */
 
+/*
+  Móvil (<1024px, punto de control 2.5, error 1): `position: fixed`, no
+  `sticky` — clavado a una franja fija en la parte de arriba del viewport,
+  SIN compartir columna/fila con el texto (ver el comentario largo en
+  base.css sobre `.layout-con-stage`: un primer intento con grid
+  superpuesto + z-index se descartó porque no hay forma de garantizar que
+  texto de alto variable nunca entre en la franja del teléfono). `#hero`
+  (`.seccion-hero` más abajo) le deja un hueco con `padding-top` sólo en
+  la primera pantalla — de ahí en adelante el resto del contenido ya
+  scrollea por debajo sin tocar nada más, porque la franja es siempre la
+  MISMA región de pantalla, nunca una región de página.
+*/
 .stage {
-  position: relative;
+  position: fixed;
+  top: var(--altura-header-movil, 4.25rem);
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
-  padding: var(--space-4) 0 var(--space-5);
+  padding: var(--space-2) 0;
+  pointer-events: none;
 }
 
 @media (min-width: 1024px) {
   .stage {
     position: sticky;
     top: var(--space-3);
+    left: auto;
+    right: auto;
     height: calc(100vh - var(--space-4));
     align-items: center;
+    pointer-events: auto;
     /* Overflow visible a propósito: el "vuelo" de la etapa 4 saca el
        teléfono del ancho de su propia columna hacia el texto y de vuelta —
        si esto recortara, el vuelo se vería guillotinado en el borde. */
@@ -66,7 +85,10 @@
    acompaña debajo sin competir por todo el alto de la primera pantalla. */
 @media (max-width: 1023px) {
   .escenario-3d {
-    width: clamp(160px, 42vw, 240px);
+    /* Más chico que antes (era hasta 240px): tiene que caber entero,
+       cómodo, dentro de la franja fija de arriba (`.stage`) sin empujar
+       demasiado abajo el punto donde empieza a leerse el hero. */
+    width: clamp(130px, 32vw, 180px);
   }
 }
 
