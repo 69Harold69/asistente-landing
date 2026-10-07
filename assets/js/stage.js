@@ -111,9 +111,11 @@ function crearAdministradorDeCapas(pantalla, idInicial) {
 
   const estado = { actual: capaA, siguiente: capaB, idActual: idInicial };
   montarEnCapa(capaA, idInicial);
+  ESCENAS[idInicial]?.play?.();
 
   function irA(idNuevo, { animar = false, duracion = 0.5 } = {}) {
     if (idNuevo === estado.idActual) return;
+    const idViejo = estado.idActual;
     montarEnCapa(estado.siguiente, idNuevo);
     if (animar) {
       gsap.to(estado.actual, { opacity: 0, duration: duracion, overwrite: true });
@@ -126,6 +128,15 @@ function crearAdministradorDeCapas(pantalla, idInicial) {
     estado.actual = estado.siguiente;
     estado.siguiente = tmp;
     estado.idActual = idNuevo;
+    // Ciclo de vida de los loops propios de cada escena (plan, parte B: "los
+    // loops arrancan y pausan con onEnter/onLeave") — `irA` es el único
+    // punto por el que pasa TODO cambio de escena visible (las 5 fases de
+    // `FASES` y la rama sin movimiento), así que alcanza con engancharlo acá
+    // una sola vez en vez de repetir el cableo en cada `ScrollTrigger`.
+    // `pause`/`play` son opcionales (la mayoría de las escenas no tienen
+    // loop propio — Splash/Login/Elementos-estático/etc.) de ahí el `?.`.
+    ESCENAS[idViejo]?.pause?.();
+    ESCENAS[idNuevo]?.play?.();
   }
 
   function prepararCruce(idDestino) {
@@ -338,6 +349,41 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     });
   }
 
+  /**
+   * Sub-cruce hábitos → logro (plan 4.4, punto 3) factorizado — lo usan
+   * las 2 ramas con movimiento (escritorio y móvil), antes repetido
+   * literal. Además del cruce continuo de opacidad (`fijarCruce`, ya
+   * existía), ahora también arranca/pausa el loop propio de cada escena
+   * al cruzar la mitad del tramo — mismo criterio de "lado" que
+   * `registrarVuelo` — para que el confetti de `logro` no dispare antes
+   * de que el sub-cruce lo haya revelado, y el switch de `habitos` no
+   * siga corriendo de fondo una vez tapado.
+   */
+  function registrarSubCruceHabitosLogro() {
+    if (!secciones.habitos) return null;
+    let enLogro = false;
+    return ScrollTrigger.create({
+      trigger: secciones.habitos,
+      start: "center top",
+      end: "bottom top",
+      scrub: 0.3,
+      onUpdate(self) {
+        capas.fijarCruce(self.progress);
+        const pasoALogro = self.progress >= 0.5;
+        if (pasoALogro !== enLogro) {
+          enLogro = pasoALogro;
+          if (pasoALogro) {
+            ESCENAS.habitos?.pause?.();
+            ESCENAS.logro?.play?.();
+          } else {
+            ESCENAS.logro?.pause?.();
+            ESCENAS.habitos?.play?.();
+          }
+        }
+      },
+    });
+  }
+
   const mm = gsap.matchMedia();
 
   // ---- Hero (compartido): Splash respira → al scrollear, la mascota
@@ -387,22 +433,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     });
     triggers.push(registrarDesvanecidoDeCierre(secciones.cta));
 
-    if (secciones.habitos) {
-      // Sub-cruce hábitos → logro (plan 4.4, punto 3): el logro sigue
-      // siendo parte de la fase de hábitos, no una sección propia — pasa
-      // DE FRENTE (sin girar) en el resto del recorrido de esa sección.
-      triggers.push(
-        ScrollTrigger.create({
-          trigger: secciones.habitos,
-          start: "center top",
-          end: "bottom top",
-          scrub: 0.3,
-          onUpdate(self) {
-            capas.fijarCruce(self.progress);
-          },
-        })
-      );
-    }
+    triggers.push(registrarSubCruceHabitosLogro());
 
     return () => triggers.filter(Boolean).forEach((t) => t.kill());
   });
@@ -420,19 +451,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     });
     triggers.push(registrarDesvanecidoDeCierre(secciones.cta));
 
-    if (secciones.habitos) {
-      triggers.push(
-        ScrollTrigger.create({
-          trigger: secciones.habitos,
-          start: "center top",
-          end: "bottom top",
-          scrub: 0.3,
-          onUpdate(self) {
-            capas.fijarCruce(self.progress);
-          },
-        })
-      );
-    }
+    triggers.push(registrarSubCruceHabitosLogro());
 
     return () => triggers.filter(Boolean).forEach((t) => t.kill());
   });

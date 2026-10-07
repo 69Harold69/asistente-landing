@@ -15,6 +15,13 @@ import { iconoTrazo } from "../icons.js";
  */
 export const id = "elementos";
 
+let refs = null;
+let tl = null;
+
+function prefiereMovimientoReducido() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 export function mount(contenedor) {
   contenedor.innerHTML = `
     <div class="escena ps-elementos">
@@ -60,12 +67,53 @@ export function mount(contenedor) {
       </div>
     </div>
   `;
+  refs = {
+    tiles: Array.from(contenedor.querySelectorAll(".ps-tile")),
+    barras: Array.from(contenedor.querySelectorAll(".ps-bar-fill")),
+  };
 }
 
+/**
+ * Cascada de entrada sutil (plan, parte B) — las 5 tarjetas aparecen una
+ * detrás de otra (stagger) y las 2 barras de progreso se "llenan" desde 0,
+ * cada vez que la sección vuelve a quedar a la vista (`stage.js` llama acá
+ * desde `irA` en cada cambio de escena, no sólo la primera vez — así se ve
+ * viva si la persona sube y vuelve a bajar).
+ *
+ * Barras animadas con `scaleX`/`transform-origin:left`, no `width`: mismo
+ * resultado visual que "llenarse", pero sigue la regla de sólo animar
+ * `transform`/`opacity`. El ancho final en sí (el `%` real de cada barra)
+ * ya lo fija `aplicarBarrasDeProgreso` en `stage.js` vía `data-progreso`
+ * ANTES de que esto corra — acá sólo se la revela con un scaleX.
+ */
 export function play() {
-  return null;
+  if (!refs) return null;
+  if (tl) tl.kill();
+  if (prefiereMovimientoReducido()) {
+    gsap.set(refs.tiles, { opacity: 1, y: 0 });
+    gsap.set(refs.barras, { scaleX: 1 });
+    return null;
+  }
+  gsap.set(refs.barras, { transformOrigin: "left center" });
+  tl = gsap.timeline();
+  tl.set(refs.tiles, { opacity: 0, y: 14 });
+  tl.set(refs.barras, { scaleX: 0 });
+  tl.to(refs.tiles, { opacity: 1, y: 0, duration: 0.45, stagger: 0.08, ease: "power2.out" });
+  tl.to(refs.barras, { scaleX: 1, duration: 0.6, stagger: 0.12, ease: "power2.out" }, "-=0.25");
+  return tl;
 }
 
-export function pause() {}
+export function pause() {
+  if (tl) tl.pause();
+}
 
-export function reset() {}
+export function reset() {
+  if (tl) {
+    tl.kill();
+    tl = null;
+  }
+  if (refs) {
+    gsap.set(refs.tiles, { opacity: 1, y: 0 });
+    gsap.set(refs.barras, { scaleX: 1 });
+  }
+}

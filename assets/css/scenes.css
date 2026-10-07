@@ -321,6 +321,113 @@
   fill: none;
 }
 
+/* Chat vivo (etapa 5) — tecleo, dictado y "Confirmado ✓" ------------------- */
+
+.ps-input-texto {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ps-cursor {
+  display: inline-block;
+  width: 0.6cqw;
+  min-width: 1.5px;
+  height: 1em;
+  margin-left: 0.3cqw;
+  background: currentColor;
+  vertical-align: text-bottom;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ps-cursor {
+    animation: ps-parpadeo 1s step-end infinite;
+  }
+}
+
+@keyframes ps-parpadeo {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Ondas de dictado: ocultas salvo que `.ps-input` lleve `--dictando` (el
+   escenario "dictado" de chat.js las muestra en vez de tecleo). Barras con
+   `transform-origin:center` porque GSAP anima `scaleY` cuadro a cuadro —
+   crecen/encogen desde el medio, como un visualizador de voz real. */
+.ps-onda-voz {
+  display: none;
+  align-items: center;
+  gap: 1.2cqw;
+  height: 1em;
+}
+
+.ps-input--dictando .ps-onda-voz {
+  display: flex;
+}
+
+.ps-input--dictando .ps-input-texto,
+.ps-input--dictando .ps-cursor {
+  display: none;
+}
+
+.ps-onda-barra {
+  width: 0.8cqw;
+  min-width: 2px;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-accent);
+  transform-origin: center;
+  transform: scaleY(0.4);
+}
+
+.ps-chip-voz {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 1cqw 2.4cqw;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent);
+  font-size: 2.3cqw;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ps-bubble--pensando {
+  font-style: italic;
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ps-bubble--pensando {
+    animation: ps-pensando-pulso 1.1s ease-in-out infinite;
+  }
+}
+
+@keyframes ps-pensando-pulso {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.ps-confirmado {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: 1.6cqw;
+  padding: 1.6cqw 2.8cqw;
+  border-radius: 999px;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 2.8cqw;
+}
+
 /* Elementos (Bento) -------------------------------------------------------- */
 
 .ps-elementos-head {
