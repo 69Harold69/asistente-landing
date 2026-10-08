@@ -1,6 +1,7 @@
 import { inicializarTema, alternarTema, sincronizarToggle } from "./theme.js";
 import { mostrarDemoDeTemaSiCorresponde } from "./theme-demo.js";
 import { inicializarEscenario } from "./stage.js";
+import { inicializarTilt } from "./tilt.js";
 import { BETA_URL } from "./config.js";
 
 /*
@@ -12,7 +13,8 @@ import { BETA_URL } from "./config.js";
 */
 
 inicializarTema();
-inicializarEscenario();
+const escenario = inicializarEscenario();
+inicializarTilt();
 mostrarDemoDeTemaSiCorresponde();
 
 const botonesTema = document.querySelectorAll("[data-theme-toggle]");
