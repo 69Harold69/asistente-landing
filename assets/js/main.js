@@ -11,6 +11,7 @@ import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js";
 import { inicializarEscenario } from "./stage.js";
 import { inicializarTilt } from "./tilt.js";
 import { inicializarReveals } from "./revelar.js";
+import { inicializarProgreso } from "./progreso.js";
 import { BETA_URL } from "./config.js";
 
 /*
@@ -68,3 +69,4 @@ if (BETA_URL) {
 }
 
 inicializarReveals(escenario);
+inicializarProgreso();
