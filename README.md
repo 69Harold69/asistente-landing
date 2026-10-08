@@ -268,7 +268,18 @@ yaruki.hjgr.dev {
 
 	try_files {path} {path}/index.html {path}.html
 
-	file_server
+	# El sitio se sirve desde el clon del repo: nunca exponer `.git` (todo el
+	# historial) ni los archivos que no son del sitio.
+	file_server {
+		hide .git README.md
+	}
+
+	# Recursos estáticos: caché larga. Sin hash en los nombres, así que
+	# `max-age` de un día + `stale-while-revalidate`: un despliegue se ve a
+	# más tardar al día siguiente sin perder las visitas repetidas rápidas.
+	# Si se agregan hashes a los nombres, subir a `max-age=31536000, immutable`.
+	@recursos path /assets/*
+	header @recursos Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
 
 	handle_errors {
 		rewrite * /404.html
@@ -287,10 +298,17 @@ yaruki.hjgr.dev {
 ```
 
 Notas:
-- **CSP:** hoy el sitio no tiene JS ni fuentes externas, así que
-  `script-src 'self'` y `font-src 'self'` alcanzan. Cuando se agregue GSAP
-  vendorizado (etapas 2+), sigue siendo `'self'` porque el plan dice que se
-  vendoriza en el repo, no por CDN — no hay que relajar la CSP para eso.
+- **CSP:** todo el JS (GSAP, ScrollTrigger y canvas-confetti vendorizados en
+  `assets/js/vendor/`, más los módulos propios) y las fuentes se sirven
+  desde el mismo origen, así que `script-src 'self'` y `font-src 'self'`
+  alcanzan. No hay nada inline: los estilos que calcula JS van por CSSOM
+  (`el.style.setProperty`), que la CSP permite.
+- **`hide .git README.md`:** el repo se clona tal cual en `/var/www`; sin esto,
+  `https://yaruki.hjgr.dev/.git/config` (y con él todo el historial) quedaba
+  público.
+- **Caché de `/assets/*`:** ver el comentario en el bloque. El HTML no lleva
+  `Cache-Control` propio: Caddy manda `ETag`/`Last-Modified` y el navegador
+  revalida en cada visita, así que un despliegue se ve al instante.
 - **HSTS:** sólo `max-age`, sin `includeSubDomains` ni `preload`. Es un
   subdominio propio con su propio certificado; `preload` compromete al dominio
   raíz completo con los navegadores de forma casi irreversible, y no
