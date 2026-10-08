@@ -1,4 +1,5 @@
 import { iconoTrazo, barraDeNavegacion } from "../icons.js";
+import { contar, detener } from "./contar.js";
 
 /**
  * Elementos — pedido explícito del dueño (corrección 2026-10-04 a la
@@ -22,7 +23,14 @@ function prefiereMovimientoReducido() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+/** Número que cuenta desde 0 al entrar la escena (contar.js). */
+const n = (valor) => `<span data-contar="${valor}">${valor}</span>`;
+
+let conteos = [];
+let raiz = null;
+
 export function mount(contenedor) {
+  raiz = contenedor;
   const tile = (titulo, icono, kpi, progreso) => `
     <div class="ps-tile">
       <div class="ps-tile-titulo">${titulo}</div>
@@ -38,15 +46,15 @@ export function mount(contenedor) {
         <h2 class="ps-titulo">Elementos</h2>
       </div>
       <div class="ps-elementos-grid">
-        ${tile("TAREAS", "tareas", "2/5 hoy", 0.4)}
-        ${tile("HÁBITOS", "habitos", "2/3 hoy", 0.67)}
-        ${tile("LISTAS", "listas", "3 activas", null)}
-        ${tile("NOTAS", "notas", "4 notas", null)}
+        ${tile("TAREAS", "tareas", `${n(2)}/5 hoy`, 0.4)}
+        ${tile("HÁBITOS", "habitos", `${n(2)}/3 hoy`, 0.67)}
+        ${tile("LISTAS", "listas", `${n(3)} activas`, null)}
+        ${tile("NOTAS", "notas", `${n(4)} notas`, null)}
         <div class="ps-tile ps-tile--ancha">
           <div class="ps-tile-icono">${iconoTrazo("eventos")}</div>
           <div>
             <div class="ps-tile-titulo">PRÓXIMOS EVENTOS</div>
-            <div class="ps-tile-kpi">2 en puerta</div>
+            <div class="ps-tile-kpi">${n(2)} en puerta</div>
           </div>
         </div>
       </div>
@@ -80,6 +88,8 @@ export function play() {
     gsap.set(refs.barras, { scaleX: 1 });
     return null;
   }
+  detener(conteos);
+  conteos = contar(raiz, { retraso: 0.25 });
   gsap.set(refs.barras, { transformOrigin: "left center" });
   tl = gsap.timeline();
   tl.set(refs.tiles, { opacity: 0, y: 14 });
@@ -91,6 +101,8 @@ export function play() {
 
 export function pause() {
   if (tl) tl.pause();
+  detener(conteos, raiz);
+  conteos = [];
 }
 
 export function reset() {
