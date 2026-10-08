@@ -361,6 +361,13 @@
   right: 14%;
 }
 
+/*
+  Mascota de la espalda con su halo. Antes el halo era un `box-shadow`
+  animado en bucle (repinta cada cuadro y corría siempre, aunque la espalda
+  no se viera). Ahora es una capa aparte (`::before`) que sólo anima
+  `transform`/`opacity`, y la animación queda en pausa salvo cuando la
+  espalda está a la vista (`data-espalda="visible"`, stage.js).
+*/
 .phone-mascota-halo {
   position: relative;
   width: 22%;
@@ -369,20 +376,48 @@
   background: var(--color-accent);
 }
 
+.phone-mascota-halo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .phone-mascota-halo {
-    animation: halo-respirar 3s ease-in-out infinite;
+    animation: halo-mascota 3s ease-in-out infinite paused;
+  }
+
+  .phone-mascota-halo::before {
+    animation: halo-onda 3s ease-in-out infinite paused;
+  }
+
+  .phone[data-espalda="visible"] .phone-mascota-halo,
+  .phone[data-espalda="visible"] .phone-mascota-halo::before {
+    animation-play-state: running;
   }
 }
 
-@keyframes halo-respirar {
+@keyframes halo-mascota {
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 35%, transparent);
   }
   50% {
     transform: scale(1.08);
-    box-shadow: 0 0 0 14px color-mix(in srgb, var(--color-accent) 16%, transparent);
+  }
+}
+
+@keyframes halo-onda {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.55);
+    opacity: 0.18;
   }
 }
