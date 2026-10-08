@@ -1,13 +1,12 @@
 # asistente-landing — sitio de Yaruki
 
 Sitio estático (HTML/CSS/JS, sin paso de build) para `yaruki.hjgr.dev`. Construido
-según `asistente-ia-ops/docs/plan-landing-yaruki.md`. **Este pase cubre las
-etapas 1 a 4 del plan**: esqueleto/tokens, teléfono 3D, el cruce Splash→Login
-del hero ligado al scroll (etapa 3) y la coreografía completa de vuelo 360°
-entre fases con GSAP + ScrollTrigger (etapa 4) — ver `assets/js/stage.js`.
-Parado en el **PUNTO DE CONTROL 2** del plan: no avanza a la etapa 5 sin que
-el dueño revise. La demo de tema al cargar (decisión 3.5) sigue pendiente,
-etapa 9.
+según `asistente-ia-ops/docs/plan-landing-yaruki.md`. Incluye el teléfono 3D
+con la coreografía de scroll (`assets/js/stage.js`), la demo de tema al
+cargar con revelado circular (`theme-demo.js`) y los detalles de la ronda del
+dueño: escritorio lado a lado, textos escalonados, titular palabra por
+palabra, barra de progreso, navegación con puntos, CTAs magnéticos, tilt y
+contadores (ver "Detalles de la portada").
 
 ## Estructura
 
@@ -28,11 +27,17 @@ asistente-landing/
 │   │   └── scenes.css   Contenido de cada escena dentro de la pantalla del teléfono
 │   ├── js/
 │   │   ├── config.js    BRAND_NAME / BETA_URL
-│   │   ├── theme.js     Toggle sol/luna
+│   │   ├── theme.js     Toggle sol/luna (revelado circular con View Transitions, crossfade de respaldo)
+│   │   ├── theme-demo.js  Demo de tema al cargar, una vez por visita, con la pista junto al toggle
 │   │   ├── stage.js     Coreografía de scroll y modo de inspección `?escena=&cara=&angulo=`
+│   │   ├── revelar.js   Aparición escalonada de los textos (atada al vuelo en escritorio)
+│   │   ├── progreso.js  Barra de avance (respaldo JS) y "Desliza para descubrir"
+│   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
+│   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
+│   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto)
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
-│   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, llamada, dashboard
+│   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, llamada, dashboard (+ contar.js)
 │   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
 │   ├── fonts/     .woff2 completos + OFL.txt (páginas legales)
 │   ├── fuentes/   los mismos pesos recortados al rango latino + OFL.txt (portada)
@@ -63,9 +68,11 @@ visible, que es lo que pide el plan ("≈ 90°").
 Sin parámetros de inspección, `inicializarCoreografia()` arma todo con GSAP +
 ScrollTrigger y `gsap.matchMedia()` con 3 ramas:
 
-- **Escritorio (≥1024px) con movimiento:** el teléfono vuela de lado a lado
-  (arco de ±160px, escala 0.9 a mitad de vuelo) girando 360° en Y entre cada
-  fase; la escena cambia al 50% del progreso (de espaldas).
+- **Escritorio (≥1024px) con movimiento:** el teléfono cruza de una columna
+  a la otra (escala 0.9 a mitad de vuelo) girando 360° en Y entre cada fase,
+  y el texto de cada sección va en la columna libre; la escena cambia al 50%
+  del progreso (de espaldas). Sin movimiento, el teléfono salta de columna
+  apagado y reaparece cuando la columna nueva quedó libre de texto.
 - **Móvil (<1024px) con movimiento:** el mismo giro 360°, en el lugar, con el
   teléfono en la franja sticky de 44vh. En horizontal (alto ≤520px) el layout
   pasa a 2 columnas.
@@ -116,9 +123,30 @@ Sol/luna en el header. Sin tocar nada, el sitio sigue `prefers-color-scheme`
 explícito en `<html>` (`:root[data-theme="dark"]`/`["light"]`, mayor
 especificidad que el `@media`, por eso gana) y lo recuerda en `localStorage`
 (`yaruki-theme`), envuelto en try/catch — sin storage disponible, el toggle
-sigue funcionando para esa carga, sólo no sobrevive a un refresh. La demo de
-tema al cargar (decisión 3.5 del plan: tema opuesto al del sistema, pausa,
-regreso) es la etapa 9, todavía no implementada.
+sigue funcionando para esa carga, sólo no sobrevive a un refresh. El cambio
+usa el mismo revelado circular desde el botón que la demo de tema al cargar
+(`theme-demo.js`: una vez por visita, nunca con reduced-motion, se cancela
+al primer clic en el toggle).
+
+## Detalles de la portada
+
+- **Textos (`revelar.js`):** cada bloque entra escalonado, subiendo 24 px.
+  En escritorio el texto sigue la misma posición suavizada que el teléfono:
+  la sección nueva entra en el último 40% del giro (el teléfono ya dejó su
+  columna) y la anterior se va en el primer 35% (antes de que llegue). Por
+  eso nunca se enciman, tampoco con saltos. En móvil, entrada al 84% del
+  viewport.
+- **Titular del hero:** palabra por palabra en CSS (`base.css`), sin JS ni CLS.
+- **Barra de progreso:** `animation-timeline: scroll()` cuando existe;
+  si no, `progreso.js`.
+- **Navegación con puntos (`nav-recorrido.js`):** `nav` con `aria-label`,
+  `aria-current="location"` y salto a la posición en la que cada sección
+  queda en lectura.
+- **Mascota del header:** respira y se infla con el hover del CTA de la beta.
+- **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
+  magnéticos toman únicamente CTAs activos: con `BETA_URL` vacía no se ven.
+- **Contadores (`scenes/contar.js`):** los números de Elementos y del
+  Dashboard cuentan desde 0; el valor final ya está en el HTML.
 
 ## Íconos e imagen para compartir (`assets/img/`)
 
@@ -201,14 +229,9 @@ la licencia, sólo la atribución exacta).
 5. ~~Elementos sin sección de texto propia~~ → **resuelto, punto de control
    2:** `#fase-elementos`, enganchada al recorrido (chat → Elementos →
    hábitos → llamada → Dashboard) y coreografiada igual que las demás.
-6. **`gsap.matchMedia()` no reacomoda el teléfono al cruzar de rama en
-   caliente** — si alguien cambia el ancho de ventana cruzando los 1024px
-   (o activa/desactiva "reducir movimiento") a mitad de sesión, sin
-   recargar, `--rotacion-y`/`--vuelo-x`/`--vuelo-escala` pueden quedar en el
-   valor que dejó la rama anterior hasta el próximo scroll. No afecta a un
-   visitante real (nadie cruza ese breakpoint sin recargar en el uso
-   normal) ni a ninguna de las capturas pedidas (tamaño de ventana fijo por
-   captura) — señalado, no resuelto en este pase.
+6. ~~`gsap.matchMedia()` no reacomoda el teléfono al cruzar de rama~~ →
+   **resuelto (M1):** al cruzar 1024 px o cambiar "reducir movimiento" se
+   re-mide y se vuelve a la misma sección.
 7. **Vuelo probado por scroll programático (Puppeteer) y revisión visual
    cuadro a cuadro, no por un dedo/mouse real** — el comportamiento con
    gestos táctiles reales (momentum scroll de iOS/Android) no se validó en
