@@ -187,10 +187,9 @@ falta — no quedó ningún `node_modules/`/`package.json` en el repo.
   (que es el caso de esta landing: pública y gratuita). Texto completo
   citado y verificado el 2026-10-04 en `assets/js/vendor/LICENSE-GSAP.txt`,
   fuente <https://gsap.com/standard-license/>.
-- **canvas-confetti 1.9.4** (`canvas-confetti.min.js`) — todavía sin usar
-  (etapa 6: el confeti real del logro se hace con esto; por ahora la escena
-  `logro` dibuja sus puntos de confeti con `<span>` + CSSOM, ver
-  `assets/js/scenes/logro.js`). Licencia **ISC** (permisiva, equivalente a
+- **canvas-confetti 1.9.4** (`canvas-confetti.min.js`) — el confeti del
+  logro. No va en el `<head>`: `scenes/logro.js` lo carga recién cuando monta
+  la escena (al acercarse a Hábitos) y nunca con reduced-motion. Licencia **ISC** (permisiva, equivalente a
   MIT/BSD-2), texto completo en `assets/js/vendor/LICENSE-canvas-confetti.txt`.
 
 ## Fuentes autoalojadas

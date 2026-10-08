@@ -14,6 +14,28 @@ export const id = "logro";
 
 let refs = null;
 let confetiPropio = null;
+let jugando = false;
+let turno = 0;
+let carga = null;
+
+/**
+ * canvas-confetti (25 KB) se carga recién cuando esta escena se monta (al
+ * acercarse a Hábitos), no en el `<head>`: no tiene nada que hacer en la
+ * primera carga. Script del mismo origen, permitido por `script-src 'self'`.
+ */
+function cargarConfeti() {
+  if (window.confetti) return Promise.resolve();
+  carga ??= new Promise((listo, error) => {
+    const script = document.createElement("script");
+    script.src = new URL("../vendor/canvas-confetti.min.js", import.meta.url).href;
+    script.onload = listo;
+    script.onerror = error;
+    document.head.append(script);
+  }).catch(() => {
+    carga = null;
+  });
+  return carga;
+}
 
 function prefiereMovimientoReducido() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -33,6 +55,7 @@ export function mount(contenedor) {
   `;
   refs = { canvas: contenedor.querySelector(".ps-confeti-canvas") };
   confetiPropio = null;
+  if (!prefiereMovimientoReducido()) cargarConfeti();
 }
 
 /**
@@ -49,8 +72,14 @@ export function mount(contenedor) {
  * igual de completo, sólo sin el efecto, como pide la regla general.
  */
 export function play() {
-  if (!refs || !window.confetti) return null;
-  if (prefiereMovimientoReducido()) return null;
+  jugando = true;
+  const este = ++turno;
+  if (!refs || prefiereMovimientoReducido()) return null;
+  if (!window.confetti) {
+    // Si todavía no llegó, el burst sale en cuanto llegue (si la escena sigue en pantalla).
+    cargarConfeti().then(() => este === turno && jugando && window.confetti && play());
+    return null;
+  }
   if (!confetiPropio) {
     confetiPropio = window.confetti.create(refs.canvas, { resize: true, useWorker: false });
   }
@@ -67,6 +96,7 @@ export function play() {
 }
 
 export function pause() {
+  jugando = false;
   if (confetiPropio) confetiPropio.reset();
 }
 
