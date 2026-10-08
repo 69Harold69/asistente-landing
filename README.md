@@ -155,6 +155,9 @@ al primer clic en el toggle).
 - `favicon-32.png`: el mismo SVG rasterizado a 32 px con fondo transparente
   (`magick -background none -density 600 favicon.svg -resize 32x32`), para
   los navegadores sin favicon SVG.
+- `/favicon.ico` (raíz del repo, 16/32/48 px, mismo origen): lo piden solos
+  los navegadores en las páginas que no declaran ícono (las legales y la
+  404, que no se tocan); sin él, cada visita dejaba un 404 en la consola.
 - `apple-touch-icon.png` (180×180): la mascota con su halo sobre el fondo
   claro del sitio, sin transparencia (iOS redondea las esquinas solo).
 - `og-yaruki.png` (1200×630): nombre, significado, lema y mascota, para
