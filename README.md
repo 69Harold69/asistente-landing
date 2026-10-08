@@ -36,7 +36,7 @@ asistente-landing/
 │   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
 │   ├── fonts/     .woff2 completos + OFL.txt (páginas legales)
 │   ├── fuentes/   los mismos pesos recortados al rango latino + OFL.txt (portada)
-│   └── img/       favicon.svg
+│   └── img/       favicon.svg, favicon-32.png, apple-touch-icon.png y og-yaruki.png (ver "Íconos e imagen para compartir")
 └── README.md
 ```
 
@@ -119,6 +119,25 @@ especificidad que el `@media`, por eso gana) y lo recuerda en `localStorage`
 sigue funcionando para esa carga, sólo no sobrevive a un refresh. La demo de
 tema al cargar (decisión 3.5 del plan: tema opuesto al del sistema, pausa,
 regreso) es la etapa 9, todavía no implementada.
+
+## Íconos e imagen para compartir (`assets/img/`)
+
+- `favicon.svg`: la mascota (círculo `#6C5CE0`). Es el ícono que usan los
+  navegadores con SVG.
+- `favicon-32.png`: el mismo SVG rasterizado a 32 px con fondo transparente
+  (`magick -background none -density 600 favicon.svg -resize 32x32`), para
+  los navegadores sin favicon SVG.
+- `apple-touch-icon.png` (180×180): la mascota con su halo sobre el fondo
+  claro del sitio, sin transparencia (iOS redondea las esquinas solo).
+- `og-yaruki.png` (1200×630): nombre, significado, lema y mascota, para
+  Open Graph y Twitter/X. Se generó con Chromium headless desde una página
+  HTML con las fuentes de `assets/fuentes/` (el `やる気` con Noto Sans CJK
+  del sistema) y se pasó a PNG de 8 bits con ImageMagick (~20 KB).
+
+Los metadatos `og:*` y `twitter:*` de `index.html` apuntan a
+`https://yaruki.hjgr.dev/`, con URL absoluta (las redes no resuelven
+rutas relativas). Si cambia el dominio, actualizarlos junto con
+`<link rel="canonical">`.
 
 ## Librerías vendorizadas (`assets/js/vendor/`)
 
