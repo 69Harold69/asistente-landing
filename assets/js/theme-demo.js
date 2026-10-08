@@ -1,36 +1,30 @@
-import { prefiereOscuroElSistema, temaExplicitoActual } from "./theme.js";
+import { temaEfectivo, temaExplicitoActual, opuestoDe, fijarTema, transicionarTema, cortarTransicion } from "./theme.js";
 
 /*
-  Yaruki — demo del tema al cargar (plan, parte B, etapa 9): un parpadeo
-  breve al tema CONTRARIO del que está activo (guardado o del sistema),
-  para que la persona vea que el toggle existe sin tener que ir a
-  buscarlo. Reglas, todas explícitas del encargo:
-  - Una sola vez por visita — `sessionStorage`, envuelto en try/catch (si
-    el storage está bloqueado, mejor no insistir en cada carga que romper
-    la página).
-  - Nunca si la persona pide menos movimiento (`prefers-reduced-motion`).
-  - Revierte EXACTAMENTE al estado de antes: si no había `data-theme`
-    explícito (seguía al sistema), lo saca del todo al terminar — nunca
-    "fija" sin querer un tema que la persona no eligió tocando el toggle.
-  - La transición en sí la hace CSS (`--theme-transition`, tokens.css,
-    ~600ms) al cambiar `data-theme` — acá sólo se agendan los 2 cambios
-    de atributo con `setTimeout`, nada de animar nada a mano.
+  Yaruki — demo del tema al cargar (decisión 3.5 del plan). Invita a mirar
+  el toggle en vez de "parpadear": el tema contrario se revela en un círculo
+  que crece DESDE el botón sol/luna (~700 ms), se queda ~1.2 s con una pista
+  al lado ("Prueba el modo oscuro"/"…claro") y se contrae de vuelta hacia el
+  botón. El ícono anima de sol a luna con el cambio (base.css).
+
+  - Una vez por visita (`sessionStorage`, en try/catch: sin storage se trata
+    como ya vista, mejor no insistir en cada recarga).
+  - Nunca con `prefers-reduced-motion`.
+  - Revierte exactamente al estado de antes: si seguía al sistema, quita el
+    atributo — nunca fija un tema que la persona no eligió.
+  - Se cancela al primer clic en el toggle (`cancelarDemo`): la elección de
+    la persona gana siempre (N3).
 */
 const CLAVE_DEMO = "yaruki-theme-demo-visto";
-const ESPERA_INICIAL_MS = 700;
-const DURACION_VISIBLE_MS = 1000;
+const ESPERA_INICIAL_MS = 1300;
+const DURACION_VISIBLE_MS = 1200;
 
-function prefiereMovimientoReducido() {
-  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
+let demo = null;
 
 function yaSeMostro() {
   try {
     return sessionStorage.getItem(CLAVE_DEMO) === "1";
   } catch {
-    // Sin `sessionStorage` (privado/bloqueado): no se puede recordar entre
-    // cargas, pero tampoco se insiste — tratarlo como "ya visto" es más
-    // seguro que repetir el parpadeo en cada recarga de la sesión.
     return true;
   }
 }
@@ -39,26 +33,66 @@ function marcarMostrado() {
   try {
     sessionStorage.setItem(CLAVE_DEMO, "1");
   } catch {
-    /* Ver comentario de `yaSeMostro` — no hay nada que recuperar acá. */
+    /* Ver `yaSeMostro`. */
   }
 }
 
-export function mostrarDemoDeTemaSiCorresponde() {
-  if (prefiereMovimientoReducido() || yaSeMostro()) return;
+function mostrarPista(pista, tema) {
+  if (!pista) return;
+  pista.textContent = tema === "dark" ? "Prueba el modo oscuro" : "Prueba el modo claro";
+  pista.hidden = false;
+  // Un cuadro después, para que la transición de entrada arranque desde oculto.
+  requestAnimationFrame(() => requestAnimationFrame(() => pista.classList.add("pista-tema--visible")));
+}
+
+function ocultarPista(pista) {
+  if (!pista || pista.hidden) return;
+  pista.classList.remove("pista-tema--visible");
+  window.setTimeout(() => {
+    if (!pista.classList.contains("pista-tema--visible")) pista.hidden = true;
+  }, 300);
+}
+
+export function mostrarDemoDeTemaSiCorresponde(boton) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || yaSeMostro() || !boton) return;
   marcarMostrado();
 
+  const pista = document.getElementById("pista-tema");
   const explicitoAntes = temaExplicitoActual();
-  const actual = explicitoAntes ?? (prefiereOscuroElSistema() ? "dark" : "light");
-  const opuesto = actual === "dark" ? "light" : "dark";
+  const opuesto = opuestoDe(temaEfectivo());
+  const timers = [];
+  demo = { explicitoAntes, temaAntes: temaEfectivo(), pista, timers };
 
-  window.setTimeout(() => {
-    document.documentElement.setAttribute("data-theme", opuesto);
+  timers.push(
     window.setTimeout(() => {
-      if (explicitoAntes) {
-        document.documentElement.setAttribute("data-theme", explicitoAntes);
-      } else {
-        document.documentElement.removeAttribute("data-theme");
-      }
-    }, DURACION_VISIBLE_MS);
-  }, ESPERA_INICIAL_MS);
+      if (!demo) return;
+      mostrarPista(pista, opuesto);
+      transicionarTema(() => fijarTema(opuesto), { origen: boton, modo: "revelar" }).then(() => {
+        if (!demo) return;
+        timers.push(
+          window.setTimeout(() => {
+            if (!demo) return;
+            ocultarPista(pista);
+            transicionarTema(() => fijarTema(explicitoAntes), { origen: boton, modo: "contraer" }).then(() => {
+              demo = null;
+            });
+          }, DURACION_VISIBLE_MS)
+        );
+      });
+    }, ESPERA_INICIAL_MS)
+  );
+}
+
+/**
+ * Corta la demo si está en curso. Devuelve el tema que se veía ANTES de la
+ * demo (la base sobre la que el clic decide), o null si no había demo.
+ */
+export function cancelarDemo() {
+  if (!demo) return null;
+  const { temaAntes, explicitoAntes, pista, timers } = demo;
+  demo = null;
+  timers.forEach((t) => window.clearTimeout(t));
+  cortarTransicion();
+  ocultarPista(pista);
+  return { temaAntes, explicitoAntes };
 }

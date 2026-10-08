@@ -68,9 +68,6 @@
   /* Medida de línea para texto largo (legales) */
   --measure: 38rem;
 
-  /* Transición suave de tema (ver plan, 4.0) */
-  --theme-transition: 600ms ease;
-
   /* Sombra con tinte cálido en claro, neutra en oscuro — ver cada bloque de tema. */
   --shadow-color: 25deg 30% 20%;
 

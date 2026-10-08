@@ -1,5 +1,13 @@
-import { inicializarTema, alternarTema, sincronizarToggle } from "./theme.js";
-import { mostrarDemoDeTemaSiCorresponde } from "./theme-demo.js";
+import {
+  inicializarTema,
+  sincronizarToggle,
+  temaEfectivo,
+  opuestoDe,
+  fijarTema,
+  guardarTema,
+  transicionarTema,
+} from "./theme.js";
+import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js";
 import { inicializarEscenario } from "./stage.js";
 import { inicializarTilt } from "./tilt.js";
 import { BETA_URL } from "./config.js";
@@ -15,13 +23,28 @@ import { BETA_URL } from "./config.js";
 inicializarTema();
 const escenario = inicializarEscenario();
 inicializarTilt();
-mostrarDemoDeTemaSiCorresponde();
 
+/*
+  Toggle sol/luna: el mismo revelado circular que la demo. El primer clic
+  cancela la demo si sigue en curso, y decide sobre el tema que se veía
+  ANTES de la demo — quien toca el botón mientras se lee "Prueba el modo
+  oscuro" se queda en oscuro.
+*/
 const botonesTema = document.querySelectorAll("[data-theme-toggle]");
 botonesTema.forEach((boton) => {
-  boton.addEventListener("click", () => alternarTema());
+  boton.addEventListener("click", () => {
+    const previa = cancelarDemo();
+    const siguiente = opuestoDe(previa ? previa.temaAntes : temaEfectivo());
+    guardarTema(siguiente);
+    if (temaEfectivo() === siguiente) {
+      fijarTema(siguiente);
+      return;
+    }
+    transicionarTema(() => fijarTema(siguiente), { origen: boton, modo: "revelar" });
+  });
 });
 sincronizarToggle(botonesTema);
+mostrarDemoDeTemaSiCorresponde(botonesTema[0]);
 
 /*
   Botón "Únete a la beta" (decisión 3.8 del plan): mientras `BETA_URL` esté

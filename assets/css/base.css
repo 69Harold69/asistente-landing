@@ -10,6 +10,15 @@ html {
   color-scheme: light dark;
 }
 
+/* `color-scheme` sigue al tema elegido (barras de scroll, controles nativos). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   background: var(--color-bg);
@@ -19,7 +28,6 @@ body {
   font-size: var(--text-base);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  transition: background-color var(--theme-transition), color var(--theme-transition);
 }
 
 img,
@@ -496,9 +504,8 @@ strong {
 /* Toggle de tema (sol/luna) en el header ---------------------------------- */
 
 .theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
   width: 2.6rem;
   height: 2.6rem;
   border-radius: 50%;
@@ -515,43 +522,163 @@ strong {
   color: var(--color-accent);
 }
 
+/* Los dos íconos apilados en la misma celda: el cambio de tema los cruza
+   girando (sol → luna), sólo con transform/opacity. */
 .theme-toggle svg {
+  grid-area: 1 / 1;
   width: 1.2rem;
   height: 1.2rem;
+  transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.theme-toggle .icono-sol {
-  display: none;
+/* Claro: se ve la luna (lo que el botón ofrece); oscuro: el sol. */
+.theme-toggle .icono-sol,
+:root[data-theme="light"] .theme-toggle .icono-sol {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.4);
 }
 
-.theme-toggle .icono-luna {
-  display: block;
+.theme-toggle .icono-luna,
+:root[data-theme="light"] .theme-toggle .icono-luna {
+  opacity: 1;
+  transform: none;
 }
 
 :root[data-theme="dark"] .theme-toggle .icono-sol {
-  display: block;
+  opacity: 1;
+  transform: none;
 }
 
 :root[data-theme="dark"] .theme-toggle .icono-luna {
-  display: none;
+  opacity: 0;
+  transform: rotate(90deg) scale(0.4);
 }
 
 @media (prefers-color-scheme: dark) {
-  .theme-toggle .icono-sol {
-    display: block;
+  :root:not([data-theme="light"]) .theme-toggle .icono-sol {
+    opacity: 1;
+    transform: none;
   }
 
-  .theme-toggle .icono-luna {
-    display: none;
+  :root:not([data-theme="light"]) .theme-toggle .icono-luna {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.4);
   }
 }
 
-:root[data-theme="light"] .theme-toggle .icono-sol {
-  display: none;
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle svg {
+    transition: none;
+  }
 }
 
-:root[data-theme="light"] .theme-toggle .icono-luna {
-  display: block;
+/* Pista de la demo de tema: burbuja bajo el botón con una flechita hacia él. */
+.toggle-envoltura {
+  position: relative;
+  display: inline-flex;
+}
+
+.pista-tema {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: -0.25rem;
+  z-index: 20;
+  padding: 0.45em 0.9em;
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-0.4rem);
+  transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.pista-tema::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  right: calc(1.3rem + 0.25rem - 0.4rem);
+  border: 0.4rem solid transparent;
+  border-bottom-color: var(--color-text);
+}
+
+.pista-tema--visible {
+  opacity: 1;
+  transform: none;
+}
+
+/*
+  Cambio de tema con View Transitions (theme.js): el tema nuevo se revela en
+  un círculo que crece desde el botón (`data-vt="revelar"`) o el viejo se
+  encoge hacia él (`data-vt="contraer"`). Centro y radio: --vt-x/--vt-y/--vt-r.
+*/
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+:root[data-vt="revelar"]::view-transition-new(root) {
+  animation: vt-revelar 700ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+:root[data-vt="contraer"]::view-transition-old(root) {
+  z-index: 2;
+  animation: vt-contraer 600ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+@keyframes vt-revelar {
+  from {
+    clip-path: circle(0 at var(--vt-x) var(--vt-y));
+  }
+  to {
+    clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y));
+  }
+}
+
+@keyframes vt-contraer {
+  from {
+    clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y));
+  }
+  to {
+    clip-path: circle(0 at var(--vt-x) var(--vt-y));
+  }
+}
+
+/*
+  Respaldo sin View Transitions: los colores del tema se registran como
+  <color> para poder transicionar las VARIABLES en :root. Todo el sitio
+  (teléfono, franja, chips, toggle) cruza a la vez, sin bandas.
+*/
+@property --color-bg { syntax: "<color>"; inherits: true; initial-value: #faf7f2; }
+@property --color-bg-elevated { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --color-text { syntax: "<color>"; inherits: true; initial-value: #221f1b; }
+@property --color-text-secondary { syntax: "<color>"; inherits: true; initial-value: #6b6459; }
+@property --color-accent { syntax: "<color>"; inherits: true; initial-value: #6c5ce0; }
+@property --color-accent-soft { syntax: "<color>"; inherits: true; initial-value: #ece9fb; }
+@property --color-on-accent-soft { syntax: "<color>"; inherits: true; initial-value: #5443c9; }
+@property --color-on-accent-ui { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --color-border { syntax: "<color>"; inherits: true; initial-value: #ece6dd; }
+@property --color-border-card { syntax: "<color>"; inherits: true; initial-value: #ddd4c7; }
+@property --color-canto { syntax: "<color>"; inherits: true; initial-value: #d3c9bb; }
+
+:root.tema-fundido {
+  transition:
+    --color-bg 600ms ease,
+    --color-bg-elevated 600ms ease,
+    --color-text 600ms ease,
+    --color-text-secondary 600ms ease,
+    --color-accent 600ms ease,
+    --color-accent-soft 600ms ease,
+    --color-on-accent-soft 600ms ease,
+    --color-on-accent-ui 600ms ease,
+    --color-border 600ms ease,
+    --color-border-card 600ms ease,
+    --color-canto 600ms ease;
 }
 
 .header-acciones {
