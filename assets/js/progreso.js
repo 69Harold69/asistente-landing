@@ -1,9 +1,11 @@
 /*
-  Yaruki — barra de avance del recorrido: respaldo en JS cuando el navegador
-  no tiene animaciones ligadas al scroll.
+  Yaruki — barra de avance del recorrido (respaldo en JS cuando el navegador
+  no tiene animaciones ligadas al scroll) y la pista "Desliza para
+  descubrir", que se desvanece con el primer scroll.
 */
 export function inicializarProgreso() {
   const barra = document.querySelector(".progreso-recorrido");
+  const pista = document.querySelector(".pista-scroll");
   const nativa = window.CSS?.supports?.("animation-timeline: scroll()");
   let pendiente = 0;
 
@@ -17,6 +19,9 @@ export function inicializarProgreso() {
   }
 
   function alScroll() {
+    if (pista && window.scrollY > 8 && !pista.classList.contains("pista-scroll--oculta")) {
+      pista.classList.add("pista-scroll--oculta");
+    }
     if (!pendiente) pendiente = requestAnimationFrame(actualizar);
   }
 

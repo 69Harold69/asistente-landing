@@ -1215,3 +1215,59 @@ strong {
   }
 }
 
+/* "Desliza para descubrir": al pie del primer pantallazo en escritorio,
+   debajo de la nota en móvil. Se desvanece al primer scroll (progreso.js). */
+.pista-scroll {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: opacity 0.4s ease;
+}
+
+.pista-scroll-flecha {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--color-accent);
+}
+
+.pista-scroll--oculta {
+  opacity: 0;
+}
+
+@media (min-width: 1024px) {
+  .pista-scroll {
+    position: absolute;
+    bottom: var(--space-4);
+    left: 0;
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pista-scroll {
+    animation: subir-entra 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 900ms both;
+  }
+
+  .pista-scroll-flecha {
+    animation: pista-rebote 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+
+  .pista-scroll--oculta .pista-scroll-flecha {
+    animation: none;
+  }
+}
+
+@keyframes pista-rebote {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
