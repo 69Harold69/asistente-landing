@@ -64,14 +64,6 @@ a:hover {
   transform: none;
 }
 
-.visually-hidden-heading {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-}
-
 h1,
 h2,
 h3 {
@@ -407,14 +399,6 @@ strong {
   margin-bottom: var(--space-1);
 }
 
-.hero .meaning {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--text-md);
-  color: var(--color-accent);
-  margin-bottom: var(--space-3);
-}
-
 .hero .pitch {
   max-width: 36rem;
   margin: 0 auto var(--space-4);
@@ -429,21 +413,6 @@ strong {
   gap: var(--space-2);
   flex-wrap: wrap;
   margin-bottom: var(--space-1);
-}
-
-.hero .cta-note {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.status-note {
-  max-width: 34rem;
-  margin: var(--space-4) auto 0;
-  padding-left: var(--space-3);
-  padding-right: var(--space-3);
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
 }
 
 .link-grid {
@@ -467,9 +436,6 @@ strong {
   padding: var(--space-3);
   text-decoration: none;
   color: var(--color-text);
-}
-
-.link-card {
   transition: border-color 160ms ease, transform 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -540,9 +506,6 @@ strong {
   background: var(--color-bg-elevated);
   color: var(--color-text);
   flex-shrink: 0;
-}
-
-.theme-toggle {
   cursor: pointer;
   transition: border-color 160ms ease, color 160ms ease;
 }
@@ -916,12 +879,6 @@ strong {
   margin-top: var(--space-1);
 }
 
-@media (max-width: 1023px) {
-  #cta {
-    justify-content: center;
-  }
-}
-
 /*
   Escritorio: el cierre es más alto que una pantalla (150vh) a propósito —
   le da a `position:sticky` margen para que el Dashboard aterrice al centro
@@ -960,19 +917,22 @@ strong {
   padding: var(--space-6) 0 var(--space-5);
 }
 
-.privacidad-section .seccion-cta {
-  margin-bottom: 0;
-  /*
-    Pisa el `max-width: 40rem` de `.seccion-cta` (pensado para un párrafo de
-    cierre, no para una cuadrícula de 4 tarjetas) — con esa clase puesta
-    acá también (mismo `<div class="container seccion-cta">`), las 2 reglas
-    tienen la misma especificidad y gana la última declarada en el archivo;
-    esta, más específica (`.privacidad-section .seccion-cta`), gana
-    siempre. Sin esto, las 4 tarjetas de abajo quedaban apretadas en 640px
-    — "Eliminar tu cuenta" se partía palabra por palabra (bug real, punto
-    de control 2.5).
-  */
+/* Contenido del Centro de Privacidad: centrado, más ancho que el cierre
+   (4 tarjetas). Clase propia en vez de reusar `.seccion-cta` y pisarla por
+   especificidad (bug real del punto de control 2.5). */
+.privacidad-contenido {
   max-width: 64rem;
+  text-align: center;
+}
+
+.privacidad-contenido .fase-titulo {
+  max-width: none;
+}
+
+.privacidad-contenido .fase-texto {
+  max-width: 40ch;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .privacidad-section .link-grid {
