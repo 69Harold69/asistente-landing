@@ -176,6 +176,12 @@
   padding-top: 0;
 }
 
+/* El envoltorio lo escala el scroll del hero (stage.js); la mascota de
+   adentro respira sola. Cada uno es dueño de su propio `transform`. */
+.ps-dot-escala {
+  display: flex;
+}
+
 .ps-splash .ps-dot {
   width: calc(96 * var(--dp));
   height: calc(96 * var(--dp));

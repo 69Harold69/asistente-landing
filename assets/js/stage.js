@@ -2,32 +2,29 @@ import { ESCENAS } from "./scenes/registro.js";
 import { barraDeEstado } from "./icons.js";
 
 /**
- * Escenario del teléfono 3D — orquestador real (plan, 4.1/4.2/5.3/5.4).
+ * Escenario del teléfono 3D — orquestador (plan, 4.1/4.2/5.3/5.4).
  *
  * Dos modos, elegidos una sola vez al cargar:
- * 1. **Inspección** (`?escena=&cara=`, sin UI visible — ver README): monta
- *    una escena fija y una cara fija, sin GSAP/ScrollTrigger. Pensado para
- *    QA/capturas, no para visitantes reales.
- * 2. **Coreografía real** (todo lo demás): `gsap.matchMedia()` con 3
- *    ramas —
- *    - Escritorio + sin pedir menos movimiento: el teléfono "vuela" de
- *      lado a lado girando 360° en Y entre cada fase, ligado al scroll
- *      (`scrub`), con el cambio de escena pasando cerca de los 180° (de
- *      espaldas, invisible).
- *    - Móvil (<1024px) + sin pedir menos movimiento: el mismo giro 360°,
- *      pero EN EL LUGAR — sin volar de lado a lado (plan 5.4) — con el
- *      teléfono sticky arriba (ver base.css/phone.css) y el texto pasando
- *      por debajo.
- *    - `prefers-reduced-motion: reduce` (cualquier ancho): crossfade liso,
- *      sin giros ni vuelo.
- *    En las 3 el hero (Splash → Login) es un caso aparte: no es una fase
- *    con "antes/después" que vuela, es la primera escena de todas, con su
- *    propio cruce ligado al scroll y reversible (etapa 3).
+ * 1. **Inspección** (`?escena=&cara=&angulo=`, sin UI visible — ver README):
+ *    monta una escena fija y una cara fija, sin coreografía. Para QA.
+ * 2. **Coreografía**: el estado COMPLETO del teléfono (qué escena o escenas
+ *    están montadas, cuánto pesa cada una, ángulo, desplazamiento, escala)
+ *    es una FUNCIÓN PURA de una posición de scroll "virtual" (`estadoEn`).
+ *    No hay estado acumulado por eventos (`onEnter`/`onLeaveBack`), así que
+ *    no puede quedar desincronizado: en cada posición, bajando o subiendo,
+ *    el teléfono muestra la escena del texto que se lee.
  *
- * Sólo se anima `transform` y `opacity` en todo este archivo (regla
- * explícita del encargo) — la "sombra que se alarga" del vuelo es una
- * elipse aparte (`#sombra-vuelo`) escalada/atenuada con esas mismas dos
- * propiedades, nunca el `box-shadow` estático del teléfono.
+ * La posición virtual sigue al scroll real con un suavizado (el equivalente
+ * a `scrub` de ScrollTrigger) y un LÍMITE DE VELOCIDAD dentro de cada giro:
+ * nunca avanza más de `PASO_MAX_GIRO` del tramo por cuadro (≈36°). Con un
+ * salto brusco (End, Home, arrastrar la barra, `scrollTo`) el teléfono
+ * recorre los giros intermedios rápido pero cuadro a cuadro, y como la
+ * escena se decide sobre el ángulo YA SUAVIZADO, el cambio cae siempre de
+ * espaldas (entre 90° y 270° hay al menos 4 cuadros). El `scrub` de GSAP no
+ * alcanza para eso: su primer cuadro tras un salto avanza ~8% de la
+ * distancia total y puede saltarse un giro entero de un cuadro al otro.
+ *
+ * Sólo se anima `transform` y `opacity`.
  */
 
 const ROTACION_POR_CARA = { frente: 0, canto: 80, espalda: 180 };
@@ -38,6 +35,13 @@ const CARA_POR_DEFECTO = "frente";
 const CAPAS_CANTO = 12;
 /** Debajo de este |sen θ| (≈1.5°) el canto mide menos de medio pixel: se oculta. */
 const UMBRAL_CANTO = 0.025;
+/** Debajo de este |cos θ| (≈4.6° alrededor de 90°/270°) se ven las capas de filo: entran los planos sólidos. */
+const UMBRAL_FILO = 0.08;
+
+/** Constante de tiempo del suavizado (s): con 0.12 alcanza ~95% en 0.36 s, parecido a `scrub: 0.6`. */
+const TAU_SUAVIZADO = 0.12;
+/** Avance máximo por cuadro dentro de un giro, como fracción del tramo (0.1 → 36° por cuadro). */
+const PASO_MAX_GIRO = 0.1;
 
 function leerParametrosDeInspeccion() {
   const params = new URLSearchParams(window.location.search);
@@ -53,10 +57,9 @@ function leerParametrosDeInspeccion() {
 
 /**
  * Genera las capas del canto: N contornos redondeados repartidos en Z entre
- * la espalda (-D/2) y el frente (+D/2), sin tocar ninguno de los dos planos
- * (medio paso de margen en cada extremo, para que no peleen en profundidad
- * con las caras). El tono sigue un perfil de seno: más claro al centro,
- * más oscuro hacia las caras — se lee como un marco con bordes redondeados.
+ * la espalda (-D/2) y el frente (+D/2), más dos planos sólidos
+ * perpendiculares (uno por lado) que tapan las rayas que dejan las capas
+ * vistas exactamente de filo, a 90°/270°.
  */
 function construirCanto(telefono) {
   const canto = telefono.querySelector(".phone-canto");
@@ -73,16 +76,28 @@ function construirCanto(telefono) {
     capa.style.setProperty("--sombra", Math.round((1 - centro) * 26));
     fragmento.appendChild(capa);
   }
+  for (const lado of ["izq", "der"]) {
+    const plano = document.createElement("span");
+    plano.className = `phone-plano phone-plano--${lado}`;
+    fragmento.appendChild(plano);
+  }
   canto.appendChild(fragmento);
 }
 
-/** Aplica el ángulo y muestra el canto sólo cuando aporta (lejos de 0° y 180°). */
+/**
+ * Aplica el ángulo. `data-canto`: "oculto" de frente/espaldas, "visible"
+ * girado y "filo" cerca de 90°/270° (suma los planos sólidos).
+ * `data-espalda`: el halo de la mascota sólo anima mientras la espalda se ve.
+ */
 function fijarRotacion(telefono, grados) {
   telefono.style.setProperty("--rotacion-y", `${grados}deg`);
-  const visible = Math.abs(Math.sin((grados * Math.PI) / 180)) > UMBRAL_CANTO;
-  if (visible !== (telefono.dataset.canto === "visible")) {
-    telefono.dataset.canto = visible ? "visible" : "oculto";
-  }
+  const rad = (grados * Math.PI) / 180;
+  const sen = Math.abs(Math.sin(rad));
+  const cos = Math.cos(rad);
+  const canto = sen <= UMBRAL_CANTO ? "oculto" : Math.abs(cos) < UMBRAL_FILO ? "filo" : "visible";
+  if (telefono.dataset.canto !== canto) telefono.dataset.canto = canto;
+  const espalda = cos < 0.05 ? "visible" : "oculta";
+  if (telefono.dataset.espalda !== espalda) telefono.dataset.espalda = espalda;
 }
 
 /** Aplica el ancho real de cada `[data-progreso]` vía CSSOM (no `style=""` en el HTML). */
@@ -107,371 +122,462 @@ export function inicializarEscenario() {
   const telefono = document.getElementById("telefono");
   const pantalla = document.getElementById("pantalla-telefono");
   const sombraVuelo = document.getElementById("sombra-vuelo");
-  if (!telefono || !pantalla) return;
+  if (!telefono || !pantalla) return null;
 
   construirCanto(telefono);
 
   const { escena, cara, angulo } = leerParametrosDeInspeccion();
   if (escena || cara || angulo !== null) {
-    inicializarModoInspeccion(telefono, pantalla, escena, cara, angulo);
-    return;
+    montarEnCapa(pantalla, escena ?? ESCENA_POR_DEFECTO);
+    fijarRotacion(telefono, angulo ?? ROTACION_POR_CARA[cara ?? CARA_POR_DEFECTO]);
+    telefono.dataset.cara = angulo !== null ? `${angulo}` : cara ?? CARA_POR_DEFECTO;
+    return null;
   }
 
-  if (!window.gsap || !window.ScrollTrigger) {
-    // No debería pasar (vendorizados locales, cargados antes que este
-    // módulo) — si por lo que sea faltan, mejor mostrar el cierre real que
-    // dejar la pantalla vacía.
+  if (!window.gsap) {
+    // No debería pasar (vendorizado local): mejor el cierre real que la pantalla vacía.
     montarEnCapa(pantalla, "dashboard");
-    return;
+    return null;
   }
 
-  inicializarCoreografia(telefono, pantalla, sombraVuelo);
-}
-
-function inicializarModoInspeccion(telefono, pantalla, escena, cara, angulo) {
-  montarEnCapa(pantalla, escena ?? ESCENA_POR_DEFECTO);
-  const idCara = cara ?? CARA_POR_DEFECTO;
-  fijarRotacion(telefono, angulo ?? ROTACION_POR_CARA[idCara]);
-  telefono.dataset.cara = angulo !== null ? `${angulo}` : idCara;
+  return inicializarCoreografia(telefono, pantalla, sombraVuelo);
 }
 
 /**
- * Administrador de 2 capas físicas (`.capa-escena`) dentro de la pantalla.
- * Dos formas de usarlas:
- * - `irA(id)`: swap discreto — monta en la capa inactiva, cruza opacidad
- *   (animada o de golpe) y INTERCAMBIA cuál es "actual"/"siguiente". La usan
- *   los vuelos entre fases y la rama sin movimiento.
- * - `prepararCruce`/`fijarCruce`: cruce continuo ligado a un progreso 0..1
- *   para un tramo acotado (hero, sub-cruce hábitos→logro) — NO intercambia
- *   roles, así que quien lo usa no debe llamar `irA` hasta que su propio
- *   tramo haya terminado de verdad.
+ * Dos capas físicas (`.capa-escena`) dentro de la pantalla. `mostrar(base,
+ * encima, t)` deja `base` opaca abajo y `encima` arriba con opacidad `t`,
+ * montando cada id en la capa que haga falta: siempre según lo que pide el
+ * estado, nunca según qué capa "era la actual" (causa del bug B1).
+ * La escena dominante (la de más peso) es la única que corre su loop.
  */
-function crearAdministradorDeCapas(pantalla, idInicial) {
-  const capaA = document.createElement("div");
-  const capaB = document.createElement("div");
-  capaA.className = "capa-escena";
-  capaB.className = "capa-escena";
-  capaB.style.opacity = "0";
-  pantalla.append(capaA, capaB);
+function crearCapas(pantalla) {
+  const capas = [0, 1].map(() => {
+    const c = document.createElement("div");
+    c.className = "capa-escena";
+    c.style.opacity = "0";
+    pantalla.append(c);
+    return c;
+  });
+  const montada = new Map();
+  const opacidad = new Map();
+  let activa = null;
 
-  const estado = { actual: capaA, siguiente: capaB, idActual: idInicial };
-  montarEnCapa(capaA, idInicial);
-  ESCENAS[idInicial]?.play?.();
+  const capaCon = (id) => capas.find((c) => montada.get(c) === id) ?? null;
 
-  function irA(idNuevo, { animar = false, duracion = 0.5 } = {}) {
-    if (idNuevo === estado.idActual) return;
-    const idViejo = estado.idActual;
-    montarEnCapa(estado.siguiente, idNuevo);
-    if (animar) {
-      gsap.to(estado.actual, { opacity: 0, duration: duracion, overwrite: true });
-      gsap.to(estado.siguiente, { opacity: 1, duration: duracion, overwrite: true });
-    } else {
-      gsap.set(estado.actual, { opacity: 0 });
-      gsap.set(estado.siguiente, { opacity: 1 });
+  function asegurar(id, evitar) {
+    let capa = capaCon(id);
+    if (!capa) {
+      capa = capas.find((c) => c !== evitar);
+      montarEnCapa(capa, id);
+      montada.set(capa, id);
+      // Re-montar la escena que está corriendo (sólo puede pasar si la capa
+      // fue reciclada) la deja con referencias nuevas: arrancarla de nuevo.
+      if (id === activa) ESCENAS[id]?.play?.();
     }
-    const tmp = estado.actual;
-    estado.actual = estado.siguiente;
-    estado.siguiente = tmp;
-    estado.idActual = idNuevo;
-    // Ciclo de vida de los loops propios de cada escena (plan, parte B: "los
-    // loops arrancan y pausan con onEnter/onLeave") — `irA` es el único
-    // punto por el que pasa TODO cambio de escena visible (las 5 fases de
-    // `FASES` y la rama sin movimiento), así que alcanza con engancharlo acá
-    // una sola vez en vez de repetir el cableo en cada `ScrollTrigger`.
-    // `pause`/`play` son opcionales (la mayoría de las escenas no tienen
-    // loop propio — Splash/Login/Elementos-estático/etc.) de ahí el `?.`.
-    ESCENAS[idViejo]?.pause?.();
-    ESCENAS[idNuevo]?.play?.();
+    return capa;
   }
 
-  function prepararCruce(idDestino) {
-    montarEnCapa(estado.siguiente, idDestino);
+  function fijarOpacidad(capa, valor, z) {
+    const v = Math.round(valor * 1000) / 1000;
+    if (opacidad.get(capa) === v) return;
+    opacidad.set(capa, v);
+    capa.style.opacity = String(v);
+    capa.style.zIndex = String(z);
   }
 
-  function fijarCruce(p) {
-    gsap.set(estado.actual, { opacity: 1 - p });
-    gsap.set(estado.siguiente, { opacity: p });
+  function mostrar(base, encima = null, t = 0) {
+    if (!encima || t <= 0) {
+      encima = null;
+      t = 0;
+    } else if (t >= 1) {
+      base = encima;
+      encima = null;
+      t = 0;
+    }
+    const capaEncima = encima ? capaCon(encima) : null;
+    const capaBase = asegurar(base, capaEncima);
+    const otra = capas.find((c) => c !== capaBase);
+    if (encima) asegurar(encima, capaBase);
+    fijarOpacidad(capaBase, 1, 1);
+    fijarOpacidad(otra, encima ? t : 0, 2);
+
+    const dominante = encima && t >= 0.5 ? encima : base;
+    if (dominante !== activa) {
+      if (activa) ESCENAS[activa]?.pause?.();
+      activa = dominante;
+      ESCENAS[activa]?.play?.();
+    }
   }
 
-  return { estado, irA, prepararCruce, fijarCruce };
-}
-
-/** `sin(θ)` normalizado 0→1→0 a lo largo de un progreso 0..1 — el "arco" del vuelo. */
-function arco(p) {
-  return Math.sin(p * Math.PI);
+  return { mostrar, capaCon };
 }
 
 /*
-  Tramos de scroll de cada vuelo, como "borde de la sección / punto del
-  viewport" de ScrollTrigger. Cada sección narrativa mide al menos una
-  pantalla (base.css), así que un tramo de medio viewport nunca se solapa con
-  el de la sección vecina.
-
-  El vuelo termina ANTES de que el texto de su sección llegue al centro de la
-  pantalla: el teléfono ya muestra la escena de la que habla el texto
-  mientras se lee. (Antes el vuelo arrancaba con la sección arriba del todo,
-  "top top", y el teléfono iba una sección atrasado respecto del texto.)
+  Tramos de cada transición, como "borde superior de la sección / punto del
+  viewport" (en %, igual que `start: "top 55%"` de ScrollTrigger). Cada giro
+  termina ANTES de que el texto de su sección llegue al centro: el teléfono
+  ya muestra la escena de la que habla el texto mientras se lee.
 */
 const TRAMOS = {
-  escritorio: { inicio: "top 55%", fin: "top 5%", finCierre: "top top" },
+  escritorio: { ini: 62, fin: 12, finCierre: 0, iniCierre: 84, chat: null, logro: { ini: -25, fin: -55 } },
   // En móvil el texto arranca 46vh debajo del borde de su sección (base.css).
-  movil: { inicio: "top 85%", fin: "top 25%", finCierre: "top 20%" },
-};
-/*
-  En móvil el teléfono vive EN FLUJO entre el hero y el chat, y se pega
-  arriba recién cuando la sección del chat llega a ~44% del viewport (justo
-  debajo de la franja). El primer vuelo arranca ahí, nunca con el teléfono
-  todavía a medio entrar en pantalla.
-*/
-const TRAMO_CHAT_MOVIL = { inicio: "top 44%", fin: "top top" };
-/*
-  Sub-cruce hábitos → logro (la sección de hábitos mide 160vh): primero un
-  tramo con el heatmap quieto mientras se lee el primer párrafo, después el
-  cruce a logro con el segundo párrafo ("Más adelante… Próximamente") en
-  pantalla. En móvil el texto arranca 46vh más abajo, por eso es otro tramo.
-*/
-const TRAMOS_LOGRO = {
-  escritorio: { inicio: "top -25%", fin: "top -55%" },
-  movil: { inicio: "top 8%", fin: "top -22%" },
+  movil: { ini: 92, fin: 38, finCierre: 20, iniCierre: 92, chat: { ini: 60, fin: 14 }, logro: { ini: 8, fin: -22 } },
 };
 
-/** Posición de scroll (px) en la que `el.top` toca `pct` del viewport. */
-function scrollDonde(el, pct) {
-  return el.getBoundingClientRect().top + window.scrollY - (pct / 100) * window.innerHeight;
+const FASES = [
+  { seccion: "fase-chat", antes: "login", despues: "chat", invertido: false },
+  { seccion: "fase-elementos", antes: "chat", despues: "elementos", invertido: true },
+  { seccion: "fase-habitos", antes: "elementos", despues: "habitos", invertido: false },
+  { seccion: "fase-llamada", antes: "logro", despues: "llamada", invertido: true },
+  { seccion: "cta", antes: "llamada", despues: "dashboard", invertido: false, cierre: true },
+];
+
+const SECCIONES_ANCLA = ["hero", "fase-chat", "fase-elementos", "fase-habitos", "fase-llamada", "cta"];
+
+/** Top del elemento en coordenadas del documento, sin contar `transform` (los reveals de texto mueven las secciones). */
+function topDoc(el) {
+  let y = 0;
+  for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
+  return y;
 }
 
+/** Alto (px) de los bloques de texto de una sección visibles entre `desde` y `hasta` (coordenadas del documento). */
+function textoVisible(bloques, desde, hasta) {
+  let px = 0;
+  for (const b of bloques) px += Math.max(0, Math.min(b.fin, hasta) - Math.max(b.ini, desde));
+  return px;
+}
+
+function bloquesDeTexto(id) {
+  const sec = document.getElementById(id);
+  if (!sec) return [];
+  return [...sec.querySelectorAll("p, h1, h2, .cta-row")].map((el) => {
+    const ini = topDoc(el);
+    return { ini, fin: ini + el.offsetHeight };
+  });
+}
+
+/** Primera posición de scroll en [desde, hasta] donde el texto de `nueva` se ve más que el de `previa`. */
+function cruceDeLectura(previa, nueva, desde, hasta, zonaTexto, vh) {
+  const a = bloquesDeTexto(previa);
+  const b = bloquesDeTexto(nueva);
+  for (let y = Math.max(0, desde); y <= hasta; y += 8) {
+    if (textoVisible(b, y + zonaTexto, y + vh) > textoVisible(a, y + zonaTexto, y + vh)) return y;
+  }
+  return (desde + hasta) / 2;
+}
+
+const arco = (p) => Math.sin(p * Math.PI);
+const limitar01 = (v) => Math.min(Math.max(v, 0), 1);
+const suave = (v) => {
+  const x = limitar01(v);
+  return x * x * (3 - 2 * x);
+};
+
 function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
-  gsap.registerPlugin(ScrollTrigger);
-  const capas = crearAdministradorDeCapas(pantalla, "splash");
+  const capas = crearCapas(pantalla);
   const stageEl = telefono.closest(".stage");
+  const mqReducido = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const mqEscritorio = window.matchMedia("(min-width: 1024px)");
 
-  const secciones = {
-    hero: document.getElementById("hero"),
-    chat: document.getElementById("fase-chat"),
-    elementos: document.getElementById("fase-elementos"),
-    habitos: document.getElementById("fase-habitos"),
-    llamada: document.getElementById("fase-llamada"),
-    cta: document.getElementById("cta"),
-  };
+  let modo = null; // "escritorio" | "movil" | "reducido"
+  let geo = null;
+  let anchoMedido = 0;
+  let ancla = null;
+  let redimensionando = false;
+  let interactuo = false;
+  let virtual = window.scrollY;
+  let enMarcha = false;
+  let ultimo = null;
 
-  // Cadena de fases: cada una sabe de qué escena viene y a cuál va. El
-  // flag `invertido` alterna el lado hacia el que "vuela" el teléfono —
-  // mismo criterio que `.seccion--par` (columnas alternadas, plan 4.2).
-  const FASES = [
-    { trigger: secciones.chat, antes: "login", despues: "chat", invertido: false },
-    { trigger: secciones.elementos, antes: "chat", despues: "elementos", invertido: true },
-    { trigger: secciones.habitos, antes: "elementos", despues: "habitos", invertido: false },
-    { trigger: secciones.llamada, antes: "logro", despues: "llamada", invertido: true },
-    { trigger: secciones.cta, antes: "llamada", despues: "dashboard", invertido: false, cierre: true },
-  ];
+  const calcularModo = () => (mqReducido.matches ? "reducido" : mqEscritorio.matches ? "escritorio" : "movil");
 
-  /*
-    Cuánto hay que correr el teléfono para que el Dashboard aterrice en el
-    CENTRO HORIZONTAL DE LA PÁGINA y no sólo de su columna (plan 4.6). Se
-    recalcula en cada refresh de ScrollTrigger (resize).
-  */
-  let offsetCentradoCierre = 0;
-  function medirCentradoCierre() {
-    if (!stageEl || window.innerWidth < 1024) {
-      offsetCentradoCierre = 0;
+  function medir() {
+    modo = calcularModo();
+    const vh = window.innerHeight;
+    const tr = mqEscritorio.matches ? TRAMOS.escritorio : TRAMOS.movil;
+    const pos = (id, pct) => {
+      const el = document.getElementById(id);
+      return el ? topDoc(el) - (pct / 100) * vh : 0;
+    };
+    const segmentos = [];
+    for (const f of FASES) {
+      const trFase = f.seccion === "fase-chat" && tr.chat ? tr.chat : tr;
+      segmentos.push({
+        tipo: "giro",
+        ini: pos(f.seccion, f.cierre ? tr.iniCierre : trFase.ini),
+        fin: pos(f.seccion, f.cierre ? tr.finCierre : trFase.fin),
+        antes: f.antes,
+        despues: f.despues,
+        invertido: f.invertido,
+        cierre: !!f.cierre,
+      });
+      if (f.despues === "habitos") {
+        segmentos.push({
+          tipo: "cruce",
+          ini: pos(f.seccion, tr.logro.ini),
+          fin: pos(f.seccion, tr.logro.fin),
+          antes: "habitos",
+          despues: "logro",
+        });
+      }
+    }
+    segmentos.forEach((s) => {
+      s.fin = Math.max(s.fin, s.ini + 1);
+      s.paso = (s.fin - s.ini) * PASO_MAX_GIRO;
+    });
+    // Sin giro, el frente se ve siempre: el fundido tiene que caer justo
+    // donde el texto que se lee pasa de una sección a la otra.
+    const zonaTexto = mqEscritorio.matches ? 0 : 0.44 * vh;
+    FASES.forEach((f, i) => {
+      const s = segmentos.find((x) => x.tipo === "giro" && x.despues === f.despues);
+      const previa = i === 0 ? "hero" : FASES[i - 1].seccion;
+      s.cruceTexto = cruceDeLectura(previa, f.seccion, s.ini - vh * 0.5, s.fin + vh * 0.5, zonaTexto, vh);
+    });
+    const iniPrimerGiro = segmentos[0].ini;
+    let offsetCierre = 0;
+    if (mqEscritorio.matches && stageEl) {
+      const r = stageEl.getBoundingClientRect();
+      offsetCierre = window.innerWidth / 2 - (r.left + r.width / 2);
+    }
+    geo = {
+      hero: { ini: 0, fin: Math.max(120, iniPrimerGiro * 0.75) },
+      segmentos,
+      offsetCierre,
+      secciones: SECCIONES_ANCLA.map((id) => {
+        const el = document.getElementById(id);
+        return { id, top: el ? topDoc(el) : 0, alto: el ? el.offsetHeight : 1 };
+      }),
+      max: Math.max(0, document.documentElement.scrollHeight - vh),
+    };
+    anchoMedido = window.innerWidth;
+    ultimo = null;
+  }
+
+  /** Estado del teléfono en la posición `y` — función pura de la geometría medida. */
+  function estadoEn(y) {
+    const conMovimiento = modo !== "reducido";
+    const lateral = modo === "escritorio";
+    const e = { base: "login", encima: null, t: 0, rot: 0, x: 0, escala: 1, mascota: 1, enGiro: false, sombra: 0 };
+
+    if (y < geo.hero.fin) {
+      const p = limitar01(y / geo.hero.fin);
+      // La mascota cubre la pantalla en p≈0.6; el cruce a Login va de 0.5 a 1.
+      e.base = "splash";
+      e.encima = "login";
+      e.t = limitar01((p - 0.5) / 0.5);
+      e.mascota = conMovimiento ? 1 + Math.min(p / 0.6, 1) * 5 : 1;
+      return e;
+    }
+
+    let escena = "login";
+    let xFinal = 0;
+    for (const s of geo.segmentos) {
+      const ini = conMovimiento || s.tipo !== "giro" ? s.ini : Math.min(s.ini, s.cruceTexto - 70);
+      const fin = conMovimiento || s.tipo !== "giro" ? s.fin : Math.max(s.fin, s.cruceTexto + 10);
+      if (y < ini) break;
+      if (y <= fin) {
+        const p = limitar01((y - s.ini) / (s.fin - s.ini));
+        if (s.tipo === "cruce") {
+          e.base = s.antes;
+          e.encima = s.despues;
+          e.t = p;
+          e.x = xFinal;
+          return e;
+        }
+        if (!conMovimiento) {
+          // Sin giro: fundido corto que termina justo donde cambia el texto que se lee.
+          e.base = s.antes;
+          e.encima = s.despues;
+          e.t = suave((y - s.cruceTexto) / 60 + 1);
+          return e;
+        }
+        const a = arco(p);
+        e.base = p * 360 < 180 ? s.antes : s.despues;
+        e.rot = p * 360;
+        e.enGiro = true;
+        e.sombra = a;
+        if (lateral) {
+          // Arco lateral de ±160 px y escala 0.9 a mitad del vuelo (aprobados);
+          // el cierre suma un corrimiento que en p=1 deja el teléfono al centro.
+          e.x = (s.invertido ? -1 : 1) * a * 160 + (s.cierre ? geo.offsetCierre * p : 0);
+          e.escala = 1 - a * 0.1;
+        } else {
+          e.escala = 1 - a * 0.06;
+        }
+        return e;
+      }
+      escena = s.despues;
+      xFinal = s.cierre && lateral ? geo.offsetCierre : 0;
+    }
+    e.base = escena;
+    e.x = xFinal;
+    return e;
+  }
+
+  function aplicar(e) {
+    const clave = `${e.base}|${e.encima}|${e.t.toFixed(3)}|${e.rot.toFixed(2)}|${e.x.toFixed(1)}|${e.escala.toFixed(4)}|${e.mascota.toFixed(3)}`;
+    if (clave === ultimo) return;
+    ultimo = clave;
+
+    capas.mostrar(e.base, e.encima, e.t);
+    fijarRotacion(telefono, e.rot);
+    telefono.style.setProperty("--vuelo-x", `${e.x}px`);
+    telefono.style.setProperty("--vuelo-escala", `${e.escala}`);
+    telefono.style.willChange = e.enGiro ? "transform" : "auto";
+    if (sombraVuelo) {
+      sombraVuelo.style.opacity = `${e.enGiro ? 0.15 + e.sombra * 0.5 : 0}`;
+      sombraVuelo.style.transform = `scaleX(${1 + e.sombra * 0.6})`;
+    }
+    const mascota = capas.capaCon("splash")?.querySelector(".ps-dot-escala");
+    if (mascota) mascota.style.transform = e.mascota === 1 ? "" : `scale(${e.mascota})`;
+    telefono.dispatchEvent(new CustomEvent("yaruki:estado", { detail: e }));
+  }
+
+  /**
+   * Avanza de `desde` hacia `hasta` sin cruzar más de `paso` dentro de un
+   * giro en un solo cuadro (los tramos quietos y los fundidos se cruzan de
+   * una). Los segmentos se recorren en el orden del movimiento.
+   */
+  function limitarAvance(desde, hasta) {
+    if (modo === "reducido" || hasta === desde) return hasta;
+    const sube = hasta < desde;
+    const lista = sube ? [...geo.segmentos].reverse() : geo.segmentos;
+    for (const s of lista) {
+      if (s.tipo !== "giro") continue;
+      if (!sube) {
+        if (s.fin <= desde) continue;
+        if (s.ini >= hasta) break;
+        const entrada = Math.max(desde, s.ini);
+        if (hasta > entrada + s.paso) return entrada + s.paso;
+      } else {
+        if (s.ini >= desde) continue;
+        if (s.fin <= hasta) break;
+        const entrada = Math.min(desde, s.fin);
+        if (hasta < entrada - s.paso) return entrada - s.paso;
+      }
+    }
+    return hasta;
+  }
+
+  const objetivo = () => Math.min(Math.max(window.scrollY, 0), geo.max || Infinity);
+
+  function tick(_t, deltaMs) {
+    const meta = objetivo();
+    const dif = meta - virtual;
+    if (!interactuo || Math.abs(dif) < 0.5) {
+      // Antes de la primera interacción (carga, restauración del scroll del
+      // navegador) se salta directo: no hay ningún "cambio" que ver todavía.
+      virtual = meta;
+      aplicar(estadoEn(virtual));
+      dormir();
       return;
     }
-    const r = stageEl.getBoundingClientRect();
-    offsetCentradoCierre = window.innerWidth / 2 - (r.left + r.width / 2);
-  }
-  medirCentradoCierre();
-  ScrollTrigger.addEventListener("refreshInit", medirCentradoCierre);
-
-  /**
-   * Un vuelo entre fases — compartido por escritorio (con desplazamiento
-   * lateral) y móvil (en el lugar): gira 360°, cambia de escena cerca de
-   * los 180° (de espaldas) y, si `invertido`, alterna el lado del arco.
-   * `fijarRotacion` muestra/oculta las capas del canto según el ángulo; la
-   * sombra de vuelo se escala acá mismo.
-   */
-  function registrarVuelo({ trigger, antes, despues, invertido, cierre }, { conDesplazamiento, tramo }) {
-    if (!trigger) return null;
-    let lado = false;
-    const propio = tramoDe(trigger, tramo);
-    return ScrollTrigger.create({
-      trigger,
-      start: propio.inicio,
-      end: cierre ? tramo.finCierre : propio.fin,
-      scrub: 0.4,
-      onUpdate(self) {
-        const p = self.progress;
-        const a = arco(p);
-        fijarRotacion(telefono, p * 360);
-        // `will-change` sólo mientras el teléfono está en pleno vuelo: fuera
-        // de eso el navegador puede soltar la capa promovida.
-        telefono.style.willChange = p > 0 && p < 1 ? "transform" : "auto";
-        if (conDesplazamiento) {
-          // Arco lateral de ±160px y escala 0.9 a mitad del vuelo (aprobados);
-          // el cierre suma un corrimiento que en p=1 deja el teléfono en el
-          // centro de la página.
-          const base = (invertido ? -1 : 1) * a * 160;
-          const corrimiento = cierre ? offsetCentradoCierre * p : 0;
-          telefono.style.setProperty("--vuelo-x", `${base + corrimiento}px`);
-          telefono.style.setProperty("--vuelo-escala", `${1 - a * 0.1}`);
-        } else {
-          // Móvil: giro 360° EN EL LUGAR (plan 5.4).
-          telefono.style.setProperty("--vuelo-x", "0px");
-          telefono.style.setProperty("--vuelo-escala", `${1 - a * 0.06}`);
-        }
-        if (sombraVuelo) {
-          sombraVuelo.style.opacity = `${0.15 + a * 0.5}`;
-          sombraVuelo.style.transform = `scaleX(${1 + a * 0.6})`;
-        }
-        const pasoAlDespues = p >= 0.5;
-        if (pasoAlDespues !== lado) {
-          lado = pasoAlDespues;
-          capas.irA(lado ? despues : antes, { animar: false });
-          // El sub-cruce hábitos→logro necesita su destino montado en la
-          // capa inactiva justo cuando el vuelo termina de mostrar "habitos".
-          if (lado && despues === "habitos") {
-            capas.prepararCruce("logro");
-          }
-        }
-      },
-    });
+    const k = 1 - Math.exp(-Math.min(deltaMs, 64) / 1000 / TAU_SUAVIZADO);
+    // Un piso de velocidad para no arrastrar la cola del suavizado.
+    let deseado = virtual + dif * k;
+    if (Math.abs(deseado - virtual) < 0.6) deseado = virtual + Math.sign(dif) * Math.min(0.6, Math.abs(dif));
+    virtual = limitarAvance(virtual, deseado);
+    aplicar(estadoEn(virtual));
   }
 
-  /*
-    Cierre: el Dashboard aterriza al centro (fin del último vuelo, a 0°) y
-    se queda quieto mientras se lee el CTA; cuando `position:sticky` se
-    suelta, el teléfono sube junto con la página y entra el footer. Antes se
-    desvanecía justo antes de soltarse (para no dejar ver un canto flotando
-    a medio giro), y eso dejaba casi una pantalla en blanco; al aterrizar
-    de frente ya no hay canto que esconder.
-  */
-
-  /**
-   * Sub-cruce hábitos → logro (plan 4.4, punto 3): cruce continuo de
-   * opacidad, y el loop de cada escena arranca/pausa al cruzar la mitad, para
-   * que el confeti no dispare antes de verse ni el switch siga de fondo.
-   */
-  function registrarSubCruceHabitosLogro(tramoLogro) {
-    if (!secciones.habitos) return null;
-    let enLogro = false;
-    return ScrollTrigger.create({
-      trigger: secciones.habitos,
-      start: tramoLogro.inicio,
-      end: tramoLogro.fin,
-      scrub: 0.3,
-      onUpdate(self) {
-        capas.fijarCruce(self.progress);
-        const pasoALogro = self.progress >= 0.5;
-        if (pasoALogro !== enLogro) {
-          enLogro = pasoALogro;
-          if (pasoALogro) {
-            ESCENAS.habitos?.pause?.();
-            ESCENAS.logro?.play?.();
-          } else {
-            ESCENAS.logro?.pause?.();
-            ESCENAS.habitos?.play?.();
-          }
-        }
-      },
-    });
+  function despertar() {
+    if (enMarcha) return;
+    enMarcha = true;
+    gsap.ticker.add(tick);
   }
 
-  /*
-    Hero: Splash respira → al scrollear, la mascota escala hasta cubrir la
-    pantalla → cruza a Login (etapa 3), reversible. Arranca en el scroll 0 y
-    termina un poco antes de que empiece el primer vuelo (login → chat), para
-    que el Login alcance a verse quieto. Cruce continuo
-    (prepararCruce/fijarCruce): `capas.estado` no cambia de roles durante el
-    hero, así que el primer vuelo encuentra el escenario como lo dejó.
-  */
-  /** Tramo de una fase: el general de la rama, salvo el chat en móvil. */
-  function tramoDe(trigger, tramo) {
-    return trigger === secciones.chat && tramo === TRAMOS.movil ? TRAMO_CHAT_MOVIL : tramo;
+  function dormir() {
+    if (!enMarcha) return;
+    enMarcha = false;
+    gsap.ticker.remove(tick);
   }
 
-  function registrarHero(tramo) {
-    if (!secciones.hero || !secciones.chat) return [];
-    const puntoMascota = capas.estado.actual.querySelector(".ps-dot");
-    if (puntoMascota) {
-      // La escala la controla el scroll: sin la animación CSS de "respirar"
-      // peleando por `transform` en el mismo elemento.
-      puntoMascota.style.animation = "none";
+  function seccionLeida(y) {
+    const linea = y + window.innerHeight * 0.5;
+    let actual = geo.secciones[0];
+    for (const s of geo.secciones) if (s.top <= linea) actual = s;
+    return actual;
+  }
+
+  function guardarAncla() {
+    if (redimensionando || window.innerWidth !== anchoMedido) return;
+    const s = seccionLeida(window.scrollY);
+    ancla = { id: s.id, f: (window.scrollY + window.innerHeight * 0.5 - s.top) / Math.max(s.alto, 1) };
+  }
+
+  /** Re-mide; si cambió la rama (cruce de 1024 px o de "reducir movimiento"), vuelve a la misma sección. */
+  function reacomodar() {
+    const modoAntes = modo;
+    const anchoAntes = anchoMedido;
+    const anclaAntes = ancla;
+    medir();
+    if (anclaAntes && (modo !== modoAntes || window.innerWidth !== anchoAntes)) {
+      const s = geo.secciones.find((x) => x.id === anclaAntes.id);
+      if (s) {
+        const y = s.top + anclaAntes.f * s.alto - window.innerHeight * 0.5;
+        window.scrollTo({ top: Math.max(0, Math.min(y, geo.max)), behavior: "instant" });
+      }
     }
-    capas.prepararCruce("login");
-    const pctInicioChat = parseFloat(tramoDe(secciones.chat, tramo).inicio.split(" ")[1]);
-    const st = ScrollTrigger.create({
-      start: 0,
-      end: () => Math.max(120, scrollDonde(secciones.chat, pctInicioChat) * 0.75),
-      scrub: 0.3,
-      onUpdate(self) {
-        const p = self.progress;
-        // La mascota cubre la pantalla en p≈0.6; el cruce a Login va de 0.5 a 1.
-        const pEscala = Math.min(p / 0.6, 1);
-        const pCruce = Math.max((p - 0.5) / 0.5, 0);
-        if (puntoMascota) {
-          puntoMascota.style.transform = `scale(${1 + pEscala * 5})`;
-        }
-        capas.fijarCruce(pCruce);
-      },
-    });
-    return [st];
+    virtual = objetivo();
+    aplicar(estadoEn(virtual));
+    redimensionando = false;
+    guardarAncla();
   }
 
-  function registrarRecorrido({ conDesplazamiento, tramo, tramoLogro }) {
-    const triggers = [...registrarHero(tramo)];
-    FASES.forEach((fase) => triggers.push(registrarVuelo(fase, { conDesplazamiento, tramo })));
-    triggers.push(registrarSubCruceHabitosLogro(tramoLogro));
-    return () => triggers.filter(Boolean).forEach((t) => t.kill());
+  let rafResize = 0;
+  function alRedimensionar() {
+    redimensionando = true;
+    cancelAnimationFrame(rafResize);
+    rafResize = requestAnimationFrame(reacomodar);
   }
 
-  const mm = gsap.matchMedia();
+  medir();
+  virtual = objetivo();
+  aplicar(estadoEn(virtual));
+  guardarAncla();
 
-  // ---- Escritorio + con movimiento: vuelo lateral con giro 360°.
-  mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () =>
-    registrarRecorrido({ conDesplazamiento: true, tramo: TRAMOS.escritorio, tramoLogro: TRAMOS_LOGRO.escritorio })
+  const marcarInteraccion = () => {
+    interactuo = true;
+  };
+  for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) {
+    window.addEventListener(ev, marcarInteraccion, { passive: true, capture: true });
+  }
+  window.addEventListener(
+    "scroll",
+    () => {
+      guardarAncla();
+      despertar();
+    },
+    { passive: true }
   );
+  window.addEventListener("resize", alRedimensionar);
+  mqReducido.addEventListener?.("change", alRedimensionar);
+  // Cambios de alto del documento sin resize (fuentes, reveals): re-medir.
+  if ("ResizeObserver" in window) {
+    let primero = true;
+    new ResizeObserver(() => {
+      if (primero) {
+        primero = false;
+        return;
+      }
+      if (!redimensionando) {
+        medir();
+        aplicar(estadoEn(virtual));
+      }
+    }).observe(document.body);
+  }
 
-  // ---- Móvil + con movimiento: el mismo giro 360°, en el lugar (plan 5.4).
-  mm.add("(max-width: 1023px) and (prefers-reduced-motion: no-preference)", () =>
-    registrarRecorrido({ conDesplazamiento: false, tramo: TRAMOS.movil, tramoLogro: TRAMOS_LOGRO.movil })
-  );
-
-  // ---- Quien pidió menos movimiento (cualquier ancho): crossfades discretos,
-  // sin giros ni vuelo. Cada fase cambia cuando su sección llega a la mitad
-  // del viewport; como cada sección mide al menos una pantalla, el orden de
-  // disparo entre fases vecinas está garantizado.
-  mm.add("(prefers-reduced-motion: reduce)", () => {
-    const triggers = [];
-    if (secciones.hero) {
-      triggers.push(
-        ScrollTrigger.create({
-          trigger: secciones.hero,
-          start: "bottom 80%",
-          onEnter: () => capas.irA("login", { animar: true }),
-          onLeaveBack: () => capas.irA("splash", { animar: true }),
-        })
-      );
-    }
-    FASES.forEach(({ trigger, antes, despues }) => {
-      if (!trigger) return;
-      triggers.push(
-        ScrollTrigger.create({
-          trigger,
-          start: "top 50%",
-          onEnter: () => capas.irA(despues, { animar: true }),
-          onLeaveBack: () => capas.irA(antes, { animar: true }),
-        })
-      );
-    });
-    if (secciones.habitos) {
-      triggers.push(
-        ScrollTrigger.create({
-          trigger: secciones.habitos,
-          start: "top -15%",
-          onEnter: () => capas.irA("logro", { animar: true }),
-          onLeaveBack: () => capas.irA("habitos", { animar: true }),
-        })
-      );
-    }
-    return () => triggers.forEach((t) => t.kill());
-  });
+  return {
+    /** Sección (id) cuyo texto se lee ahora, para la navegación con puntos. */
+    seccionLeida: () => seccionLeida(window.scrollY).id,
+    /** Posición de scroll que deja una sección "en lectura" (la usa la navegación). */
+    destinoDe(id) {
+      const s = geo.secciones.find((x) => x.id === id);
+      return s ? Math.min(s.top, geo.max) : 0;
+    },
+    get geometria() {
+      return geo;
+    },
+  };
 }

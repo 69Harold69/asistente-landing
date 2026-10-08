@@ -7,13 +7,17 @@ export const id = "splash";
 
 export function mount(contenedor) {
   contenedor.innerHTML = `
-    <div class="escena ps-splash ps-center">
-      <span class="ps-dot" aria-hidden="true"></span>
+    <div class="escena ps-splash">
+      <span class="ps-dot-escala" aria-hidden="true"><span class="ps-dot"></span></span>
     </div>
   `;
 }
 
-/** Sin coreografía de scroll todavía (etapa 2) — ver KDoc del plan, 5.3. */
+/**
+ * La mascota respira con CSS (`.ps-splash .ps-dot`, scenes.css) y el scroll
+ * del hero la escala desde `stage.js` sobre `.ps-dot-escala`, el envoltorio:
+ * cada uno es dueño de su propio `transform`, así no se pisan.
+ */
 export function play() {
   return null;
 }
