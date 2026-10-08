@@ -580,10 +580,11 @@ strong {
   queda a la altura de la franja. `.stage` pinta encima (`z-index`) para tapar
   prolijo lo que sigue subiendo por detrás.
 
-  Escritorio (≥1024px): grid de 2 columnas — texto a la izquierda y `.stage`
-  sticky a la derecha, abarcando hero + secciones (`grid-row: 1 / 3`) para
-  quedar pegado durante todo el recorrido. Filas explícitas: el
-  auto-placement de Grid no rellena hacia atrás una celda libre.
+  Escritorio (≥1024px): dos columnas parejas, pero el teléfono NO vive en
+  ninguna. `.stage` abarca el ancho completo y todas las filas (sticky, sin
+  eventos de puntero) y el teléfono vuela de la columna libre de una sección
+  a la de la siguiente (stage.js). Cada sección pone su texto centrado en su
+  columna: izquierda por defecto, derecha con `.seccion--derecha`.
 */
 
 .layout-con-stage {
@@ -609,10 +610,14 @@ strong {
   }
 
   .layout-con-stage {
+    /* Hueco entre columnas y ancho de cada columna. `--columna` lleva un %:
+       se resuelve contra el ancho del bloque de quien la usa (`.secciones`,
+       `#hero`), que es el ancho completo del layout. */
+    --hueco: var(--space-5);
+    --columna: calc(50% - var(--hueco) / 2);
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
-    column-gap: var(--space-4);
     margin: 0 auto;
     padding: 0 var(--space-3);
   }
@@ -620,19 +625,18 @@ strong {
   .layout-con-stage > #hero {
     grid-column: 1;
     grid-row: 1;
-    z-index: auto;
   }
 
   .layout-con-stage > .secciones {
     grid-column: 1;
     grid-row: 2;
-    z-index: auto;
   }
 
+  /* El escenario se superpone a todo, por encima del texto (el teléfono
+     cruza la página) pero sin capturar clics. */
   .layout-con-stage > .stage {
-    grid-column: 2;
+    grid-column: 1;
     grid-row: 1 / 3;
-    z-index: auto;
   }
 }
 
@@ -704,6 +708,10 @@ strong {
 */
 @media (min-width: 1024px) {
   .seccion {
+    --ancho-texto: min(31rem, var(--columna));
+    width: var(--ancho-texto);
+    max-width: none;
+    margin-left: calc((var(--columna) - var(--ancho-texto)) / 2);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -711,15 +719,15 @@ strong {
     padding: var(--space-6) 0;
   }
 
-  #fase-habitos {
-    min-height: 160vh;
+  /* Texto en la columna derecha: el teléfono queda a la izquierda. El texto
+     sigue alineado a la izquierda (un párrafo alineado a la derecha se lee
+     peor); lo que se alterna es la columna. */
+  .seccion--derecha {
+    margin-left: calc(50% + var(--hueco) / 2 + (var(--columna) - var(--ancho-texto)) / 2);
   }
 
-  /* Fases pares: el bloque de texto se corre hacia el teléfono (plan 4.2,
-     "las columnas se alternan"), pero el texto sigue alineado a la
-     izquierda — un párrafo alineado a la derecha se lee peor. */
-  .seccion--par {
-    margin-left: auto;
+  #fase-habitos {
+    min-height: 160vh;
   }
 }
 
@@ -730,9 +738,9 @@ strong {
 
 @media (min-width: 1024px) {
   .seccion-hero {
-    /* El primer pantallazo completo es el hero, centrado con el teléfono. */
+    /* El primer pantallazo completo es el hero, a la par del teléfono. */
+    --ancho-texto: min(36rem, var(--columna));
     min-height: calc(100vh - 6rem);
-    max-width: 40rem;
     padding: var(--space-4) 0 var(--space-6);
   }
 }
@@ -888,14 +896,11 @@ strong {
 */
 @media (min-width: 1024px) {
   #cta {
+    width: 21rem;
+    margin-left: 0;
     min-height: 150vh;
     justify-content: flex-start;
     padding-top: 22vh;
-  }
-
-  #cta.seccion-cta {
-    max-width: 21rem;
-    margin: 0;
     text-align: left;
   }
 

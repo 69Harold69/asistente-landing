@@ -71,10 +71,8 @@
     top: var(--space-3);
     height: calc(100vh - var(--space-4));
     align-items: center;
-    pointer-events: auto;
-    /* Overflow visible a propósito: el "vuelo" de la etapa 4 saca el
-       teléfono del ancho de su propia columna hacia el texto y de vuelta —
-       si esto recortara, el vuelo se vería guillotinado en el borde. */
+    /* Abarca el ancho completo del layout y pinta encima del texto: sin
+       eventos de puntero, para no tapar enlaces ni botones. */
     overflow: visible;
   }
 }
@@ -89,6 +87,15 @@
   perspective: 1600px;
   width: var(--phone-width);
   flex-shrink: 0;
+  /* Vuelo de una columna a la otra: la perspectiva viaja con el teléfono,
+     así el giro se ve simétrico en cualquier punto del recorrido. */
+  transform: translateX(var(--vuelo-x, 0px)) scale(var(--vuelo-escala, 1));
+}
+
+/* Inclinación sutil con el mouse (tilt.js), compuesta aparte del giro. */
+.phone-tilt {
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
 }
 
 /*
@@ -150,11 +157,9 @@
   width: 100%;
   aspect-ratio: 9 / 19.5;
   transform-style: preserve-3d;
-  /* Orden fijo: `stage.js` sólo toca las 3 variables, nunca reescribe esta
-     propiedad — así el orden de composición (trasladar, achicar, girar)
-     queda siempre igual cuadro a cuadro. */
-  transform: translateX(var(--vuelo-x, 0px)) scale(var(--vuelo-escala, 1))
-    rotateY(var(--rotacion-y, 0deg));
+  /* `stage.js` sólo toca la variable; el vuelo y la inclinación viven en
+     los envoltorios (.escenario-3d, .phone-tilt). */
+  transform: rotateY(var(--rotacion-y, 0deg));
 }
 
 /*

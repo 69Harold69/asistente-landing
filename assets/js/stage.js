@@ -219,17 +219,23 @@ function crearCapas(pantalla) {
   ya muestra la escena de la que habla el texto mientras se lee.
 */
 const TRAMOS = {
-  escritorio: { ini: 62, fin: 12, finCierre: 0, iniCierre: 84, chat: null, logro: { ini: -25, fin: -55 } },
+  escritorio: { ini: 76, fin: 20, finCierre: 0, iniCierre: 84, chat: null, logro: { ini: -25, fin: -55 } },
   // En móvil el texto arranca 46vh debajo del borde de su sección (base.css).
   movil: { ini: 92, fin: 38, finCierre: 20, iniCierre: 92, chat: { ini: 60, fin: 14 }, logro: { ini: 8, fin: -22 } },
 };
 
+/*
+  Cadena de fases. `lado`: columna en la que queda el teléfono al terminar
+  el cruce, en escritorio (1 derecha, -1 izquierda, 0 centro de la página).
+  El texto de cada sección va en la otra columna (`.seccion--derecha`).
+*/
+const LADO_HERO = 1;
 const FASES = [
-  { seccion: "fase-chat", antes: "login", despues: "chat", invertido: false },
-  { seccion: "fase-elementos", antes: "chat", despues: "elementos", invertido: true },
-  { seccion: "fase-habitos", antes: "elementos", despues: "habitos", invertido: false },
-  { seccion: "fase-llamada", antes: "logro", despues: "llamada", invertido: true },
-  { seccion: "cta", antes: "llamada", despues: "dashboard", invertido: false, cierre: true },
+  { seccion: "fase-chat", antes: "login", despues: "chat", lado: -1 },
+  { seccion: "fase-elementos", antes: "chat", despues: "elementos", lado: 1 },
+  { seccion: "fase-habitos", antes: "elementos", despues: "habitos", lado: -1 },
+  { seccion: "fase-llamada", antes: "logro", despues: "llamada", lado: 1 },
+  { seccion: "cta", antes: "llamada", despues: "dashboard", lado: 0, cierre: true },
 ];
 
 const SECCIONES_ANCLA = ["hero", "fase-chat", "fase-elementos", "fase-habitos", "fase-llamada", "cta"];
@@ -268,6 +274,7 @@ function cruceDeLectura(previa, nueva, desde, hasta, zonaTexto, vh) {
 }
 
 const arco = (p) => Math.sin(p * Math.PI);
+const entradaYSalida = (p) => (p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2);
 const limitar01 = (v) => Math.min(Math.max(v, 0), 1);
 const suave = (v) => {
   const x = limitar01(v);
@@ -277,6 +284,7 @@ const suave = (v) => {
 function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   const capas = crearCapas(pantalla);
   const stageEl = telefono.closest(".stage");
+  const escenario = document.getElementById("escenario-3d") ?? telefono;
   const mqReducido = window.matchMedia("(prefers-reduced-motion: reduce)");
   const mqEscritorio = window.matchMedia("(min-width: 1024px)");
 
@@ -309,7 +317,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
         fin: pos(f.seccion, f.cierre ? tr.finCierre : trFase.fin),
         antes: f.antes,
         despues: f.despues,
-        invertido: f.invertido,
+        lado: f.lado,
         cierre: !!f.cierre,
       });
       if (f.despues === "habitos") {
@@ -322,7 +330,12 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
         });
       }
     }
+    let ladoPrevio = LADO_HERO;
     segmentos.forEach((s) => {
+      if (s.tipo === "giro") {
+        s.ladoAntes = ladoPrevio;
+        ladoPrevio = s.lado;
+      }
       s.fin = Math.max(s.fin, s.ini + 1);
       s.paso = (s.fin - s.ini) * PASO_MAX_GIRO;
     });
@@ -335,15 +348,27 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       s.cruceTexto = cruceDeLectura(previa, f.seccion, s.ini - vh * 0.5, s.fin + vh * 0.5, zonaTexto, vh);
     });
     const iniPrimerGiro = segmentos[0].ini;
-    let offsetCierre = 0;
+    // Centro de cada columna respecto del centro del escenario (que abarca
+    // el ancho completo del layout): el teléfono vuela entre esos dos puntos.
+    const columnas = { "-1": 0, 0: 0, 1: 0 };
     if (mqEscritorio.matches && stageEl) {
       const r = stageEl.getBoundingClientRect();
-      offsetCierre = window.innerWidth / 2 - (r.left + r.width / 2);
+      const centro = r.left + r.width / 2;
+      const centroDe = (sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return centro;
+        const b = el.getBoundingClientRect();
+        return b.left + b.width / 2;
+      };
+      const mitad = r.width / 4;
+      columnas["1"] = centroDe(".seccion--derecha") - centro || mitad;
+      columnas["-1"] = centroDe("#fase-elementos") - centro || -mitad;
     }
     geo = {
+      escritorio: mqEscritorio.matches,
       hero: { ini: 0, fin: Math.max(120, iniPrimerGiro * 0.75) },
       segmentos,
-      offsetCierre,
+      columnas,
       secciones: SECCIONES_ANCLA.map((id) => {
         const el = document.getElementById(id);
         return { id, top: el ? topDoc(el) : 0, alto: el ? el.offsetHeight : 1 };
@@ -357,8 +382,10 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   /** Estado del teléfono en la posición `y` — función pura de la geometría medida. */
   function estadoEn(y) {
     const conMovimiento = modo !== "reducido";
-    const lateral = modo === "escritorio";
-    const e = { base: "login", encima: null, t: 0, rot: 0, x: 0, escala: 1, mascota: 1, enGiro: false, sombra: 0 };
+    // Dos columnas en escritorio también sin movimiento (el teléfono salta de lado).
+    const lateral = geo.escritorio;
+    const xDe = (lado) => (lateral ? geo.columnas[String(lado)] : 0);
+    const e = { base: "login", encima: null, t: 0, rot: 0, x: xDe(LADO_HERO), escala: 1, opacidad: 1, mascota: 1, enGiro: false, sombra: 0 };
 
     if (y < geo.hero.fin) {
       const p = limitar01(y / geo.hero.fin);
@@ -371,10 +398,10 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     }
 
     let escena = "login";
-    let xFinal = 0;
+    let xFinal = xDe(LADO_HERO);
     for (const s of geo.segmentos) {
-      const ini = conMovimiento || s.tipo !== "giro" ? s.ini : Math.min(s.ini, s.cruceTexto - 70);
-      const fin = conMovimiento || s.tipo !== "giro" ? s.fin : Math.max(s.fin, s.cruceTexto + 10);
+      const ini = conMovimiento || s.tipo !== "giro" ? s.ini : Math.min(s.ini, s.cruceTexto - 160);
+      const fin = conMovimiento || s.tipo !== "giro" ? s.fin : Math.max(s.fin, s.cruceTexto + 180);
       if (y < ini) break;
       if (y <= fin) {
         const p = limitar01((y - s.ini) / (s.fin - s.ini));
@@ -386,10 +413,24 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
           return e;
         }
         if (!conMovimiento) {
-          // Sin giro: fundido corto que termina justo donde cambia el texto que se lee.
-          e.base = s.antes;
-          e.encima = s.despues;
-          e.t = suave((y - s.cruceTexto) / 60 + 1);
+          // Sin giro ni vuelo: la escena cambia justo donde cambia el texto que
+          // se lee. Si además cambia de columna (escritorio), el teléfono se
+          // desvanece, salta de lado invisible y reaparece.
+          if (lateral && s.lado !== s.ladoAntes) {
+            // Se apaga cuando el texto nuevo empieza a subir hacia su columna
+            // y reaparece del otro lado cuando ese texto ya es el que se lee.
+            const salida = Math.min(s.ini, s.cruceTexto - 120);
+            const ya = y >= s.cruceTexto;
+            e.base = ya ? s.despues : s.antes;
+            e.x = xDe(ya ? s.lado : s.ladoAntes);
+            e.opacidad = ya ? suave((y - s.cruceTexto - 70) / 100) : 1 - suave((y - salida) / 120);
+          } else {
+            const k = suave((y - s.cruceTexto) / 60 + 1);
+            e.base = s.antes;
+            e.encima = s.despues;
+            e.t = k;
+            e.x = xDe(s.lado);
+          }
           return e;
         }
         const a = arco(p);
@@ -398,9 +439,9 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
         e.enGiro = true;
         e.sombra = a;
         if (lateral) {
-          // Arco lateral de ±160 px y escala 0.9 a mitad del vuelo (aprobados);
-          // el cierre suma un corrimiento que en p=1 deja el teléfono al centro.
-          e.x = (s.invertido ? -1 : 1) * a * 160 + (s.cierre ? geo.offsetCierre * p : 0);
+          // De una columna a la otra (o al centro, en el cierre), con escala
+          // 0.9 a mitad del vuelo (aprobada).
+          e.x = xDe(s.ladoAntes) + (xDe(s.lado) - xDe(s.ladoAntes)) * entradaYSalida(p);
           e.escala = 1 - a * 0.1;
         } else {
           e.escala = 1 - a * 0.06;
@@ -408,7 +449,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
         return e;
       }
       escena = s.despues;
-      xFinal = s.cierre && lateral ? geo.offsetCierre : 0;
+      if (s.tipo === "giro") xFinal = xDe(s.lado);
     }
     e.base = escena;
     e.x = xFinal;
@@ -416,15 +457,17 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   }
 
   function aplicar(e) {
-    const clave = `${e.base}|${e.encima}|${e.t.toFixed(3)}|${e.rot.toFixed(2)}|${e.x.toFixed(1)}|${e.escala.toFixed(4)}|${e.mascota.toFixed(3)}`;
+    const clave = `${e.base}|${e.encima}|${e.t.toFixed(3)}|${e.rot.toFixed(2)}|${e.x.toFixed(1)}|${e.escala.toFixed(4)}|${e.opacidad.toFixed(3)}|${e.mascota.toFixed(3)}`;
     if (clave === ultimo) return;
     ultimo = clave;
 
     capas.mostrar(e.base, e.encima, e.t);
     fijarRotacion(telefono, e.rot);
-    telefono.style.setProperty("--vuelo-x", `${e.x}px`);
-    telefono.style.setProperty("--vuelo-escala", `${e.escala}`);
+    escenario.style.setProperty("--vuelo-x", `${e.x}px`);
+    escenario.style.setProperty("--vuelo-escala", `${e.escala}`);
+    escenario.style.opacity = e.opacidad === 1 ? "" : String(e.opacidad);
     telefono.style.willChange = e.enGiro ? "transform" : "auto";
+    escenario.style.willChange = e.enGiro ? "transform" : "auto";
     if (sombraVuelo) {
       sombraVuelo.style.opacity = `${e.enGiro ? 0.15 + e.sombra * 0.5 : 0}`;
       sombraVuelo.style.transform = `scaleX(${1 + e.sombra * 0.6})`;

@@ -98,31 +98,39 @@
     </section>
 
     <div id="stage" class="stage">
-      <div class="escenario-3d">
+      <!--
+        Tres capas de transform, cada una dueña de la suya (stage.js, tilt.js):
+        .escenario-3d vuela de una columna a la otra (translate + scale) y
+        lleva la perspectiva consigo; .phone-tilt inclina con el mouse;
+        .phone gira 360° entre fases.
+      -->
+      <div class="escenario-3d" id="escenario-3d">
         <span class="phone-sombra-vuelo" id="sombra-vuelo" aria-hidden="true"></span>
-        <div class="phone" id="telefono" aria-hidden="true">
-          <div class="phone-cara phone-frente">
-            <span class="phone-isla"></span>
-            <div class="phone-pantalla" id="pantalla-telefono">
-              <!-- Escenas montadas por assets/js/stage.js -->
+        <div class="phone-tilt" id="tilt-telefono">
+          <div class="phone" id="telefono" aria-hidden="true">
+            <div class="phone-cara phone-frente">
+              <span class="phone-isla"></span>
+              <div class="phone-pantalla" id="pantalla-telefono">
+                <!-- Escenas montadas por assets/js/stage.js -->
+              </div>
             </div>
-          </div>
-          <!-- Canto: capas del contorno redondeado apiladas en Z, las genera stage.js -->
-          <div class="phone-canto" id="canto-telefono"></div>
-          <div class="phone-cara phone-espalda">
-            <div class="phone-modulo-camaras">
-              <span class="phone-lente"></span>
-              <span class="phone-lente"></span>
-              <span class="phone-flash"></span>
+            <!-- Canto: capas del contorno redondeado apiladas en Z, las genera stage.js -->
+            <div class="phone-canto" id="canto-telefono"></div>
+            <div class="phone-cara phone-espalda">
+              <div class="phone-modulo-camaras">
+                <span class="phone-lente"></span>
+                <span class="phone-lente"></span>
+                <span class="phone-flash"></span>
+              </div>
+              <span class="phone-mascota-halo"></span>
             </div>
-            <span class="phone-mascota-halo"></span>
           </div>
         </div>
       </div>
     </div>
 
     <div class="secciones">
-      <section id="fase-chat" class="seccion">
+      <section id="fase-chat" class="seccion seccion--derecha">
         <p class="fase-kicker">Así es como empieza</p>
         <h2 class="fase-titulo">Háblale como a un amigo</h2>
         <p class="fase-texto">
@@ -136,7 +144,7 @@
         </p>
       </section>
 
-      <section id="fase-elementos" class="seccion seccion--par">
+      <section id="fase-elementos" class="seccion">
         <p class="fase-kicker">Y ahí queda</p>
         <h2 class="fase-titulo">Todo lo que le dijiste, organizado solo</h2>
         <p class="fase-texto">
@@ -149,7 +157,7 @@
         </p>
       </section>
 
-      <section id="fase-habitos" class="seccion">
+      <section id="fase-habitos" class="seccion seccion--derecha">
         <p class="fase-kicker">Y con el tiempo</p>
         <h2 class="fase-titulo">Hábitos que se ven, no que se imaginan</h2>
         <p class="fase-texto">
@@ -162,7 +170,7 @@
         </p>
       </section>
 
-      <section id="fase-llamada" class="seccion seccion--par">
+      <section id="fase-llamada" class="seccion">
         <p class="fase-kicker">Más adelante</p>
         <h2 class="fase-titulo">Un recordatorio que se siente real</h2>
         <p class="fase-texto fase-chip-inline">
