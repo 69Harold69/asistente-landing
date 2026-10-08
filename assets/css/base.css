@@ -908,7 +908,11 @@ strong {
   en CSS (sin JS): el texto está en el DOM desde el principio, accesible, y
   si las animaciones no corren queda visible tal cual. Sólo transform y
   opacity, sin cambio de layout (las palabras son inline-block). Titular
-  palabra por palabra cada 40 ms; después subtítulo, CTA y nota.
+  palabra por palabra cada 40 ms; después CTA y nota.
+  El subtítulo NO entra: es el LCP de la portada (el bloque de texto más
+  grande) y tiene que pintarse visible desde el primer cuadro. Animado desde
+  opacidad 0 retrasaba el LCP ~1.5 s en móvil (Lighthouse: 83 de
+  Performance).
 */
 @media (prefers-reduced-motion: no-preference) {
   .titular-hero .palabra {
@@ -961,14 +965,9 @@ strong {
   }
 
   .hero-significado,
-  .subtitulo-hero,
   .seccion-hero .cta-row,
   .seccion-hero .cta-nota {
     animation: subir-entra 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-
-  .subtitulo-hero {
-    animation-delay: 480ms;
   }
 
   .seccion-hero .cta-row {
