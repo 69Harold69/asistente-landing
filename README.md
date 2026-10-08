@@ -142,7 +142,7 @@ al primer clic en el toggle).
 - **Navegación con puntos (`nav-recorrido.js`):** `nav` con `aria-label`,
   `aria-current="location"` y salto a la posición en la que cada sección
   queda en lectura.
-- **Mascota del header:** respira y se infla con el hover del CTA de la beta.
+- **Mascota del header:** respira y se infla con el hover de un CTA de la beta (también mientras dice "Próximamente") o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
   magnéticos toman únicamente CTAs activos: con `BETA_URL` vacía no se ven.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
