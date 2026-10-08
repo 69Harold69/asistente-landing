@@ -903,6 +903,97 @@ strong {
   }
 }
 
+/*
+  Entrada del hero al cargar — el único momento orquestado sin scroll. Todo
+  en CSS (sin JS): el texto está en el DOM desde el principio, accesible, y
+  si las animaciones no corren queda visible tal cual. Sólo transform y
+  opacity, sin cambio de layout (las palabras son inline-block). Titular
+  palabra por palabra cada 40 ms; después subtítulo, CTA y nota.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  .titular-hero .palabra {
+    display: inline-block;
+    animation: palabra-entra 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .titular-hero .frase:nth-child(1) .palabra:nth-child(1) {
+    animation-delay: 80ms;
+  }
+
+  .titular-hero .frase:nth-child(1) .palabra:nth-child(2) {
+    animation-delay: 120ms;
+  }
+
+  .titular-hero .frase:nth-child(1) .palabra:nth-child(3) {
+    animation-delay: 160ms;
+  }
+
+  .titular-hero .frase:nth-child(1) .palabra:nth-child(4) {
+    animation-delay: 200ms;
+  }
+
+  .titular-hero .frase:nth-child(1) .palabra:nth-child(5) {
+    animation-delay: 240ms;
+  }
+
+  .titular-hero .frase:nth-child(1) .palabra:nth-child(6) {
+    animation-delay: 280ms;
+  }
+
+  .titular-hero .frase:nth-child(2) .palabra:nth-child(1) {
+    animation-delay: 320ms;
+  }
+
+  .titular-hero .frase:nth-child(2) .palabra:nth-child(2) {
+    animation-delay: 360ms;
+  }
+
+  .titular-hero .frase:nth-child(2) .palabra:nth-child(3) {
+    animation-delay: 400ms;
+  }
+
+  .titular-hero .frase:nth-child(2) .palabra:nth-child(4) {
+    animation-delay: 440ms;
+  }
+
+  .titular-hero .frase:nth-child(2) .palabra:nth-child(5) {
+    animation-delay: 480ms;
+  }
+
+  .hero-significado,
+  .subtitulo-hero,
+  .seccion-hero .cta-row,
+  .seccion-hero .cta-nota {
+    animation: subir-entra 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .subtitulo-hero {
+    animation-delay: 480ms;
+  }
+
+  .seccion-hero .cta-row {
+    animation-delay: 560ms;
+  }
+
+  .seccion-hero .cta-nota {
+    animation-delay: 640ms;
+  }
+}
+
+@keyframes palabra-entra {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+  }
+}
+
+@keyframes subir-entra {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
 .subtitulo-hero {
   font-size: var(--text-entrada);
   line-height: 1.55;
