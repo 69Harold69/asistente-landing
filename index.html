@@ -23,21 +23,13 @@
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="Yaruki (やる気): las ganas de hacer algo. Dile lo que tienes que hacer. Yaruki se encarga de anotarlo." />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Yaruki — las ganas de hacerlo" />
-  <meta
-    name="twitter:description"
-    content="Dile lo que tienes que hacer. Yaruki se encarga de anotarlo — tareas, notas, listas, eventos y hábitos, por conversación."
-  />
-  <meta name="twitter:image" content="https://yaruki.hjgr.dev/assets/img/og-yaruki.png" />
   <meta name="twitter:image:alt" content="Yaruki (やる気): las ganas de hacer algo. Dile lo que tienes que hacer. Yaruki se encarga de anotarlo." />
   <link rel="canonical" href="https://yaruki.hjgr.dev/" />
   <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#151322" media="(prefers-color-scheme: dark)" />
-  <!-- PNG primero con `sizes` y el SVG después: los navegadores con SVG se quedan con el SVG. -->
   <link rel="icon" href="assets/img/favicon-32.png" type="image/png" sizes="32x32" />
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
-  <!-- Fuentes del primer pantallazo: titular (Baloo 2 800) y subtítulo (Manrope 400, el LCP) -->
   <link rel="preload" href="assets/fuentes/baloo2-extrabold-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fuentes/manrope-regular-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="assets/css/tokens.css" />
@@ -52,7 +44,6 @@
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
-  <!-- Avance del recorrido: decorativo (progreso.js / base.css). -->
   <div class="progreso-recorrido" aria-hidden="true"></div>
 
   <header class="site-header">
@@ -64,22 +55,15 @@
       <div class="header-acciones">
         <span class="chip chip-beta-header">Beta cerrada en Android</span>
         <div class="toggle-envoltura">
-          <button
-            type="button"
-            class="theme-toggle"
-            data-theme-toggle
-            aria-label="Tema oscuro"
-            aria-pressed="false"
-          >
-            <svg class="icono-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <button type="button" class="theme-toggle" data-theme-toggle aria-label="Tema oscuro" aria-pressed="false">
+            <svg class="icono-sol" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="4.5" />
               <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8" />
             </svg>
-            <svg class="icono-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg class="icono-luna" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" />
             </svg>
           </button>
-          <!-- Pista de la demo de tema (theme-demo.js): decorativa, el botón ya tiene su nombre. -->
           <span class="pista-tema" id="pista-tema" aria-hidden="true" hidden></span>
         </div>
       </div>
@@ -98,11 +82,6 @@
 
   <main id="contenido" class="layout-con-stage">
 
-    <!--
-      Orden del DOM = orden en móvil (flujo de bloque): titular + CTA, luego
-      el teléfono (franja sticky) y luego las secciones. En escritorio el
-      grid de `.layout-con-stage` (base.css) ubica cada pieza por fila/columna.
-    -->
     <section id="hero" class="seccion seccion-hero" aria-labelledby="titular">
       <p class="hero-significado">Yaruki (<span lang="ja">やる気</span>): las ganas de hacer algo</p>
       <h1 class="titular-hero" id="titular">
@@ -115,14 +94,7 @@
       </p>
       <div class="cta-row">
         <div class="cta-item">
-          <a
-            class="button button--disabled"
-            role="link"
-            aria-disabled="true"
-            data-cta-beta
-          >
-            Únete a la beta
-          </a>
+          <a class="button button--disabled" role="link" aria-disabled="true" data-cta-beta>Únete a la beta</a>
           <span class="chip" data-chip-proximamente-beta>Próximamente</span>
         </div>
         <div class="cta-item">
@@ -140,23 +112,14 @@
     </section>
 
     <div id="stage" class="stage">
-      <!--
-        Tres capas de transform, cada una dueña de la suya (stage.js, tilt.js):
-        .escenario-3d vuela de una columna a la otra (translate + scale) y
-        lleva la perspectiva consigo; .phone-tilt inclina con el mouse;
-        .phone gira 360° entre fases.
-      -->
       <div class="escenario-3d" id="escenario-3d">
         <span class="phone-sombra-vuelo" id="sombra-vuelo" aria-hidden="true"></span>
         <div class="phone-tilt" id="tilt-telefono">
           <div class="phone" id="telefono" aria-hidden="true">
             <div class="phone-cara phone-frente">
               <span class="phone-isla"></span>
-              <div class="phone-pantalla" id="pantalla-telefono">
-                <!-- Escenas montadas por assets/js/stage.js -->
-              </div>
+              <div class="phone-pantalla" id="pantalla-telefono"></div>
             </div>
-            <!-- Canto: capas del contorno redondeado apiladas en Z, las genera stage.js -->
             <div class="phone-canto" id="canto-telefono"></div>
             <div class="phone-cara phone-espalda">
               <div class="phone-modulo-camaras">
@@ -232,14 +195,7 @@
         </p>
         <div class="cta-row">
           <div class="cta-item">
-            <a
-              class="button button--disabled"
-              role="link"
-              aria-disabled="true"
-              data-cta-beta
-            >
-              Únete a la beta
-            </a>
+            <a class="button button--disabled" role="link" aria-disabled="true" data-cta-beta>Únete a la beta</a>
             <span class="chip" data-chip-proximamente-beta>Próximamente</span>
           </div>
         </div>
@@ -260,7 +216,7 @@
         <div class="link-grid">
           <a class="link-card" href="/privacidad/">
             <span class="link-card-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24">
                 <rect x="5" y="11" width="14" height="10" rx="2" />
                 <path d="M8 11V7a4 4 0 0 1 8 0v4" />
               </svg>
@@ -270,7 +226,7 @@
           </a>
           <a class="link-card" href="/terminos/">
             <span class="link-card-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24">
                 <path d="M7 3h8l3 3v15H7z" />
                 <path d="M10 10h6M10 14h6M10 18h4" />
               </svg>
@@ -280,7 +236,7 @@
           </a>
           <a class="link-card" href="/eliminar-cuenta/">
             <span class="link-card-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24">
                 <path d="M6 7h12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
               </svg>
             </span>
@@ -290,7 +246,7 @@
           <span class="link-card link-card--disabled">
             <span class="link-card-head">
               <span class="link-card-icon" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="22" height="22" viewBox="0 0 24 24">
                   <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
                   <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
                 </svg>
