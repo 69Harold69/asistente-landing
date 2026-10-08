@@ -13,6 +13,7 @@ import { inicializarTilt } from "./tilt.js";
 import { inicializarReveals } from "./revelar.js";
 import { inicializarProgreso } from "./progreso.js";
 import { inicializarMagneticos } from "./magnetico.js";
+import { inicializarNavRecorrido } from "./nav-recorrido.js";
 import { BETA_URL } from "./config.js";
 
 /*
@@ -73,3 +74,4 @@ inicializarReveals(escenario);
 inicializarProgreso();
 // Después del bloque de BETA_URL: los magnéticos sólo toman los CTA activos.
 inicializarMagneticos();
+inicializarNavRecorrido(escenario);

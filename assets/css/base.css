@@ -1286,3 +1286,93 @@ strong {
   }
 }
 
+/* Navegación con puntos (escritorio): un punto por sección, el actual
+   marcado; la etiqueta aparece al pasar el mouse o con el foco. */
+.nav-recorrido {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .nav-recorrido {
+    display: block;
+    position: fixed;
+    right: var(--space-2);
+    top: 50%;
+    z-index: 40;
+    transform: translateY(-50%);
+  }
+
+  .nav-recorrido ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .nav-recorrido li {
+    margin: 0;
+  }
+
+  .nav-recorrido a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    text-decoration: none;
+  }
+
+  /* El punto. */
+  .nav-recorrido a::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--color-text-secondary);
+    opacity: 0.45;
+    transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .nav-recorrido a:hover::before {
+    opacity: 0.9;
+  }
+
+  .nav-recorrido a[aria-current="location"]::before {
+    background: var(--color-accent);
+    opacity: 1;
+    transform: scale(1.5);
+  }
+
+  .nav-recorrido-etiqueta {
+    position: absolute;
+    right: calc(100% + 0.25rem);
+    padding: 0.2em 0.65em;
+    border-radius: var(--radius-pill);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-card);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(0.25rem);
+    transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+    pointer-events: none;
+  }
+
+  .nav-recorrido a:hover .nav-recorrido-etiqueta,
+  .nav-recorrido a:focus-visible .nav-recorrido-etiqueta {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Las secciones reciben el foco al saltar desde la navegación (tabindex=-1):
+   no son controles, no llevan anillo de foco. */
+.seccion:focus {
+  outline: none;
+}
