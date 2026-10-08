@@ -184,22 +184,12 @@ strong {
 
 .button--primary {
   background: var(--color-accent);
-  color: var(--color-on-accent);
+  color: var(--color-on-accent-ui);
 }
 
 .button--primary:hover {
   background: var(--color-text);
-}
-
-.button--ghost {
-  background: transparent;
-  color: var(--color-text);
-  border-color: var(--color-border-card);
-}
-
-.button--ghost:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-bg);
 }
 
 .button--disabled {

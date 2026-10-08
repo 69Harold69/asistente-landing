@@ -27,8 +27,13 @@
   --color-warning-bg: #fbead1;
   --color-danger-bg: #fbdede;
 
-  /* Texto sobre el acento (botones primarios): siempre claro en los dos temas */
+  /* Texto sobre el acento DENTRO del teléfono: blanco en los dos temas, como
+     `onPrimary = White` de la app (Theme.kt). */
   --color-on-accent: #ffffff;
+  /* Texto sobre el acento en los controles del sitio (botón primario). En
+     oscuro va oscuro: blanco sobre #8b7cf0 da 3.37:1 (no pasa AA); #151322
+     sobre #8b7cf0 da 5.43:1. En claro, blanco sobre #6c5ce0 da 4.95:1. */
+  --color-on-accent-ui: #ffffff;
 
   /* Tipografía */
   --font-display: "Baloo 2", "Baloo 2 Fallback", ui-rounded, system-ui, sans-serif;
@@ -96,6 +101,7 @@
     --color-warning-bg: #3d3120;
     --color-danger-bg: #3d2323;
     --shadow-color: 0deg 0% 0%;
+    --color-on-accent-ui: #151322;
   }
 }
 
@@ -124,6 +130,7 @@
   --color-warning-bg: #3d3120;
   --color-danger-bg: #3d2323;
   --shadow-color: 0deg 0% 0%;
+  --color-on-accent-ui: #151322;
 }
 
 :root[data-theme="light"] {
@@ -144,4 +151,5 @@
   --color-warning-bg: #fbead1;
   --color-danger-bg: #fbdede;
   --shadow-color: 25deg 30% 20%;
+  --color-on-accent-ui: #ffffff;
 }
