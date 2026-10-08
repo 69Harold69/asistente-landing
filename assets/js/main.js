@@ -10,6 +10,7 @@ import {
 import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js";
 import { inicializarEscenario } from "./stage.js";
 import { inicializarTilt } from "./tilt.js";
+import { inicializarReveals } from "./revelar.js";
 import { BETA_URL } from "./config.js";
 
 /*
@@ -65,3 +66,5 @@ if (BETA_URL) {
   });
   document.querySelectorAll("[data-chip-proximamente-beta]").forEach((chip) => chip.remove());
 }
+
+inicializarReveals(escenario);

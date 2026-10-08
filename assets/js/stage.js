@@ -221,7 +221,7 @@ function crearCapas(pantalla) {
   ya muestra la escena de la que habla el texto mientras se lee.
 */
 const TRAMOS = {
-  escritorio: { ini: 76, fin: 20, finCierre: 0, iniCierre: 84, chat: null, logro: { ini: -25, fin: -55 } },
+  escritorio: { ini: 80, fin: 22, finCierre: 0, iniCierre: 84, chat: null, logro: { ini: -25, fin: -55 } },
   // En móvil el texto arranca 46vh debajo del borde de su sección (base.css).
   movil: { ini: 92, fin: 38, finCierre: 20, iniCierre: 92, chat: { ini: 60, fin: 14 }, logro: { ini: 8, fin: -22 } },
 };
@@ -321,6 +321,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
         despues: f.despues,
         lado: f.lado,
         cierre: !!f.cierre,
+        seccion: f.seccion,
       });
       if (f.despues === "habitos") {
         segmentos.push({
@@ -411,7 +412,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     // Dos columnas en escritorio también sin movimiento (el teléfono salta de lado).
     const lateral = geo.escritorio;
     const xDe = (lado) => (lateral ? geo.columnas[String(lado)] : 0);
-    const e = { base: "login", encima: null, t: 0, rot: 0, x: xDe(LADO_HERO), escala: 1, opacidad: 1, mascota: 1, enGiro: false, sombra: 0 };
+    const e = { y, base: "login", encima: null, t: 0, rot: 0, x: xDe(LADO_HERO), escala: 1, opacidad: 1, mascota: 1, enGiro: false, sombra: 0 };
 
     if (y < geo.hero.fin) {
       const p = limitar01(y / geo.hero.fin);
@@ -646,6 +647,10 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     destinoDe(id) {
       const s = geo.secciones.find((x) => x.id === id);
       return s ? Math.min(s.top, geo.max) : 0;
+    },
+    /** Posición suavizada que sigue el teléfono (la usan los textos de escritorio, revelar.js). */
+    get y() {
+      return virtual;
     },
     get geometria() {
       return geo;
