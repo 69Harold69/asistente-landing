@@ -5,35 +5,50 @@
  * switch "Cumplido hoy" REALES de `ui/elementos/habitos/HabitoDetalleScreen.kt`
  * (`EstadisticasCard`/`CumplimientoHoyRow`), mismo texto literal.
  *
- * El patrón del heatmap y los números son de ejemplo. La nota final usa a
- * propósito la rama "todavía no alcanza el umbral" (no la de "ya es
- * elegible para consolidar") — mostrar esa segunda rama sin que la regla de
- * consolidación sea pública todavía sería prometer algo que el producto no
- * define (plan, 4.4: "sin prometer reglas").
+ * Datos de ejemplo coherentes con la lógica real del backend
+ * (`ServicioHabitoRegistros::estadisticas()`):
+ * - Antigüedad 15 días → la ventana es `min(30, antigüedad)` = 15, de ahí
+ *   "últimos 15 día(s)", y el heatmap sólo pinta esos 15 días (las celdas
+ *   anteriores a la creación del hábito quedan "fuera").
+ * - Porcentaje con 2 decimales (`round(x * 100, 2)`): 10/15 = 66.67%,
+ *   11/15 = 73.33%.
+ * - Sin elegibilidad para consolidar (pide ≥ 21 días Y ≥ 80%): el texto
+ *   "Todavía no alcanza el umbral…" es el que la app mostraría.
+ * - El switch refleja `racha_actual > 0`: ayer no se cumplió, así que antes
+ *   de marcar hoy la racha es 0 y el switch está apagado; al prenderse, la
+ *   celda de hoy se llena y la racha pasa a 1.
  *
- * **Punto de control 2, bug 8:** sin rojo — un día sin cumplir es una celda
- * vacía (ver `ps-heat-cell` sin modificador en `scenes.css`), nunca una
- * falta marcada en rojo (el dato real es booleano por día, "incumplimiento"
- * no es un estado que el backend distinga). `done-suave` es sólo textura
- * tipo GitHub, sigue siendo "cumplido".
+ * Sin rojo: un día sin cumplir es una celda vacía (el dato real es booleano
+ * por día). `--suave` es sólo textura tipo GitHub, sigue siendo "cumplido".
  */
 export const id = "habitos";
 
-const PATRON_HEATMAP = [
-  "done", "done", "none", "done", "none", "done", "done-suave",
-  "done", "none", "done", "done-suave", "none", "done", "done",
-  "done", "none", "done-suave", "done", "done", "none", "done",
-  "none", "done", "done", "done-suave", "done", "none", "done",
+/** Días anteriores a la creación del hábito (fuera de la ventana): completan la grilla de 3 semanas. */
+const DIAS_FUERA = 6;
+/** Los 14 días de la ventana antes de hoy: 10 cumplidos, ayer vacío (racha 0). */
+const PATRON_VENTANA = [
+  "done", "done-suave", "none", "done", "done", "none", "done",
+  "done-suave", "done", "none", "done", "done", "done", "none",
 ];
+const ANTIGUEDAD = PATRON_VENTANA.length + 1;
+const CUMPLIDOS_ANTES = PATRON_VENTANA.filter((d) => d !== "none").length;
 
 const CLASE_CELDA = { done: " ps-celda--hecha", "done-suave": " ps-celda--suave", none: "" };
 
-/** La última celda es "hoy": empieza vacía y se llena cuando el switch se activa. */
 function celdas() {
-  return PATRON_HEATMAP.map((estado, i) => {
-    if (i === PATRON_HEATMAP.length - 1) return `<div class="ps-celda ps-celda--hoy"></div>`;
-    return `<div class="ps-celda${CLASE_CELDA[estado]}"></div>`;
-  }).join("");
+  const fuera = Array.from({ length: DIAS_FUERA }, () => `<div class="ps-celda ps-celda--fuera"></div>`);
+  const ventana = PATRON_VENTANA.map((estado) => `<div class="ps-celda${CLASE_CELDA[estado]}"></div>`);
+  // La última celda es "hoy": empieza vacía y se llena cuando el switch se activa.
+  return [...fuera, ...ventana, `<div class="ps-celda ps-celda--hoy"></div>`].join("");
+}
+
+/** Mismo redondeo que el backend: `round(x * 100, 2)`; PHP lo serializa sin ceros de sobra. */
+function porcentaje(cumplidos, dias) {
+  return String(Math.round((cumplidos / dias) * 10000) / 100);
+}
+
+function textoCumplimiento(cumplidos) {
+  return `${cumplidos}/${ANTIGUEDAD} (${porcentaje(cumplidos, ANTIGUEDAD)}%)`;
 }
 
 let refs = null;
@@ -43,16 +58,17 @@ function prefiereMovimientoReducido() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/**
- * Cumplido hoy: prende el switch, llena la celda de hoy y sube la racha en 1
- * (plan 4.4, punto 2). Los números son de ejemplo pero consistentes entre sí.
- */
-function marcarHoy(cumplido) {
+/** Cumplido hoy: prende el switch, llena la celda de hoy y la racha pasa de 0 a 1 (plan 4.4, punto 2). */
+function marcarHoy(cumplido, { animar = false } = {}) {
   if (!refs) return;
   refs.switch.classList.toggle("ps-switch--on", cumplido);
   refs.hoy.classList.toggle("ps-celda--hecha", cumplido);
-  refs.racha.textContent = cumplido ? "6" : "5";
-  refs.cumplimiento.textContent = cumplido ? "24/28 (85.7%)" : "23/28 (82.1%)";
+  refs.racha.textContent = cumplido ? "1" : "0";
+  refs.cumplimiento.textContent = textoCumplimiento(CUMPLIDOS_ANTES + (cumplido ? 1 : 0));
+  if (animar && cumplido) {
+    // La racha sube con un rebote chico (sólo `transform`).
+    gsap.fromTo(refs.racha, { scale: 1.6, y: -2 }, { scale: 1, y: 0, duration: 0.6, ease: "back.out(3)" });
+  }
 }
 
 export function mount(contenedor) {
@@ -64,15 +80,15 @@ export function mount(contenedor) {
         <div class="ps-heatmap">${celdas()}</div>
         <div class="ps-card">
           <div class="ps-card-titulo">Racha y consolidación</div>
-          <p>Racha actual: <span data-racha>5</span> día(s)</p>
-          <p>Antigüedad: 42 día(s)</p>
-          <p>Cumplimiento últimos 28 día(s): <span data-cumplimiento>23/28 (82.1%)</span></p>
+          <p>Racha actual: <span class="ps-racha" data-racha>0</span> día(s)</p>
+          <p>Antigüedad: ${ANTIGUEDAD} día(s)</p>
+          <p>Cumplimiento últimos ${ANTIGUEDAD} día(s): <span data-cumplimiento>${textoCumplimiento(CUMPLIDOS_ANTES)}</span></p>
           <div class="ps-divisor"></div>
           <p class="ps-nota">Todavía no alcanza el umbral para sugerirlo como Rutina.</p>
         </div>
         <div class="ps-card ps-fila-switch">
           <span>Cumplido hoy</span>
-          <div class="ps-switch" aria-hidden="true"></div>
+          <div class="ps-switch" aria-hidden="true"><span class="ps-switch-perilla"></span></div>
         </div>
       </div>
     </div>
@@ -86,14 +102,9 @@ export function mount(contenedor) {
 }
 
 /**
- * El switch "Cumplido hoy" se activa solo a los ~2-3s de entrar a la
- * sección (plan, parte B) — no es que el visitante lo toque, es una
- * demo de que así se ve un hábito ya cumplido hoy. Arranca "apagado" en
- * `mount()` (ver `scenes.css`) para que haya algo que animar; `pause()`
- * cancela el temporizador si la sección queda atrás antes de que dispare
- * (scroll rápido) — si no, el switch se prendería solo, fuera de
- * pantalla, y el sub-cruce a "logro" (stage.js) lo encontraría ya
- * prendido la próxima vez sin haberse "visto" prender.
+ * El switch "Cumplido hoy" se activa solo a los ~2 s de entrar a la sección
+ * — una demo de cómo se ve un hábito cumplido hoy. `pause()` cancela el
+ * temporizador si la sección queda atrás antes de que dispare.
  */
 export function play() {
   if (!refs) return null;
@@ -103,7 +114,7 @@ export function play() {
     return null;
   }
   marcarHoy(false);
-  demora = gsap.delayedCall(2.2, () => marcarHoy(true));
+  demora = gsap.delayedCall(2.2, () => marcarHoy(true, { animar: true }));
   return demora;
 }
 

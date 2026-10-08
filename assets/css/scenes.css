@@ -639,13 +639,38 @@
   background: color-mix(in srgb, var(--color-success) 55%, var(--color-border));
 }
 
-.ps-celda--hoy {
-  box-shadow: inset 0 0 0 calc(2 * var(--dp)) var(--color-success);
-  transition: background-color 0.35s ease;
+/* Días anteriores a la creación del hábito: fuera de la ventana, sin dato. */
+.ps-celda--fuera {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
-.ps-celda--hoy.ps-celda--hecha {
-  box-shadow: none;
+/* Hoy: anillo de éxito vacío; al cumplirse se llena con una capa que entra
+   por `opacity` (no se transiciona `background-color`). */
+.ps-celda--hoy {
+  position: relative;
+  background: none;
+  box-shadow: inset 0 0 0 calc(2 * var(--dp)) var(--color-success);
+}
+
+.ps-celda--hoy::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-success);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.ps-celda--hoy.ps-celda--hecha::after {
+  opacity: 1;
+  transform: none;
+}
+
+.ps-racha {
+  display: inline-block;
 }
 
 /* Card de M3 por defecto: superficie, radio 12dp, padding 16dp. */
@@ -692,8 +717,9 @@
 }
 
 /* Switch de M3: pista 52×32dp; apagado = contorno + perilla chica de 16dp,
-   encendido = pista de acento + perilla de 24dp. Sólo transform/opacity
-   en la perilla; el color de la pista pasa con transición de color. */
+   encendido = pista de acento + perilla de 24dp. El relleno de acento de la
+   pista (`::before`) y el color de la perilla (dos capas) cambian por
+   `opacity`; la perilla se mueve con `transform`. */
 .ps-switch {
   position: relative;
   width: calc(52 * var(--dp));
@@ -702,11 +728,19 @@
   border: calc(2 * var(--dp)) solid var(--color-text-secondary);
   background: var(--color-bg-elevated);
   flex-shrink: 0;
-  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
-.ps-switch::after {
+.ps-switch::before {
   content: "";
+  position: absolute;
+  inset: calc(-2 * var(--dp));
+  border-radius: inherit;
+  background: var(--color-accent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.ps-switch-perilla {
   position: absolute;
   top: 50%;
   left: calc(6 * var(--dp));
@@ -715,16 +749,25 @@
   margin-top: calc(-8 * var(--dp));
   border-radius: 50%;
   background: var(--color-text-secondary);
-  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), background-color 0.25s ease;
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.ps-switch--on {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.ps-switch--on::after {
+.ps-switch-perilla::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
   background: var(--color-on-accent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.ps-switch--on::before,
+.ps-switch--on .ps-switch-perilla::after {
+  opacity: 1;
+}
+
+.ps-switch--on .ps-switch-perilla {
   transform: translateX(calc(20 * var(--dp))) scale(1.5);
 }
 
