@@ -247,7 +247,8 @@
   pointer-events: none;
 }
 
-.phone[data-canto="visible"] .phone-canto {
+.phone[data-canto="visible"] .phone-canto,
+.phone[data-canto="filo"] .phone-canto {
   display: block;
 }
 
@@ -261,6 +262,44 @@
     #000 calc(var(--sombra, 0) * 1%)
   );
   transform: translateZ(calc(var(--z, 0) * var(--phone-depth)));
+}
+
+/*
+  Planos sólidos de cada lado, perpendiculares a las caras (`rotateY(90deg)`
+  sobre el borde). Vistas exactamente de filo (90°/270°), las capas de arriba
+  se proyectan como líneas con huecos entre sí: rayas. A ese ángulo estos
+  planos se ven de frente y tapan los huecos con el mismo degradado del canto.
+  Sólo se muestran cerca del filo (`data-canto="filo"`, stage.js): girados más
+  allá, su esquina recta asomaría por fuera del contorno redondeado.
+*/
+.phone-plano {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--phone-depth);
+  margin-left: calc(var(--phone-depth) / -2);
+  border-radius: calc(var(--phone-depth) / 2);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-canto), #000 26%),
+    color-mix(in oklab, var(--color-canto), #fff 22%) 50%,
+    color-mix(in oklab, var(--color-canto), #000 26%)
+  );
+  display: none;
+}
+
+.phone[data-canto="filo"] .phone-plano {
+  display: block;
+}
+
+.phone-plano--izq {
+  left: 0;
+  transform: rotateY(-90deg);
+}
+
+.phone-plano--der {
+  left: 100%;
+  transform: rotateY(90deg);
 }
 
 .phone-espalda {
