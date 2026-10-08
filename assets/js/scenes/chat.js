@@ -19,6 +19,17 @@ import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js";
  */
 export const id = "chat";
 
+/** "9 oct 2026": fecha de mañana con el mismo estilo MEDIUM de la app (locale es-MX). */
+function fechaDeManana() {
+  const manana = new Date();
+  manana.setDate(manana.getDate() + 1);
+  try {
+    return new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(manana);
+  } catch {
+    return manana.toLocaleDateString();
+  }
+}
+
 const ESCENARIOS = [
   {
     id: "lista",
@@ -34,7 +45,9 @@ const ESCENARIOS = [
       icono: "eventos",
       tipo: "EVENTO",
       titulo: "Reunión de diseño",
-      detalle: "Mañana · 10:00",
+      // Fecha absoluta, como `formatearFechaHoraLegible` de la app
+      // (FormatStyle.MEDIUM + "HH:mm"): la tarjeta nunca dice "Mañana".
+      detalle: `${fechaDeManana()} · 10:00`,
       accion: "Ver evento",
     },
   },
