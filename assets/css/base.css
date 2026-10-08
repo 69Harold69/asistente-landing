@@ -1271,3 +1271,18 @@ strong {
   }
 }
 
+/* Mascota del header: respira sola (.punto-vivo--breathe) y se infla un poco
+   con el hover de un CTA de la beta (también mientras dice "Próximamente":
+   es el botón que la página invita a mirar) o con el foco de uno activo. El
+   envoltorio es dueño de la escala; la respiración, del punto. */
+.punto-vivo-envoltura {
+  display: inline-flex;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body:has([data-cta-beta]:hover, .button--primary:focus-visible) .punto-vivo-envoltura {
+    transform: scale(1.3);
+  }
+}
+
