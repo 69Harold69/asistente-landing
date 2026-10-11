@@ -17,6 +17,9 @@ asistente-landing/
 ├── terminos/index.html     Términos y condiciones
 ├── eliminar-cuenta/index.html  Cómo eliminar tu cuenta
 ├── 404.html                Página de error, servida por el handle_errors de Caddy
+├── sitemap.xml             URLs canónicas con su lastmod (sin 404 ni la verificación de Google)
+├── robots.txt              Permite todo y apunta al sitemap
+├── google9633e8d6c904333e.html  Verificación de Search Console: NO borrar (Google la revisa periódicamente)
 ├── assets/
 │   ├── css/
 │   │   ├── tokens.css   Colores/tipografía/espaciado/tema (claro, oscuro, y el `data-theme` del toggle)
@@ -100,6 +103,25 @@ vuelo.
 `play`, `pause` y `reset` (plan 5.3); `stage.js` llama `play`/`pause` en cada
 cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 100cqw/360), con los dp/sp reales del código Compose de la app.
+
+## SEO técnico
+
+- **`sitemap.xml`:** las 4 páginas públicas con URL absoluta y barra final, igual
+  que los enlaces del sitio. `lastmod` es la fecha del último cambio de contenido
+  visible de cada página: actualízala a mano cuando cambie el texto, no por
+  ajustes de `<head>`.
+- **`robots.txt`:** permite todo y declara el sitemap.
+- **JSON-LD** en el `<head>` de `index.html` (`WebSite` + `SoftwareApplication`):
+  - `applicationCategory` es `BusinessApplication`, el valor más cercano a
+    productividad en la lista que acepta Google; `applicationSubCategory`
+    dice "Productividad".
+  - No lleva `aggregateRating` ni `review` porque todavía no existen. Sin eso
+    Google no muestra la ficha enriquecida de app, pero el bloque sigue
+    describiendo la app.
+  - Cuando haya ficha en Google Play, agrega `downloadUrl` y las calificaciones reales.
+  - Es un bloque de datos (`type="application/ld+json"`), no se ejecuta: la CSP
+    `script-src 'self'` no lo bloquea.
+- **Páginas legales:** cada una tiene su `<title>`, meta description y `<link rel="canonical">`.
 
 ## BRAND_NAME y BETA_URL
 
