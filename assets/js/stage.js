@@ -236,11 +236,12 @@ const FASES = [
   { seccion: "fase-chat", antes: "login", despues: "chat", lado: -1 },
   { seccion: "fase-elementos", antes: "chat", despues: "elementos", lado: 1 },
   { seccion: "fase-habitos", antes: "elementos", despues: "habitos", lado: -1 },
-  { seccion: "fase-llamada", antes: "logro", despues: "llamada", lado: 1 },
+  { seccion: "fase-avisos", antes: "logro", despues: "avisos", lado: 1 },
+  { seccion: "fase-llamada", antes: "avisos", despues: "llamada", lado: -1 },
   { seccion: "cta", antes: "llamada", despues: "dashboard", lado: 0, cierre: true },
 ];
 
-const SECCIONES_ANCLA = ["hero", "fase-chat", "fase-elementos", "fase-habitos", "fase-llamada", "cta"];
+const SECCIONES_ANCLA = ["hero", "fase-chat", "fase-elementos", "fase-habitos", "fase-avisos", "fase-llamada", "cta"];
 
 /** Top del elemento en coordenadas del documento, sin contar `transform` (los reveals de texto mueven las secciones). */
 function topDoc(el) {

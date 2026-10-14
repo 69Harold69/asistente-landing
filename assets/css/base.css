@@ -1115,6 +1115,46 @@ strong {
   margin-top: var(--space-1);
 }
 
+/* Pasos para entrar a la beta (#cta): el grupo de testers y luego Play. */
+.pasos-beta {
+  list-style: none;
+  margin: var(--space-2) auto 0;
+  padding: 0;
+  max-width: 40ch;
+  display: grid;
+  gap: var(--space-2);
+  text-align: left;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.pasos-beta li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.pasos-beta-numero {
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-soft);
+  color: var(--color-on-accent-soft);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.pasos-beta a {
+  color: var(--color-accent);
+  font-weight: 600;
+  text-underline-offset: 0.18em;
+}
+
 /*
   Escritorio: el cierre es más alto que una pantalla (150vh) a propósito —
   le da a `position:sticky` margen para que el Dashboard aterrice al centro
@@ -1139,6 +1179,10 @@ strong {
 
   #cta .cta-row {
     justify-content: flex-start;
+  }
+
+  #cta .pasos-beta {
+    margin-left: 0;
   }
 }
 

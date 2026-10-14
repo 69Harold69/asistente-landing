@@ -10,6 +10,7 @@ import * as chat from "./chat.js";
 import * as elementos from "./elementos.js";
 import * as habitos from "./habitos.js";
 import * as logro from "./logro.js";
+import * as avisos from "./avisos.js";
 import * as llamada from "./llamada.js";
 import * as dashboard from "./dashboard.js";
 
@@ -20,6 +21,7 @@ export const ESCENAS = {
   elementos,
   habitos,
   logro,
+  avisos,
   llamada,
   dashboard,
 };
@@ -31,6 +33,7 @@ export const ORDEN_ESCENAS = [
   "elementos",
   "habitos",
   "logro",
+  "avisos",
   "llamada",
   "dashboard",
 ];

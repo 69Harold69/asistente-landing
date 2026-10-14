@@ -1057,6 +1057,168 @@
   color: var(--color-danger);
 }
 
+/* Avisos (NotificacionesScreen.kt: LazyColumn padding 16dp, separación 8dp) - */
+
+.ps-avisos-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8 * var(--dp));
+  padding: calc(16 * var(--dp)) calc(16 * var(--dp)) calc(88 * var(--dp));
+}
+
+/* FilterChip de Material 3: 32dp, esquina 8dp, labelLarge 14sp. */
+.ps-chips {
+  display: flex;
+  gap: calc(8 * var(--dp));
+}
+
+.ps-chip {
+  display: inline-flex;
+  align-items: center;
+  height: calc(32 * var(--dp));
+  padding: 0 calc(12 * var(--dp));
+  border: 1px solid var(--color-border-card);
+  border-radius: calc(8 * var(--dp));
+  font-size: calc(14 * var(--dp));
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ps-chip--activo {
+  border-color: transparent;
+  background: var(--color-accent-soft);
+  color: var(--color-on-accent-soft);
+}
+
+/* TituloSeccion: titleMedium negrita, 12dp arriba. */
+.ps-avisos-seccion {
+  padding-top: calc(12 * var(--dp));
+  font-weight: 700;
+  font-size: calc(16 * var(--dp));
+  line-height: 1.4;
+}
+
+.ps-avisos-seccion--peligro {
+  color: var(--color-danger);
+}
+
+/* Subtitulo / EncabezadoAcordeon: labelLarge en mayúsculas, texto secundario. */
+.ps-avisos-grupo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: calc(14 * var(--dp));
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.ps-avisos-grupo--acordeon {
+  padding: calc(8 * var(--dp)) 0;
+}
+
+.ps-avisos-grupo svg {
+  width: calc(24 * var(--dp));
+  height: calc(24 * var(--dp));
+  fill: currentColor;
+}
+
+/* FilaAviso: Card con borde 1dp bordeTarjeta, padding 14dp, ícono 24dp. */
+.ps-aviso {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--dp));
+  padding: calc(14 * var(--dp));
+  border: 1px solid var(--color-border-card);
+  border-radius: calc(12 * var(--dp));
+  background: var(--color-bg);
+}
+
+.ps-aviso-icono svg {
+  display: block;
+  width: calc(24 * var(--dp));
+  height: calc(24 * var(--dp));
+  stroke: var(--color-accent);
+}
+
+.ps-aviso-textos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ps-aviso-titulo,
+.ps-aviso-detalle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.ps-aviso-titulo {
+  font-size: calc(16 * var(--dp));
+}
+
+.ps-aviso-detalle {
+  font-size: calc(12 * var(--dp));
+  color: var(--color-text-secondary);
+}
+
+/* SwipeToDismissBox: el fondo "Completar" (exitoContainer) queda debajo. */
+.ps-aviso-deslizable {
+  position: relative;
+}
+
+.ps-aviso-fondo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 calc(20 * var(--dp));
+  border-radius: calc(12 * var(--dp));
+  background: var(--color-success-bg);
+  font-size: calc(14 * var(--dp));
+  font-weight: 600;
+  opacity: 0;
+}
+
+/* Aviso del sistema (heads-up) que baja sobre la pantalla. */
+.ps-heads-up {
+  position: absolute;
+  top: calc(40 * var(--dp));
+  left: calc(10 * var(--dp));
+  right: calc(10 * var(--dp));
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--dp));
+  padding: calc(14 * var(--dp)) calc(16 * var(--dp));
+  border-radius: calc(20 * var(--dp));
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 calc(8 * var(--dp)) calc(24 * var(--dp)) hsl(var(--shadow-color) / 0.22);
+  /* Fuera de cuadro desde el inicio; la posición la anima avisos.js (yPercent). */
+  opacity: 0;
+}
+
+.ps-heads-up-icono .ps-dot {
+  display: block;
+  width: calc(28 * var(--dp));
+  height: calc(28 * var(--dp));
+}
+
+.ps-heads-up-app {
+  font-size: calc(12 * var(--dp));
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.ps-heads-up .ps-aviso-titulo {
+  font-weight: 700;
+}
+
 /* Barra de navegación inferior (BottomNavBar.kt: 72dp, FAB 64dp a -28dp) ---- */
 
 .ps-navbar {

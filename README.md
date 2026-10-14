@@ -40,7 +40,7 @@ asistente-landing/
 │   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto)
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
-│   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, llamada, dashboard (+ contar.js)
+│   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, avisos, llamada, dashboard (+ contar.js)
 │   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
 │   ├── fonts/     .woff2 completos + OFL.txt (páginas legales)
 │   ├── fuentes/   los mismos pesos recortados al rango latino + OFL.txt (portada)
@@ -55,7 +55,7 @@ visible, son sólo para QA/capturas. **Con cualquiera de los dos presentes,
 `stage.js` no arranca GSAP/ScrollTrigger en absoluto** — monta la escena
 pedida una sola vez y fija la cara, estático, igual que en la etapa 2:
 - `escena`: `splash` (por defecto) · `login` · `chat` · `elementos` ·
-  `habitos` · `logro` · `llamada` · `dashboard` (ids de `assets/js/scenes/registro.js`).
+  `habitos` · `logro` · `avisos` · `llamada` · `dashboard` (ids de `assets/js/scenes/registro.js`).
 - `cara`: `frente` (por defecto, 0°) · `canto` (80°, ver nota abajo) ·
   `espalda` (180°).
 - `angulo`: cualquier ángulo en grados (p. ej. `?angulo=120`), gana sobre
@@ -88,7 +88,7 @@ pantalla y cada vuelo termina ANTES de que su texto llegue al centro
 vuelo arranca recién cuando el teléfono se pega arriba). Así el teléfono ya
 muestra la escena de la que habla el texto mientras se lee.
 **Hero:** la mascota del Splash escala y cruza a Login entre el scroll 0 y el
-75% del tramo previo al primer vuelo. **Hábitos → logro (`TRAMOS_LOGRO`):**
+75% del tramo previo al primer vuelo. **Avisos (`#fase-avisos`, 2026-10-13):** la pestaña Notificaciones de la app (`scenes/avisos.js`, de `NotificacionesScreen.kt`), entre el logro y la llamada; en bucle baja un aviso del sistema y una fila se desliza a "Completar". Por esta fase, la llamada pasó a la columna derecha (`.seccion--derecha`). **Hábitos → logro (`TRAMOS_LOGRO`):**
 la sección mide 160vh: primero el heatmap quieto, después un cruce de opacidad
 de frente a "logro". **Cierre:** el Dashboard aterriza al centro de la página,
 queda quieto mientras se lee el CTA y sube con la página cuando el sticky se
@@ -129,11 +129,14 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 - `BRAND_NAME = "Yaruki"` — el HTML de cada página sigue escribiendo "Yaruki"
   literal en el texto visible (título, wordmark, copy); la constante es para
   lo que genera JS, no reemplaza al texto estático.
-- `BETA_URL = ""` — mientras esté vacía, el botón "Únete a la beta" (hay dos,
-  uno en `#hero` y otro en `#cta`) sale deshabilitado con el chip
-  "Próximamente" al lado y `main.js` no hace nada con él. El día que exista el
-  enlace de prueba cerrada de Google Play, pegarlo ahí: `main.js` activa el/los
-  botón(es) y quita el/los chip(s) solo, sin tocar `index.html`.
+- `BETA_URL` — el Google Group de testers
+  (`https://groups.google.com/g/yaruki-beta/`). La prueba cerrada de Google
+  Play usa ese grupo como lista de testers, así que unirse es el paso 1;
+  `main.js` activa los dos botones "Únete a la beta" (`#hero` y `#cta`) y
+  quita su chip "Próximamente". El paso 2, aceptar la invitación en
+  `https://play.google.com/apps/testing/dev.hjgr.yaruki`, está escrito en la
+  lista `.pasos-beta` de `#cta`. Con `BETA_URL` vacía los botones vuelven a
+  salir deshabilitados con el chip.
 
 Si el nombre cambia, además de `config.js` es un buscar-y-reemplazar de
 "Yaruki" en el HTML de las 4 páginas (y del lema "las ganas de hacerlo").
@@ -245,8 +248,9 @@ la licencia, sólo la atribución exacta).
 1. ~~Retención de backups~~ → **resuelto 2026-10-04: 30 días** (decisión del dueño), con cron de rotación en el droplet. El plazo ARCO usa el artículo 31 de la LFPDPPP 2025 (20 días para responder, 15 para hacer efectivo, ampliables una vez).
 2. **Atribución exacta de las fuentes** (ver arriba).
 3. El badge de App Store en `index.html` queda deshabilitado (decisión 3.2 del
-   plan); cuando haya ficha pública de Android, el CTA "Únete a la beta" de la
-   portada provisional cambia a "Descárgala en Google Play" (decisión 3.8).
+   plan). "Únete a la beta" ya está activo (prueba cerrada, 2026-10-13); cuando
+   haya ficha pública en producción cambia a "Descárgala en Google Play"
+   (decisión 3.8) y el JSON-LD gana `downloadUrl`.
 4. ~~Texto del hero y el lema sin cerrar~~ → **resuelto, punto de control 2:**
    titular/subtítulo de la opción B + el significado chico arriba (ver
    "Coreografía de scroll" y el reporte de esa sesión).
