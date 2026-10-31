@@ -111,6 +111,9 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
   visible de cada página: actualízala a mano cuando cambie el texto, no por
   ajustes de `<head>`.
 - **`robots.txt`:** permite todo y declara el sitemap.
+- **Open Graph y Twitter/X** en las 4 páginas públicas (`index.html`, privacidad,
+  términos y eliminar cuenta), con la misma imagen `og-yaruki.png` 1200×630. La
+  página 404 lleva `noindex` a propósito.
 - **JSON-LD** en el `<head>` de `index.html` (`WebSite` + `SoftwareApplication`):
   - `applicationCategory` es `BusinessApplication`, el valor más cercano a
     productividad en la lista que acepta Google; `applicationSubCategory`
