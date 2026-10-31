@@ -455,7 +455,7 @@
   transform: none;
 }
 
-/* Dictado: ondas en el campo + chip "Voz · Próximamente". */
+/* Dictado: ondas en el campo + chip "Voz · Disponible". */
 .ps-onda-voz {
   display: none;
   align-items: center;
