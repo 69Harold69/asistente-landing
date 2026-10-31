@@ -6,7 +6,7 @@ import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js";
  * Visual idéntico a `ChatScreen.kt`/`TarjetaElementoChat.kt`: tecleo en el
  * input → burbuja del usuario → "Pensando..." → tarjeta rica animada (o
  * Confirmar/Rechazar → se "toca" Confirmar → "Confirmado ✓"). Uno de los 6
- * es dictado: ondas en el input + chip "Voz · Próximamente" en vez de
+ * es dictado: ondas en el input + chip "Voz · Disponible" en vez de
  * tecleo, mismo recorrido de ahí en más.
  *
  * `play()`/`pause()`/`reset()` los maneja `stage.js` con
@@ -102,7 +102,7 @@ export function mount(contenedor) {
         </div>
         <span class="ps-boton-icono" aria-hidden="true">${iconoMic().replace("<svg ", '<svg class="ps-icono-mic" ')}${iconoEnviar()}</span>
       </div>
-      <span class="ps-chip-voz">Voz · Próximamente</span>
+      <span class="ps-chip-voz">Voz · Disponible</span>
     </div>
   `;
   refs = {
