@@ -30,7 +30,7 @@
     <article class="legal">
       <div class="container">
         <header class="legal-head">
-          <span class="chip">Vigente desde el 11 de octubre de 2026</span>
+          <span class="chip">Vigente desde [COMPLETAR: fecha de vigencia]</span>
           <h1>Política de privacidad</h1>
           <p>
             Esta política explica qué datos recopila <strong>Yaruki</strong>, la
@@ -96,15 +96,36 @@
             <h3>2.2 El contenido que creas</h3>
             <p>
               Tus tareas, notas, listas y sus ítems, eventos, hábitos y el
-              registro diario de tus hábitos, además del historial de cambios
-              de cada uno de estos elementos.
+              registro diario de tus hábitos, proyectos, lugares y personas,
+              además del historial de cambios de cada uno de estos elementos.
+            </p>
+            <p>
+              <strong>Lugares:</strong> guardamos el nombre que le pones a cada
+              lugar y una descripción libre opcional. Un lugar es sólo texto:
+              Yaruki no guarda coordenadas, no te pide permiso de ubicación y
+              no usa mapas.
+            </p>
+            <p>
+              <strong>Personas y sus datos de contacto:</strong> puedes guardar
+              a una persona con su nombre, notas y datos de contacto (teléfono,
+              correo o usuario en alguna app, con la plataforma y una
+              etiqueta). Son datos de terceros que tú escribes o le dices al
+              asistente; Yaruki no los lee de los contactos de tu teléfono ni
+              los usa para enviar mensajes o hacer llamadas en tu nombre, sólo
+              los guarda para que puedas consultarlos. Al guardar datos de
+              otra persona, tú eres quien decide hacerlo y quien debe tener un
+              motivo legítimo para ello (por ejemplo, que se trate de tu
+              agenda personal); no guardes datos de terceros que no tengas
+              derecho a guardar.
             </p>
             <p>
               Ciframos en reposo (es decir, mientras están guardados en nuestra
               base de datos) el contenido más sensible: la descripción de tus
               tareas, el contenido de tus notas, la ubicación que escribes en
-              tus eventos, la descripción y el objetivo de tus hábitos, y los
-              ítems de tus listas. Dejamos sin cifrar los títulos y nombres, las
+              tus eventos, la descripción y el objetivo de tus hábitos, los
+              ítems de tus listas, la descripción de tus lugares, y las notas
+              y los datos de contacto (teléfono, correo o usuario) de tus
+              personas. Dejamos sin cifrar los títulos y nombres (incluido el nombre de cada lugar o persona), las
               etiquetas, las fechas y los estados (por ejemplo "pendiente" o
               "hecha"), porque los necesitamos para ordenar y filtrar tu
               contenido al mostrártelo.
@@ -125,7 +146,36 @@
               escribiste, también cifrados, para poder revisarlos.
             </p>
 
-            <h3>2.4 Datos técnicos</h3>
+            <h3>2.4 Tus mensajes de voz</h3>
+            <p>
+              Puedes hablarle al asistente en vez de escribirle. Para eso,
+              Yaruki te pide permiso para usar el micrófono
+              del teléfono y lo usa <strong>sólo mientras estás
+              grabando un mensaje</strong>; no escucha en segundo plano ni
+              cuando la app está cerrada. El permiso es opcional: sin él, la
+              app funciona igual por escrito.
+            </p>
+            <p>
+              Al enviar el mensaje, la grabación (un archivo de audio) se sube
+              a nuestro servidor, que la manda a Gemini en Google Cloud Vertex
+              AI únicamente para transcribirla a texto. <strong>El audio no se
+              guarda en nuestro servidor:</strong> se procesa en memoria y se
+              descarta al terminar la solicitud. Lo único que guardamos es el
+              texto de la transcripción, que entra a la conversación como si lo
+              hubieras escrito (cifrado, con la misma retención de la sección
+              7). Si la transcripción falla, tampoco queda el audio.
+            </p>
+            <p>
+              En tu teléfono, la app guarda tus grabaciones y el audio
+              generado al leerte en voz alta las respuestas del asistente (con
+              el motor de voz de tu teléfono) en una carpeta privada de la app,
+              a la que ninguna otra app puede entrar. Sirven para que puedas
+              volver a reproducirlos desde el chat. No se envían a ningún
+              servidor adicional, y se borran al cerrar sesión, al eliminar tu
+              cuenta o cuando cumplen 30 días.
+            </p>
+
+            <h3>2.5 Datos técnicos</h3>
             <ul>
               <li>
                 Cuántas unidades de procesamiento del modelo de IA ("tokens")
@@ -146,21 +196,27 @@
               </li>
             </ul>
 
-            <h3>2.5 Lo que no recopilamos</h3>
+            <h3>2.6 Lo que no recopilamos</h3>
             <p>
-              No pedimos ni guardamos tu ubicación (GPS o aproximada), tus
-              contactos, tus fotos ni otros archivos de tu teléfono. No usamos
+              No pedimos ni guardamos tu ubicación (GPS o aproximada), la agenda
+              de contactos de tu teléfono, tus fotos ni otros archivos de tu
+              teléfono (los datos de personas de la sección 2.2 son sólo los
+              que tú escribes dentro de Yaruki). Tampoco conservamos el audio
+              de tus mensajes de voz en nuestro servidor (sección 2.4). No usamos
               identificadores publicitarios: Yaruki no tiene anuncios. No
               usamos herramientas de analítica ni de reporte de fallos de
               terceros (sin Firebase, sin Crashlytics, sin ninguna similar).
             </p>
 
-            <h3>2.6 Datos guardados sólo en tu teléfono</h3>
+            <h3>2.7 Datos guardados sólo en tu teléfono</h3>
             <p>
               La app guarda localmente tu token de sesión, el identificador de
               la conversación activa y tu preferencia de notificaciones. Usa
-              estos permisos: acceso a internet, mostrar notificaciones y
-              programar alarmas exactas (para tus recordatorios). La copia de
+              estos permisos: acceso a internet, mostrar notificaciones,
+              programar alarmas exactas (para tus recordatorios) y usar el
+              micrófono, sólo mientras grabas un mensaje de voz (sección 2.4).
+              Los audios de tus mensajes de voz también viven sólo en tu
+              teléfono, como se explica en esa sección. La copia de
               seguridad automática de Android está desactivada para Yaruki, así
               que tus datos no se respaldan fuera de nuestro servidor por esa
               vía.
@@ -183,7 +239,8 @@
               <li>Crear y proteger tu cuenta, y dejarte iniciar sesión.</li>
               <li>Guardar y mostrarte tu contenido (tareas, notas, listas, eventos, hábitos).</li>
               <li>Programarte recordatorios como notificaciones.</li>
-              <li>Hacer que el asistente entienda tus mensajes y te responda.</li>
+              <li>Hacer que el asistente entienda tus mensajes y te responda, incluida la transcripción de tus mensajes de voz.</li>
+              <li>Guardar y mostrarte el historial de tus chats recientes, para que puedas volver a leerlos.</li>
               <li>Enviarte los correos de verificación de cuenta y de restablecimiento de contraseña.</li>
               <li>Controlar el uso del asistente y evitar abuso del servicio.</li>
               <li>Revisar las respuestas del asistente que reportes.</li>
@@ -205,7 +262,7 @@
               quien envía a Vertex AI:
             </p>
             <ul>
-              <li>el mensaje que acabas de escribir;</li>
+              <li>el mensaje que acabas de escribir o, si le hablaste, la grabación de tu voz (ver más abajo);</li>
               <li>
                 hasta 8 intercambios anteriores de esa conversación, sólo si
                 ocurrieron en las últimas 24 horas, para que el asistente
@@ -221,6 +278,14 @@
                 "mañana" o "el viernes".
               </li>
             </ul>
+            <p>
+              <strong>Mensajes de voz:</strong> cuando le hablas al asistente,
+              nuestro servidor envía la grabación a Vertex AI en una primera
+              llamada que sólo la transcribe a texto, y después trata ese texto
+              como cualquier mensaje escrito. Google procesa el audio por
+              nuestra cuenta, para ese único fin; nosotros no lo conservamos
+              (sección 2.4).
+            </p>
             <p>
               <strong>Nunca enviamos tu nombre ni tu correo a Vertex AI.</strong>
               Ese envío tiene un único fin: interpretar tu mensaje y generar la
@@ -267,8 +332,8 @@
               <tbody>
                 <tr>
                   <td>Google Cloud Vertex AI (Gemini)</td>
-                  <td>Generar las respuestas del asistente</td>
-                  <td>Lo descrito en la sección 4. Nunca tu nombre ni tu correo</td>
+                  <td>Generar las respuestas del asistente y transcribir tus mensajes de voz</td>
+                  <td>Lo descrito en la sección 4, incluida la grabación de tu voz cuando le hablas al asistente. Nunca tu nombre ni tu correo</td>
                 </tr>
                 <tr>
                   <td>Google Sign-In</td>
@@ -309,7 +374,8 @@
             <h2 id="seguridad-h">6. Cómo protegemos tus datos</h2>
             <ul>
               <li>Toda la comunicación entre la app y el servidor viaja cifrada (HTTPS); la app rechaza conexiones sin cifrar.</li>
-              <li>En la base de datos ciframos en reposo el contenido más sensible: ver la lista completa en la sección 2.2, y también los mensajes del chat y las respuestas del asistente, los eventos internos y los parámetros de las acciones que propone, y los reportes de respuestas (sección 2.3).</li>
+              <li>En la base de datos ciframos en reposo el contenido más sensible: ver la lista completa en la sección 2.2, y también los mensajes del chat y las respuestas del asistente (incluido el historial de chats), las transcripciones de tus mensajes de voz, los eventos internos y los parámetros de las acciones que propone, y los reportes de respuestas (sección 2.3).</li>
+              <li>Tus grabaciones de voz viajan cifradas (HTTPS) y no se guardan en el servidor; en tu teléfono viven en una carpeta privada de la app (sección 2.4).</li>
               <li>Las contraseñas se guardan como hash irreversible, nunca en texto plano.</li>
               <li>Cada cuenta sólo puede acceder a su propia información.</li>
               <li>Cerrar sesión revoca tu token de acceso en el servidor de inmediato.</li>
@@ -321,8 +387,23 @@
             <h2 id="conservacion-h">7. Cuánto tiempo conservamos tus datos</h2>
             <ul>
               <li><strong>Tu cuenta y tu contenido:</strong> mientras tu cuenta esté activa.</li>
-              <li><strong>Tus conversaciones con el asistente:</strong> se conservan mientras tu cuenta esté activa, aunque el asistente sólo usa como contexto las de las últimas 24 horas.</li>
-              <li><strong>Claves de idempotencia:</strong> 24 horas (sección 2.4).</li>
+              <li>
+                <strong>Historial de tus chats:</strong> los mensajes y
+                respuestas de tus conversaciones se conservan
+                <strong>30 días</strong> para que puedas volver a leerlos desde
+                la app; después se borran automáticamente. El asistente nunca
+                usa esas conversaciones antiguas como contexto: sólo usa las
+                últimas 24 horas del chat que tienes abierto.
+              </li>
+              <li>
+                <strong>Registros internos de cada mensaje:</strong> el
+                registro técnico de lo que pediste y de las acciones que el
+                asistente propuso (que incluye el texto de tu mensaje o de su
+                transcripción, cifrado), y los reportes de respuestas, se
+                conservan mientras tu cuenta esté activa.
+              </li>
+              <li><strong>Audio de tus mensajes de voz:</strong> en nuestro servidor, no se conserva: se descarta al terminar de transcribirlo. En tu teléfono, hasta que cierres sesión, elimines tu cuenta o pasen 30 días, lo que ocurra primero.</li>
+              <li><strong>Claves de idempotencia:</strong> 24 horas (sección 2.5).</li>
               <li>
                 <strong>Copias de seguridad del servidor:</strong> las copias de
                 seguridad del servidor se conservan por un máximo de
