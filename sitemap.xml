@@ -6,13 +6,11 @@
   </url>
   <url>
     <loc>https://yaruki.hjgr.dev/privacidad/</loc>
-    <!-- [FECHA DE DESPLIEGUE]: al publicar la política, cambia este lastmod a esa fecha (AAAA-MM-DD) -->
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-11-01</lastmod>
   </url>
   <url>
     <loc>https://yaruki.hjgr.dev/terminos/</loc>
-    <!-- [FECHA DE DESPLIEGUE]: al publicar el ajuste de Términos de esta PR, cambia este lastmod a esa fecha (AAAA-MM-DD) -->
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-11-01</lastmod>
   </url>
   <url>
     <loc>https://yaruki.hjgr.dev/eliminar-cuenta/</loc>
