@@ -6,8 +6,10 @@ import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js";
  * Visual idéntico a `ChatScreen.kt`/`TarjetaElementoChat.kt`: tecleo en el
  * input → burbuja del usuario → "Pensando..." → tarjeta rica animada (o
  * Confirmar/Rechazar → se "toca" Confirmar → "Confirmado ✓"). Uno de los 6
- * es dictado: ondas en el input + chip "Voz · Disponible" en vez de
- * tecleo, mismo recorrido de ahí en más.
+ * es un mensaje de voz, como en la app: barra de grabación (papelera,
+ * punto rojo, contador, onda) → burbuja de audio con "Transcribiendo…" →
+ * transcripción → "Pensando..." → respuesta con su propio reproductor (sólo
+ * se anima el progreso, sin audio real) y la tarjeta.
  *
  * `play()`/`pause()`/`reset()` los maneja `stage.js` con
  * `onEnter`/`onLeave` (plan, regla de la parte B) — entrar a la sección
@@ -70,12 +72,62 @@ const ESCENARIOS = [
   },
   {
     id: "dictado",
-    texto: "Recuérdame llamar al dentista",
+    texto: "Recuérdame llamar al dentista hoy",
     dictado: true,
-    respuesta: "Te lo anoté para hoy.",
+    // Texto real del backend (`ServicioConversacional`): «Listo, ya anoté tu tarea «…».»
+    respuesta: "Listo, ya anoté tu tarea «Llamar al dentista».",
     tarjeta: { icono: "tareas", tipo: "TAREA", titulo: "Llamar al dentista", detalle: "Hoy", accion: "Ver tarea" },
   },
 ];
+
+const N_BARRAS_GRABACION = 28;
+const N_BARRAS_AUDIO = 34;
+const DURACION_VOZ = 3;
+const DURACION_RESPUESTA = 4;
+
+const ICONO_PAPELERA =
+  '<svg class="ps-grabacion-papelera" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+const ICONO_PLAY =
+  '<svg class="ps-audio-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+
+/** Amplitud 0..1 determinista (mezcla de senos): la onda se ve a "voz" sin azar entre corridas. */
+function amplitud(i, semilla = 0) {
+  const v = Math.abs(Math.sin(i * 0.9 + semilla) * 0.6 + Math.sin(i * 0.37 + semilla * 2) * 0.4);
+  return 0.18 + 0.82 * v;
+}
+
+function formatearDuracion(segundos) {
+  return `${Math.floor(segundos / 60)}:${String(Math.floor(segundos % 60)).padStart(2, "0")}`;
+}
+
+/** Reproductor del chat (`ReproductorAudioChat`): play, onda de barras y duración m:ss. */
+function crearReproductor(segundos, semilla) {
+  const barras = Array.from({ length: N_BARRAS_AUDIO }, (_, i) => `<i style="--h:${Math.round(amplitud(i, semilla) * 100)}%"></i>`).join("");
+  const el = document.createElement("div");
+  el.className = "ps-audio";
+  el.setAttribute("aria-hidden", "true");
+  el.innerHTML = `${ICONO_PLAY}<span class="ps-audio-onda">${barras}</span><span class="ps-audio-duracion">${formatearDuracion(segundos)}</span>`;
+  return el;
+}
+
+/** Pinta de sólido las barras hasta `fraccion` (0..1), como `FormaOndaCanvas`. */
+function pintarProgreso(reproductor, fraccion) {
+  const barras = reproductor.querySelectorAll(".ps-audio-onda i");
+  const hasta = fraccion * (barras.length - 1);
+  barras.forEach((b, i) => b.classList.toggle("on", fraccion > 0 && i <= hasta));
+}
+
+/** Burbuja del usuario con audio: reproductor y, debajo, el pie (transcripción). */
+function crearBurbujaVozUsuario(pie, segundos) {
+  const el = document.createElement("div");
+  el.className = "ps-burbuja ps-burbuja--usuario ps-burbuja--voz";
+  el.append(crearReproductor(segundos, 1.3));
+  const texto = document.createElement("div");
+  texto.className = "ps-burbuja-pie";
+  texto.textContent = pie;
+  el.append(texto);
+  return el;
+}
 
 let refs = null;
 let timelineActivo = null;
@@ -94,11 +146,12 @@ export function mount(contenedor) {
         <div class="ps-campo">
           <span class="ps-placeholder">Escribe un mensaje...</span>
           <span class="ps-entrada-texto"></span><span class="ps-cursor" aria-hidden="true"></span>
-          <span class="ps-onda-voz" aria-hidden="true">
-            <span class="ps-onda-barra"></span><span class="ps-onda-barra"></span>
-            <span class="ps-onda-barra"></span><span class="ps-onda-barra"></span>
-            <span class="ps-onda-barra"></span>
-          </span>
+        </div>
+        <div class="ps-grabacion" aria-hidden="true">
+          ${ICONO_PAPELERA}
+          <span class="ps-grabacion-punto"></span>
+          <span class="ps-grabacion-tiempo">0:00</span>
+          <span class="ps-grabacion-onda">${"<i></i>".repeat(N_BARRAS_GRABACION)}</span>
         </div>
         <span class="ps-boton-icono" aria-hidden="true">${iconoMic().replace("<svg ", '<svg class="ps-icono-mic" ')}${iconoEnviar()}</span>
       </div>
@@ -113,7 +166,8 @@ export function mount(contenedor) {
     placeholder: contenedor.querySelector(".ps-placeholder"),
     cursor: contenedor.querySelector(".ps-cursor"),
     chipVoz: contenedor.querySelector(".ps-chip-voz"),
-    barras: contenedor.querySelectorAll(".ps-onda-barra"),
+    tiempo: contenedor.querySelector(".ps-grabacion-tiempo"),
+    barrasGrabacion: contenedor.querySelectorAll(".ps-grabacion-onda i"),
   };
   escribirEnEntrada("");
 }
@@ -159,7 +213,7 @@ function crearTarjeta(escenario) {
   const el = document.createElement("div");
   el.className = "ps-burbuja ps-burbuja--asistente";
   el.innerHTML = `
-    ${escenario.respuesta}
+    ${escenario.dictado ? "" : escenario.respuesta}
     <div class="ps-tarjeta">
       ${iconoTrazo(tarjeta.icono)}
       <div class="ps-tarjeta-texto">
@@ -170,6 +224,15 @@ function crearTarjeta(escenario) {
       </div>
     </div>
   `;
+  if (escenario.dictado) {
+    // Responde por voz: reproductor arriba, el texto debajo y luego la tarjeta
+    // (mismo orden que `BurbujaAsistente`).
+    const audio = crearReproductor(DURACION_RESPUESTA, 4.1);
+    const texto = document.createElement("div");
+    texto.className = "ps-burbuja-pie ps-burbuja-pie--asistente";
+    texto.textContent = escenario.respuesta;
+    el.prepend(audio, texto);
+  }
   return el;
 }
 
@@ -228,30 +291,12 @@ function construirTimeline(espera = 0.9) {
     },
   });
 
-  refs.inputCaja.classList.remove("ps-campo--dictando");
+  refs.entrada.classList.remove("ps-chat-entrada--grabando");
   escribirEnEntrada("");
   tl.to({}, { duration: espera }); // respiro entre un intercambio y el siguiente
 
   if (escenario.dictado) {
-    // Ondas de voz en vez de tecleo — mismo recorrido de ahí en más.
-    tl.call(() => refs.inputCaja.classList.add("ps-campo--dictando"));
-    tl.to(refs.chipVoz, { opacity: 1, duration: 0.2 }, "<");
-    tl.to(
-      refs.barras,
-      {
-        scaleY: () => 0.4 + Math.random() * 1.4,
-        duration: 0.22,
-        repeat: 6,
-        yoyo: true,
-        stagger: { each: 0.05, repeat: 6 },
-      },
-      "<"
-    );
-    tl.call(() => {
-      refs.inputCaja.classList.remove("ps-campo--dictando");
-      escribirEnEntrada(escenario.texto);
-    });
-    tl.to(refs.chipVoz, { opacity: 0, duration: 0.2 }, "<");
+    return construirTimelineVoz(tl, escenario);
   } else {
     // Tecleo real, carácter a carácter — proxy numérico + onUpdate (no hay
     // forma de "animar" texttContent con transform/opacity, es la única
@@ -317,6 +362,79 @@ function construirTimeline(espera = 0.9) {
   return tl;
 }
 
+/**
+ * Escenario de voz, como la app real (`BarraGrabacion`, `BurbujaUsuario`,
+ * `BurbujaAsistente`): graba con contador y onda que corre → se envía como
+ * audio con "Transcribiendo…" → pie con la transcripción → "Pensando..." →
+ * la respuesta trae su reproductor, que avanza solo, y la tarjeta.
+ */
+function construirTimelineVoz(tl, escenario) {
+  const buffer = Array.from({ length: N_BARRAS_GRABACION }, () => 0);
+  let paso = -1;
+  const pintarGrabacion = (t) => {
+    const nuevo = Math.floor(t * 10);
+    while (paso < nuevo) {
+      paso += 1;
+      // La voz "habla" a ráfagas: pausas cortas entre palabras.
+      const habla = Math.sin(paso * 0.55) > -0.55;
+      buffer.shift();
+      buffer.push(habla ? amplitud(paso, 0.7) : 0);
+    }
+    refs.barrasGrabacion.forEach((b, i) => b.style.setProperty("--h", `${Math.round(buffer[i] * 100)}%`));
+    refs.tiempo.textContent = formatearDuracion(t);
+  };
+
+  tl.call(() => {
+    paso = -1;
+    buffer.fill(0);
+    pintarGrabacion(0);
+    refs.entrada.classList.add("ps-chat-entrada--grabando");
+  });
+  tl.to(refs.chipVoz, { opacity: 1, duration: 0.2 }, "<");
+  const reloj = { t: 0 };
+  tl.to(reloj, { t: DURACION_VOZ + 0.4, duration: DURACION_VOZ + 0.4, ease: "none", onUpdate: () => pintarGrabacion(reloj.t) });
+  tl.to({}, { duration: 0.15 });
+
+  let burbuja;
+  tl.call(() => {
+    refs.entrada.classList.remove("ps-chat-entrada--grabando");
+    burbuja = crearBurbujaVozUsuario("Transcribiendo…", DURACION_VOZ);
+    agregarAlHistorial(burbuja);
+    entrar(burbuja);
+  });
+  tl.to(refs.chipVoz, { opacity: 0, duration: 0.2 }, "<");
+  tl.to({}, { duration: 1.1 });
+  tl.call(() => {
+    burbuja.querySelector(".ps-burbuja-pie").textContent = escenario.texto;
+  });
+  tl.to({}, { duration: 0.6 });
+
+  let pensando;
+  tl.call(() => {
+    pensando = agregarAlHistorial(crearBurbujaPensando());
+    entrar(pensando, { y: 6 });
+  });
+  tl.to({}, { duration: 0.9 });
+
+  let respuesta;
+  tl.call(() => {
+    respuesta = reemplazarEnHistorial(pensando, crearTarjeta(escenario));
+    gsap.set(respuesta, { opacity: 0, y: 10, scale: 0.98, transformOrigin: "left bottom" });
+    gsap.to(respuesta, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power3.out" });
+  });
+  // La respuesta se "lee" sola: sólo avanza el progreso de la onda.
+  const avance = { f: 0 };
+  tl.to(avance, {
+    f: 1,
+    duration: DURACION_RESPUESTA,
+    ease: "none",
+    onUpdate: () => pintarProgreso(respuesta.querySelector(".ps-audio"), avance.f),
+  });
+  tl.call(() => pintarProgreso(respuesta.querySelector(".ps-audio"), 0));
+  tl.to({}, { duration: 1.6 });
+  return tl;
+}
+
 function prefiereMovimientoReducido() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
@@ -332,7 +450,7 @@ function mostrarEstadoEstatico() {
   if (!refs) return;
   refs.cuerpo.innerHTML = "";
   escribirEnEntrada("");
-  refs.inputCaja.classList.remove("ps-campo--dictando");
+  refs.entrada.classList.remove("ps-chat-entrada--grabando");
   gsap.set(refs.chipVoz, { opacity: 0 });
   sembrarIntercambio();
 }
@@ -340,8 +458,8 @@ function mostrarEstadoEstatico() {
 /** Un intercambio ya terminado (mensaje + respuesta), agregado de una, sin animar. */
 function sembrarIntercambio() {
   const escenario = elegirEscenario();
-  const burbuja = crearBurbujaUsuario();
-  burbuja.textContent = escenario.texto;
+  const burbuja = escenario.dictado ? crearBurbujaVozUsuario(escenario.texto, DURACION_VOZ) : crearBurbujaUsuario();
+  if (!escenario.dictado) burbuja.textContent = escenario.texto;
   let respuesta;
   if (escenario.confirmar) {
     respuesta = crearConfirmacion(escenario.confirmar.pregunta);
@@ -383,6 +501,6 @@ export function reset() {
   if (refs) {
     refs.cuerpo.innerHTML = "";
     escribirEnEntrada("");
-    refs.inputCaja.classList.remove("ps-campo--dictando");
+    refs.entrada.classList.remove("ps-chat-entrada--grabando");
   }
 }
