@@ -390,8 +390,8 @@
           <section id="seguridad" aria-labelledby="seguridad-h">
             <h2 id="seguridad-h">6. Cómo protegemos tus datos</h2>
             <ul>
-              <li>Toda la comunicación entre la app y el servidor viaja cifrada (HTTPS); la app rechaza conexiones sin cifrar.</li>
-              <li>En la base de datos ciframos en reposo el contenido más sensible: ver la lista completa en la sección 2.2, y también los mensajes del chat y las respuestas del asistente (incluido el historial de chats), las transcripciones de tus mensajes de voz, los eventos internos y los parámetros de las acciones que propone, y los reportes de respuestas (sección 2.3).</li>
+              <li>Toda la comunicación entre la app y el servidor viaja cifrada (HTTPS); la app rechaza conexiones sin cifrar. También viaja cifrada (HTTPS) la comunicación entre nuestro servidor y Google Vertex AI.</li>
+              <li>En la base de datos ciframos en reposo el contenido más sensible: ver la lista completa en la sección 2.2, y también los mensajes del chat y las respuestas del asistente (incluido el historial de chats), las transcripciones de tus mensajes de voz, los eventos internos y los parámetros de las acciones que propone, los reportes de respuestas (sección 2.3), y las respuestas guardadas para las claves de idempotencia (sección 2.5).</li>
               <li>Tus grabaciones de voz viajan cifradas (HTTPS) y no se guardan en el servidor; en tu teléfono viven en una carpeta privada de la app (sección 2.4).</li>
               <li>Las contraseñas se guardan como hash irreversible, nunca en texto plano.</li>
               <li>Cada cuenta sólo puede acceder a su propia información.</li>
