@@ -158,8 +158,9 @@
             <p>
               Al enviar el mensaje, la grabación (un archivo de audio) se sube
               a nuestro servidor, que la manda a Gemini en Google Cloud Vertex
-              AI únicamente para transcribirla a texto. Google procesa el audio
-              en Estados Unidos. <strong>El audio no se
+              AI únicamente para transcribirla a texto. Google lo procesa en sus servidores,
+              que pueden estar fuera de México, incluido Estados Unidos, sin
+              una región fija garantizada. <strong>El audio no se
               guarda en nuestro servidor:</strong> se procesa en memoria y se
               descarta al terminar la solicitud. Lo único que guardamos es el
               texto de la transcripción, que entra a la conversación como si lo
@@ -283,7 +284,8 @@
               nuestro servidor envía la grabación a Vertex AI en una primera
               llamada que sólo la transcribe a texto, y después trata ese texto
               como cualquier mensaje escrito. Google procesa el audio
-              por nuestra cuenta y en Estados Unidos, para ese único fin;
+              por nuestra cuenta, en servidores que pueden estar fuera de
+              México, incluido Estados Unidos, para ese único fin;
               nosotros no lo conservamos (sección 2.4).
             </p>
             <p>
