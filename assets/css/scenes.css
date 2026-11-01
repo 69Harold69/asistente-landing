@@ -526,12 +526,12 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .ps-grabacion-punto {
-    animation: ps-latido 1s ease-in-out infinite;
+    animation: ps-latido 0.8s ease-in-out infinite alternate;
   }
 }
 
 @keyframes ps-latido {
-  50% {
+  to {
     opacity: 0.3;
   }
 }
@@ -959,7 +959,7 @@
 
 /*
   Degradado FIJO, no con tokens de tema (bug 7 del punto de control 2): una
-  pantalla de llamada entrante se lee oscura en los dos temas, como la de un
+  pantalla de llamada se lee oscura en los dos temas, como la de un
   teléfono real. Mismos hex que el tema oscuro de `tokens.css`.
 */
 .ps-llamada {
@@ -1017,10 +1017,44 @@
   opacity: 0.45;
 }
 
-.ps-llamada-sub {
-  margin-top: calc(28 * var(--dp));
+.ps-llamada-contador {
+  margin-top: calc(24 * var(--dp));
+  font-size: calc(22 * var(--dp));
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.ps-llamada-estado {
+  min-height: calc(20 * var(--dp));
   font-size: calc(14 * var(--dp));
-  opacity: 0.8;
+  opacity: 0.85;
+}
+
+/* Nivel del micrófono: sólo mientras Yaruki escucha. */
+.ps-llamada-nivel {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--dp));
+  height: calc(24 * var(--dp));
+  margin-top: calc(4 * var(--dp));
+  visibility: hidden;
+}
+
+.ps-llamada[data-fase="escuchando"] .ps-llamada-nivel {
+  visibility: visible;
+}
+
+.ps-llamada[data-fase="llamando"] .ps-llamada-contador {
+  opacity: 0;
+}
+
+.ps-nivel-barra {
+  width: calc(4 * var(--dp));
+  height: calc(14 * var(--dp));
+  border-radius: calc(2 * var(--dp));
+  background: #8b7cf0;
+  transform-origin: center;
 }
 
 .ps-llamada-acciones {
@@ -1052,9 +1086,6 @@
   transform: rotate(135deg);
 }
 
-.ps-boton-llamada--contestar {
-  background: #3fa66b;
-}
 
 /* Dashboard (DashboardScreen.kt: padding 20dp, separación 16dp) ------------- */
 

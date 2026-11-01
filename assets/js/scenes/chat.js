@@ -21,6 +21,20 @@ import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js";
  */
 export const id = "chat";
 
+/**
+ * Próximo viernes en el formato de `describirFechaRelativa` del backend (#89):
+ * "viernes 6 de noviembre" (día de la semana, día y mes en minúsculas, sin
+ * año si es el actual). Si hoy es viernes, el próximo es en 7 días.
+ */
+function proximoViernes() {
+  const d = new Date();
+  d.setDate(d.getDate() + (((5 - d.getDay() + 7) % 7) || 7));
+  const f = new Intl.DateTimeFormat("es-MX", { weekday: "long", day: "numeric", month: "long" });
+  const partes = Object.fromEntries(f.formatToParts(d).map((p) => [p.type, p.value]));
+  const anio = d.getFullYear() !== new Date().getFullYear() ? ` de ${d.getFullYear()}` : "";
+  return `${partes.weekday} ${partes.day} de ${partes.month}${anio}`;
+}
+
 /** "9 oct 2026": fecha de mañana con el mismo estilo MEDIUM de la app (locale es-MX). */
 function fechaDeManana() {
   const manana = new Date();
@@ -68,19 +82,27 @@ const ESCENARIOS = [
   {
     id: "confirmar",
     texto: "Pospón lo de la renta para el viernes",
-    confirmar: { pregunta: '¿Confirmas posponer "Pagar la renta" para el viernes?' },
+    // Texto de `partesPosponer` + cierre de `construirRespuesta` (backend #89);
+    // la tarea no trae hora, así que no lleva "a las…".
+    confirmar: {
+      get pregunta() {
+        return `¿Muevo «Pagar la renta» al ${proximoViernes()}? Responde para confirmar o cancelar.`;
+      },
+      listo: "Listo, pospuse «Pagar la renta».",
+    },
   },
   {
     id: "dictado",
-    texto: "Recuérdame llamar al dentista hoy",
+    texto: "Recuérdame llamar al dentista",
     dictado: true,
-    // Texto real del backend (`ServicioConversacional`): «Listo, ya anoté tu tarea «…».»
+    // Tarea sin referencia de tiempo: queda sin fecha (backend #118), así que
+    // la tarjeta no lleva detalle (`resumenTarjeta` de TarjetaElementoChat.kt).
     respuesta: "Listo, ya anoté tu tarea «Llamar al dentista».",
-    tarjeta: { icono: "tareas", tipo: "TAREA", titulo: "Llamar al dentista", detalle: "Hoy", accion: "Ver tarea" },
+    tarjeta: { icono: "tareas", tipo: "TAREA", titulo: "Llamar al dentista", detalle: null, accion: "Ver tarea" },
   },
 ];
 
-const N_BARRAS_GRABACION = 28;
+const N_BARRAS_GRABACION = 32; // NUM_BARRAS_EN_VIVO de BarraGrabacion.kt
 const N_BARRAS_AUDIO = 34;
 const DURACION_VOZ = 3;
 const DURACION_RESPUESTA = 4;
@@ -236,6 +258,14 @@ function crearTarjeta(escenario) {
   return el;
 }
 
+/** Respuesta de texto del asistente tras confirmar ("Listo, pospuse…"). */
+function crearBurbujaTexto(texto) {
+  const el = document.createElement("div");
+  el.className = "ps-burbuja ps-burbuja--asistente";
+  el.textContent = texto;
+  return el;
+}
+
 function crearConfirmacion(pregunta) {
   const el = document.createElement("div");
   el.className = "ps-burbuja ps-burbuja--asistente";
@@ -348,7 +378,9 @@ function construirTimeline(espera = 0.9) {
       const fila = burbujaConfirmar.querySelector(".ps-confirmar-fila");
       fila.outerHTML = '<div class="ps-confirmado">Confirmado ✓</div>';
     });
-    tl.to({}, { duration: 2.2 });
+    tl.to({}, { duration: 0.6 });
+    tl.call(() => entrar(agregarAlHistorial(crearBurbujaTexto(escenario.confirmar.listo)), { y: 6 }));
+    tl.to({}, { duration: 2.4 });
   } else {
     let tarjeta;
     tl.call(() => {
@@ -464,6 +496,8 @@ function sembrarIntercambio() {
   if (escenario.confirmar) {
     respuesta = crearConfirmacion(escenario.confirmar.pregunta);
     respuesta.querySelector(".ps-confirmar-fila").outerHTML = '<div class="ps-confirmado">Confirmado ✓</div>';
+    refs.cuerpo.append(burbuja, respuesta, crearBurbujaTexto(escenario.confirmar.listo));
+    return;
   } else {
     respuesta = crearTarjeta(escenario);
   }
