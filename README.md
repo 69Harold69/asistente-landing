@@ -109,8 +109,14 @@ pantalla y cada vuelo termina ANTES de que su texto llegue al centro
 (escritorio: `top 55%`→`top 5%`; móvil: `top 85%`→`top 25%`, y el primer
 vuelo arranca recién cuando el teléfono se pega arriba). Así el teléfono ya
 muestra la escena de la que habla el texto mientras se lee.
-**Hero:** la mascota del Splash escala y cruza a Login entre el scroll 0 y el
-75% del tramo previo al primer vuelo. **Avisos (`#fase-avisos`, 2026-10-13):** la pestaña Notificaciones de la app (`scenes/avisos.js`, de `NotificacionesScreen.kt`), entre el logro y la llamada; en bucle baja un aviso del sistema y una fila se desliza a "Completar". Por esta fase, la llamada pasó a la columna derecha (`.seccion--derecha`). **Hábitos → logro (`TRAMOS_LOGRO`):**
+**Hero:** la mascota del Splash escala hasta tapar la pantalla entera
+(`ESCALA_MASCOTA`, ≈9.5: con 6 quedaban dos franjas moradas y Login se fundía
+sobre ellas) y cruza a Login. En escritorio, entre el scroll 0 y el 75% del
+tramo previo al primer vuelo; en móvil/tablet la franja del teléfono entra
+desde abajo del CTA, así que el tramo arranca recién cuando la franja terminó
+de entrar en pantalla (#11: antes el círculo crecía con el teléfono todavía
+cortado por el borde inferior del viewport) y termina antes del primer giro.
+**Avisos (`#fase-avisos`, 2026-10-13):** la pestaña Notificaciones de la app (`scenes/avisos.js`, de `NotificacionesScreen.kt`), entre el logro y la llamada; en bucle baja un aviso del sistema y una fila se desliza a "Completar". Por esta fase, la llamada pasó a la columna derecha (`.seccion--derecha`). **Hábitos → logro (`TRAMOS_LOGRO`):**
 la sección mide 160vh: primero el heatmap quieto, después un cruce de opacidad
 de frente a "logro". **Cierre:** el Dashboard aterriza al centro de la página,
 queda quieto mientras se lee el CTA y sube con la página cuando el sticky se
@@ -131,7 +137,19 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 - **`sitemap.xml`:** las 4 páginas públicas con URL absoluta y barra final, igual
   que los enlaces del sitio. `lastmod` es la fecha del último cambio de contenido
   visible de cada página: actualízala a mano cuando cambie el texto, no por
-  ajustes de `<head>`.
+  ajustes de `<head>`. Antes de abrir una PR que toque el texto de una
+  página, compara con la fecha del último commit de cada una:
+
+  ```bash
+  for p in index.html privacidad/index.html terminos/index.html eliminar-cuenta/index.html; do
+    printf '%s  %s\n' "$(git log -1 --format=%ad --date=short -- "$p")" "$p"
+  done
+  grep -n lastmod sitemap.xml
+  ```
+
+  Si una página tiene un commit de contenido posterior a su `lastmod`, se
+  actualiza en la misma PR (el `/` se quedó en 2026-10-29 con dos cambios de
+  texto encima; se corrigió en #11).
 - **`robots.txt`:** permite todo y declara el sitemap.
 - **Open Graph y Twitter/X** en las 4 páginas públicas (`index.html`, privacidad,
   términos y eliminar cuenta), con la misma imagen `og-yaruki.png` 1200×630. La

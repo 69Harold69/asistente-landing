@@ -729,6 +729,19 @@ strong {
   display: block;
 }
 
+/*
+  Móvil/tablet: al terminar `<main>`, la franja sticky queda apoyada en el
+  borde inferior y su `::after` (el degradado de 2.5rem que suaviza la
+  franja, phone.css) colgaba ENCIMA del Centro de Privacidad: una banda del
+  color del fondo fundiéndose sobre el fondo elevado del pie (#11). `clip`
+  no crea un contenedor de scroll, así que el sticky sigue funcionando.
+*/
+@media (max-width: 1023px) {
+  .layout-con-stage {
+    overflow: clip;
+  }
+}
+
 .layout-con-stage > #hero,
 .layout-con-stage > .secciones {
   position: relative;

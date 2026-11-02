@@ -44,6 +44,13 @@ const TAU_SUAVIZADO = 0.12;
 const PASO_MAX_GIRO = 0.1;
 /** Lo mismo en los fundidos de frente (Splash → Login, Hábitos → logro): nunca en menos de 8 cuadros. */
 const PASO_MAX_FUNDIDO = 0.125;
+/**
+ * Escala final de la mascota del Splash en el hero. Con 96dp de diámetro
+ * sobre una pantalla de 360×810dp, para tapar hasta las esquinas hace falta
+ * ≥ 9.2 (la diagonal, ~886dp). Antes era 6 (576dp): quedaban dos franjas
+ * moradas arriba y abajo y Login se fundía sobre ellas (#11).
+ */
+const ESCALA_MASCOTA = 9.5;
 
 function leerParametrosDeInspeccion() {
   const params = new URLSearchParams(window.location.search);
@@ -223,7 +230,10 @@ function crearCapas(pantalla) {
 const TRAMOS = {
   escritorio: { ini: 80, fin: 22, finCierre: 0, iniCierre: 84, chat: null, logro: { ini: -25, fin: -55 } },
   // En móvil el texto arranca 46vh debajo del borde de su sección (base.css).
-  movil: { ini: 92, fin: 38, finCierre: 20, iniCierre: 92, chat: { ini: 60, fin: 14 }, logro: { ini: 8, fin: -22 } },
+  // `logro`: el cruce al logro arranca recién cuando el párrafo "va a celebrar
+  // contigo" entra en la zona de lectura (debajo de la franja de 44vh). Antes
+  // (8 → -22) ya iba por el 27% con el título en lectura: doble exposición (#11).
+  movil: { ini: 92, fin: 38, finCierre: 20, iniCierre: 92, chat: { ini: 60, fin: 14 }, logro: { ini: -8, fin: -30 } },
 };
 
 /*
@@ -389,13 +399,33 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       columnas["1"] = centroDe(".seccion--derecha") - centro || mitad;
       columnas["-1"] = centroDe("#fase-elementos") - centro || -mitad;
     }
-    const finHero = Math.max(120, iniPrimerGiro * 0.75);
+    /*
+      Hero (Splash → Login). En escritorio el teléfono está a la vista desde
+      el scroll 0. En móvil/tablet la franja del teléfono va en el flujo
+      DEBAJO del CTA del hero, así que al cargar asoma cortada por el borde
+      inferior del viewport (#11): la mascota no puede escalar ni cruzar a
+      Login hasta que la franja entera entró en pantalla, si no el círculo
+      se ve "cortado en plano por abajo". El tramo arranca cuando la franja
+      termina de entrar y acaba antes del primer giro.
+    */
+    let iniHero = 0;
+    if (!mqEscritorio.matches) {
+      const secciones = document.querySelector(".secciones");
+      // La franja (`.stage`) es el hermano inmediato anterior: su borde inferior en flujo es el top de `.secciones`.
+      if (secciones) iniHero = Math.max(0, topDoc(secciones) - vh);
+    }
+    let finHero = Math.max(iniHero + 120, iniPrimerGiro * 0.75);
+    if (finHero > iniPrimerGiro) {
+      finHero = iniPrimerGiro;
+      iniHero = Math.max(0, Math.min(iniHero, finHero - 120));
+    }
+    const medioHero = iniHero + (finHero - iniHero) * 0.5;
     geo = {
       escritorio: mqEscritorio.matches,
-      hero: { ini: 0, fin: finHero },
+      hero: { ini: iniHero, fin: finHero },
       segmentos,
       // Tramos con avance limitado por cuadro: el fundido del hero y los de `segmentos`.
-      limitados: [{ ini: finHero * 0.5, fin: finHero, paso: finHero * 0.5 * PASO_MAX_FUNDIDO }, ...segmentos],
+      limitados: [{ ini: medioHero, fin: finHero, paso: (finHero - medioHero) * PASO_MAX_FUNDIDO }, ...segmentos],
       columnas,
       secciones: SECCIONES_ANCLA.map((id) => {
         const el = document.getElementById(id);
@@ -416,12 +446,14 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     const e = { y, base: "login", encima: null, t: 0, rot: 0, x: xDe(LADO_HERO), escala: 1, opacidad: 1, mascota: 1, enGiro: false, sombra: 0 };
 
     if (y < geo.hero.fin) {
-      const p = limitar01(y / geo.hero.fin);
-      // La mascota cubre la pantalla en p≈0.6; el cruce a Login va de 0.5 a 1.
+      const p = limitar01((y - geo.hero.ini) / (geo.hero.fin - geo.hero.ini));
+      // La mascota cubre la pantalla entera en p≈0.6 (ESCALA_MASCOTA) y el
+      // cruce a Login va de 0.5 a 1: Login aparece sobre el blanco liso de la
+      // mascota, nunca sobre el morado del Splash.
       e.base = "splash";
       e.encima = "login";
       e.t = limitar01((p - 0.5) / 0.5);
-      e.mascota = conMovimiento ? 1 + Math.min(p / 0.6, 1) * 5 : 1;
+      e.mascota = conMovimiento ? 1 + Math.min(p / 0.6, 1) * (ESCALA_MASCOTA - 1) : 1;
       return e;
     }
 
