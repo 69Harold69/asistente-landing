@@ -6,15 +6,15 @@ import {
   fijarTema,
   guardarTema,
   transicionarTema,
-} from "./theme.js?v=8aff38cc44";
-import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js?v=8aff38cc44";
-import { inicializarEscenario } from "./stage.js?v=8aff38cc44";
-import { inicializarTilt } from "./tilt.js?v=8aff38cc44";
-import { inicializarReveals } from "./revelar.js?v=8aff38cc44";
-import { inicializarProgreso } from "./progreso.js?v=8aff38cc44";
-import { inicializarMagneticos } from "./magnetico.js?v=8aff38cc44";
-import { inicializarNavRecorrido } from "./nav-recorrido.js?v=8aff38cc44";
-import { BETA_URL } from "./config.js?v=8aff38cc44";
+} from "./theme.js?v=7e55092f39";
+import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js?v=7e55092f39";
+import { inicializarEscenario } from "./stage.js?v=7e55092f39";
+import { inicializarTilt } from "./tilt.js?v=7e55092f39";
+import { inicializarReveals } from "./revelar.js?v=7e55092f39";
+import { inicializarProgreso } from "./progreso.js?v=7e55092f39";
+import { inicializarMagneticos } from "./magnetico.js?v=7e55092f39";
+import { inicializarNavRecorrido } from "./nav-recorrido.js?v=7e55092f39";
+import { BETA_URL } from "./config.js?v=7e55092f39";
 
 /*
   Yaruki — punto de entrada de `index.html`. Sin framework, sin bundler:

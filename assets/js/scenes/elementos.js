@@ -1,5 +1,5 @@
-import { iconoTrazo, barraDeNavegacion } from "../icons.js?v=8aff38cc44";
-import { contar, detener } from "./contar.js?v=8aff38cc44";
+import { iconoTrazo, barraDeNavegacion } from "../icons.js?v=7e55092f39";
+import { contar, detener } from "./contar.js?v=7e55092f39";
 
 /**
  * Elementos — pedido explícito del dueño (corrección 2026-10-04 a la
