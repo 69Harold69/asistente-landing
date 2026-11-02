@@ -45,8 +45,30 @@ asistente-landing/
 │   ├── fonts/     .woff2 completos + OFL.txt (páginas legales)
 │   ├── fuentes/   los mismos pesos recortados al rango latino + OFL.txt (portada)
 │   └── img/       favicon.svg, favicon-32.png, apple-touch-icon.png y og-yaruki.png (ver "Íconos e imagen para compartir")
+├── scripts/versionar.py    Cache busting (`?v=<hash>`), ver más abajo
 └── README.md
 ```
+
+## Cache busting (`scripts/versionar.py`)
+
+Los recursos propios (`assets/css/*.css`, `assets/js/**/*.js`) llevan `?v=<hash>`
+en los `<link>`/`<script>` de todos los `.html` **y en los `import` entre módulos
+JS** (los módulos ES también se cachean: versionar sólo `main.js` dejaba un
+`chat.js` viejo con el `index.html` nuevo). El hash es del contenido de esos
+archivos, no del commit, así que cambia sólo cuando cambia algo.
+
+**Antes de cada publicación** (o después de resolver un merge que toque `assets/`):
+
+```bash
+python3 scripts/versionar.py          # reescribe las URLs; idempotente
+python3 scripts/versionar.py --check  # no escribe; sale con 1 si hay URLs viejas
+```
+
+Y haz commit del resultado. Si dos ramas tocan `assets/`, el hash de cada una
+choca al mergear: resuélvelo corriendo el script de nuevo. Los vendor
+(`assets/js/vendor/`) también llevan versión en el HTML, pero sus propios
+imports no se tocan; el confeti (`new URL(...)` en `logro.js`) se carga sin versión
+porque ese archivo no cambia.
 
 ## Modo de inspección del teléfono (sólo desarrollo)
 

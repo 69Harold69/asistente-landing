@@ -1,4 +1,4 @@
-import { temaEfectivo, temaExplicitoActual, opuestoDe, fijarTema, transicionarTema, cortarTransicion } from "./theme.js";
+import { temaEfectivo, temaExplicitoActual, opuestoDe, fijarTema, transicionarTema, cortarTransicion } from "./theme.js?v=8aff38cc44";
 
 /*
   Yaruki — demo del tema al cargar (decisión 3.5 del plan). Invita a mirar

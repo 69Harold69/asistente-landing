@@ -1,4 +1,4 @@
-import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js";
+import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js?v=8aff38cc44";
 
 /**
  * Chat vivo (etapa 5, plan 4.3 y sección 2) — pool de 6 escenarios, uno al
@@ -154,6 +154,8 @@ function crearBurbujaVozUsuario(pie, segundos) {
 let refs = null;
 let timelineActivo = null;
 let idEscenarioAnterior = null;
+/** Último escenario cuyo mensaje SÍ llegó al historial (uno interrumpido por pausa no cuenta). */
+let idUltimoEnHistorial = null;
 let activo = false;
 
 export function mount(contenedor) {
@@ -195,7 +197,10 @@ export function mount(contenedor) {
 }
 
 function elegirEscenario() {
-  const candidatos = ESCENARIOS.filter((e) => e.id !== idEscenarioAnterior);
+  // Excluye el último elegido y el último que de verdad quedó en pantalla:
+  // si una pausa interrumpió el escenario anterior, no hay que repetir el
+  // que ya está en el historial (p. ej. «Leer 20 minutos» dos veces seguidas).
+  const candidatos = ESCENARIOS.filter((e) => e.id !== idEscenarioAnterior && e.id !== idUltimoEnHistorial);
   const elegido = candidatos[Math.floor(Math.random() * candidatos.length)];
   idEscenarioAnterior = elegido.id;
   return elegido;
@@ -348,6 +353,7 @@ function construirTimeline(espera = 0.9) {
     escribirEnEntrada("");
     const burbuja = crearBurbujaUsuario();
     burbuja.textContent = escenario.texto;
+    idUltimoEnHistorial = escenario.id;
     agregarAlHistorial(burbuja);
     entrar(burbuja);
   });
@@ -431,6 +437,7 @@ function construirTimelineVoz(tl, escenario) {
   tl.call(() => {
     refs.entrada.classList.remove("ps-chat-entrada--grabando");
     burbuja = crearBurbujaVozUsuario("Transcribiendo…", DURACION_VOZ);
+    idUltimoEnHistorial = escenario.id;
     agregarAlHistorial(burbuja);
     entrar(burbuja);
   });
@@ -496,11 +503,13 @@ function sembrarIntercambio() {
   if (escenario.confirmar) {
     respuesta = crearConfirmacion(escenario.confirmar.pregunta);
     respuesta.querySelector(".ps-confirmar-fila").outerHTML = '<div class="ps-confirmado">Confirmado ✓</div>';
+    idUltimoEnHistorial = escenario.id;
     refs.cuerpo.append(burbuja, respuesta, crearBurbujaTexto(escenario.confirmar.listo));
     return;
   } else {
     respuesta = crearTarjeta(escenario);
   }
+  idUltimoEnHistorial = escenario.id;
   refs.cuerpo.append(burbuja, respuesta);
 }
 
@@ -532,6 +541,7 @@ export function reset() {
     timelineActivo = null;
   }
   idEscenarioAnterior = null;
+  idUltimoEnHistorial = null;
   if (refs) {
     refs.cuerpo.innerHTML = "";
     escribirEnEntrada("");

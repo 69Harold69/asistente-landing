@@ -8,7 +8,7 @@
  * que no existe todavía). Lleva el chip "Próximamente" (regla de la
  * sección 2 del plan: toda función fuera del MVP se marca así).
  */
-import { iconoTrofeo } from "../icons.js";
+import { iconoTrofeo } from "../icons.js?v=8aff38cc44";
 
 export const id = "logro";
 

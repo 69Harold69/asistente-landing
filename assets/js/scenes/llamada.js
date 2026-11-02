@@ -1,4 +1,4 @@
-import { iconoTelefono } from "../icons.js";
+import { iconoTelefono } from "../icons.js?v=8aff38cc44";
 
 /**
  * Llamada del usuario a Yaruki (issue #6 de la landing; backend #111,
