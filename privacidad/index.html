@@ -47,7 +47,7 @@
     <article class="legal">
       <div class="container">
         <header class="legal-head">
-          <span class="chip">Vigente desde el 1 de noviembre de 2026</span>
+          <span class="chip">Vigente desde el 2 de noviembre de 2026</span>
           <h1>Política de privacidad</h1>
           <p>
             Esta política explica qué datos recopila <strong>Yaruki</strong>, la
@@ -167,7 +167,8 @@
             <p>
               Si reportas una respuesta del asistente porque te pareció
               incorrecta o inapropiada, guardamos esa respuesta y el motivo que
-              escribiste, también cifrados, para poder revisarlos.
+              escribiste, también cifrados, para poder revisarlos. Estos
+              reportes se borran a los 30 días (sección 7).
             </p>
 
             <h3>2.4 Tus mensajes de voz</h3>
@@ -199,8 +200,8 @@
               el motor de voz de tu teléfono) en una carpeta privada de la app,
               a la que ninguna otra app puede entrar. Sirven para que puedas
               volver a reproducirlos desde el chat. No se envían a ningún
-              servidor adicional, y se borran al cerrar sesión o al eliminar tu
-              cuenta.
+              servidor adicional, y se borran al cerrar sesión, al eliminar tu
+              cuenta o cuando cumplen 30 días.
             </p>
 
             <h3>2.5 Datos técnicos</h3>
@@ -268,6 +269,7 @@
               <li>Guardar y mostrarte tu contenido (tareas, notas, listas, eventos, hábitos).</li>
               <li>Programarte recordatorios como notificaciones.</li>
               <li>Hacer que el asistente entienda tus mensajes y te responda, incluida la transcripción de tus mensajes de voz.</li>
+              <li>Guardar y mostrarte el historial de tus chats recientes, para que puedas volver a leerlos.</li>
               <li>Enviarte los correos de verificación de cuenta y de restablecimiento de contraseña.</li>
               <li>Controlar el uso del asistente y evitar abuso del servicio.</li>
               <li>Revisar las respuestas del asistente que reportes.</li>
@@ -407,7 +409,7 @@
             <h2 id="seguridad-h">6. Cómo protegemos tus datos</h2>
             <ul>
               <li>Toda la comunicación entre la app y el servidor viaja cifrada (HTTPS); la app rechaza conexiones sin cifrar. También viaja cifrada (HTTPS) la comunicación entre nuestro servidor y Google Vertex AI.</li>
-              <li>En la base de datos ciframos en reposo el contenido más sensible: ver la lista completa en la sección 2.2, y también los mensajes del chat y las respuestas del asistente, las transcripciones de tus mensajes de voz, los eventos internos y los parámetros de las acciones que propone, los reportes de respuestas (sección 2.3), y las respuestas guardadas para las claves de idempotencia (sección 2.5).</li>
+              <li>En la base de datos ciframos en reposo el contenido más sensible: ver la lista completa en la sección 2.2, y también los mensajes del chat y las respuestas del asistente (incluido el historial de chats), las transcripciones de tus mensajes de voz, los eventos internos y los parámetros de las acciones que propone, los reportes de respuestas (sección 2.3), y las respuestas guardadas para las claves de idempotencia (sección 2.5).</li>
               <li>Tus grabaciones de voz viajan cifradas (HTTPS) y no se guardan en el servidor; en tu teléfono viven en una carpeta privada de la app (sección 2.4).</li>
               <li>Las contraseñas se guardan como hash irreversible, nunca en texto plano.</li>
               <li>Cada cuenta sólo puede acceder a su propia información.</li>
@@ -420,13 +422,38 @@
             <h2 id="conservacion-h">7. Cuánto tiempo conservamos tus datos</h2>
             <ul>
               <li><strong>Tu cuenta y tu contenido:</strong> mientras tu cuenta esté activa.</li>
-              <li><strong>Tus conversaciones con el asistente:</strong> se conservan mientras tu cuenta esté activa, aunque el asistente sólo usa como contexto las de las últimas 24 horas.</li>
-              <li><strong>Audio de tus mensajes de voz:</strong> en nuestro servidor, no se conserva: se descarta al terminar de transcribirlo. En tu teléfono, hasta que cierres sesión o elimines tu cuenta.</li>
+              <li>
+                <strong>Historial de tus chats:</strong> los mensajes y
+                respuestas de tus conversaciones se conservan
+                <strong>30 días</strong> para que puedas volver a leerlos desde
+                la app; después se borran automáticamente. Este borrado
+                automático rige desde el 1 de noviembre de 2026. El asistente
+                nunca usa esas conversaciones antiguas como contexto: sólo usa
+                las últimas 24 horas del chat que tienes abierto.
+              </li>
+              <li>
+                <strong>Registros internos de cada mensaje:</strong> el
+                registro técnico de lo que pediste y de las acciones que el
+                asistente propuso incluye el texto de tu mensaje o de su
+                transcripción (cifrado). A los <strong>30 días</strong> ese
+                texto se elimina: el registro se conserva sólo como un
+                esqueleto técnico sin texto (identificadores, tipo, estado y
+                fechas), que se borra junto con tu cuenta cuando la eliminas.
+                Si una acción que el asistente te propuso seguía esperando tu
+                confirmación al cumplirse los 30 días, se marca como rechazada.
+                Los reportes de respuestas (sección 2.3) se borran por
+                completo a los 30 días. Esta limpieza automática rige desde el
+                2 de noviembre de 2026 y también alcanza lo que se había
+                guardado antes de esa fecha.
+              </li>
+              <li><strong>Audio de tus mensajes de voz:</strong> en nuestro servidor, no se conserva: se descarta al terminar de transcribirlo. En tu teléfono, hasta que cierres sesión, elimines tu cuenta o pasen 30 días, lo que ocurra primero.</li>
               <li><strong>Claves de idempotencia:</strong> 24 horas (sección 2.5).</li>
               <li>
                 <strong>Copias de seguridad del servidor:</strong> las copias de
                 seguridad del servidor se conservan por un máximo de
-                30 días y luego se eliminan.
+                30 días y luego se eliminan. Un texto que ya borramos o
+                anonimizamos puede seguir existiendo en una copia de seguridad
+                hasta que esa copia caduque.
               </li>
             </ul>
           </section>
