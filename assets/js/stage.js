@@ -414,7 +414,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       // La franja (`.stage`) es el hermano inmediato anterior: su borde inferior en flujo es el top de `.secciones`.
       if (secciones) iniHero = Math.max(0, topDoc(secciones) - vh);
     }
-    let finHero = Math.max(iniHero + 160, iniPrimerGiro * 0.75);
+    let finHero = Math.max(iniHero + 120, iniPrimerGiro * 0.75);
     if (finHero > iniPrimerGiro) {
       finHero = iniPrimerGiro;
       iniHero = Math.max(0, Math.min(iniHero, finHero - 120));
