@@ -6,15 +6,15 @@ import {
   fijarTema,
   guardarTema,
   transicionarTema,
-} from "./theme.js";
-import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js";
-import { inicializarEscenario } from "./stage.js";
-import { inicializarTilt } from "./tilt.js";
-import { inicializarReveals } from "./revelar.js";
-import { inicializarProgreso } from "./progreso.js";
-import { inicializarMagneticos } from "./magnetico.js";
-import { inicializarNavRecorrido } from "./nav-recorrido.js";
-import { BETA_URL } from "./config.js";
+} from "./theme.js?v=8aff38cc44";
+import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js?v=8aff38cc44";
+import { inicializarEscenario } from "./stage.js?v=8aff38cc44";
+import { inicializarTilt } from "./tilt.js?v=8aff38cc44";
+import { inicializarReveals } from "./revelar.js?v=8aff38cc44";
+import { inicializarProgreso } from "./progreso.js?v=8aff38cc44";
+import { inicializarMagneticos } from "./magnetico.js?v=8aff38cc44";
+import { inicializarNavRecorrido } from "./nav-recorrido.js?v=8aff38cc44";
+import { BETA_URL } from "./config.js?v=8aff38cc44";
 
 /*
   Yaruki — punto de entrada de `index.html`. Sin framework, sin bundler:
