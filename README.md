@@ -366,8 +366,10 @@ git clone <url-del-repo> /var/www/asistente-landing
 chmod -R a+rX /var/www/asistente-landing
 ```
 
-(Este repo todavía no existe en GitHub: el PM avisa al dueño antes de crearlo
-y hacer push. Mientras tanto, el `git clone` de arriba usa una ruta de ejemplo.)
+(El repo ya existe en GitHub, es **público a propósito** como estrategia de SEO
+(`69Harold69/asistente-landing`, rama `main`) y el droplet lo tiene clonado en
+`/var/www/asistente-landing`. Para actualizar: `git pull` ahí; no hace falta
+recargar Caddy. La última publicación es `cc51b60` del 2026-11-02.)
 
 ### 3. Bloque de Caddy
 
