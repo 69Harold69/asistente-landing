@@ -64,6 +64,13 @@
     background: linear-gradient(var(--color-bg), transparent);
     pointer-events: none;
   }
+
+  /* Foco no tapado (WCAG 2.4.11): al subir con Shift+Tab el navegador deja
+     el enlace en el borde de arriba, detrás de la franja. Con este margen lo
+     deja debajo de la franja y de su difuminado (prueba `foco-visible.mjs`). */
+  .secciones :is(a, button) {
+    scroll-margin-top: calc(44vh + 2.5rem);
+  }
 }
 
 @media (min-width: 1024px) {
