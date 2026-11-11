@@ -9,7 +9,11 @@
 
   Uso: node capturas.mjs [--salida DIR] [--paginas /,/privacidad/] [--temas claro,oscuro]
          [--tamanos escritorio,tablet,movil] [--sin-reducido] [--sin-video]
-         [--sin-inspeccion] [--caras] [--demo-tema] [--estricto] [--url http://...]
+         [--sin-inspeccion] [--caras] [--demo-tema] [--sin-320] [--estricto] [--url http://...]
+
+  Además, una pasada LIGERA a 320×568 (el Android más angosto común; #48): solo mide el scroll
+  horizontal de cada página en cada tema (la portada, también con cada sección arriba), sin
+  capturas ni video, para no alargar la corrida. `--sin-320` la omite.
 */
 import fs from "node:fs";
 import path from "node:path";
@@ -29,6 +33,8 @@ export const TAMANOS = {
   tablet: { viewport: { width: 820, height: 1180 }, movil: true },
   movil: { viewport: { width: 390, height: 844 }, movil: true },
 };
+// Solo para la pasada ligera de medición (no genera capturas): ver `medicionAngosta()`.
+const ANGOSTO = { viewport: { width: 320, height: 568 }, movil: true };
 const TEMAS = { claro: "light", oscuro: "dark" };
 
 const salida = carpetaSalida(a.salida, "~/Pictures/yaruki-landing-2026-11/capturas");
@@ -234,6 +240,49 @@ async function otrasPaginas(combo, dir, nombreCombo) {
   await ctx.close();
 }
 
+/*
+  Pasada ligera a 320×568 (#48): el scroll horizontal aparecía solo por debajo de 360 px y los combos
+  completos (390 px) no lo veían. Sin video ni capturas: un contexto por tema, cada página, y en la
+  portada cada sección arriba (scroll instantáneo; el teléfono cambia de transformación por sección).
+*/
+async function medicionAngosta() {
+  for (const tema of temas) {
+    const nombreCombo = `${tema}-320`;
+    process.stdout.write(`> ${nombreCombo} (solo medición) ... `);
+    const t0 = Date.now();
+    const ctx = await navegador.newContext({
+      ...opcionesContexto({ tema, tam: "movil", reducido: false }, false),
+      viewport: ANGOSTO.viewport,
+    });
+    await ctx.addInitScript(scriptInicial({ tema: TEMAS[tema] }));
+    const page = await ctx.newPage();
+    for (const ruta of paginas) {
+      const es404 = ruta === "/404.html";
+      page.removeAllListeners("console");
+      page.removeAllListeners("pageerror");
+      page.removeAllListeners("requestfailed");
+      page.removeAllListeners("response");
+      guardia.instalar(page, `${nombreCombo} ${ruta}${es404 ? " [esperado-404]" : ""}`);
+      await page.goto(srv.url + ruta, { waitUntil: "load" });
+      await esperarCarga(page, { portada: ruta === "/" });
+      const medir = async (donde) => {
+        const ancho = await medirScrollHorizontal(page);
+        if (ancho) guardia.fallas.push({ tipo: "scroll-horizontal", detalle: `${donde} ${ancho}`, contexto: nombreCombo });
+      };
+      await medir(ruta);
+      if (ruta === "/") {
+        for (const { id } of SECCIONES_PORTADA.slice(1)) {
+          await page.evaluate((s) => document.getElementById(s)?.scrollIntoView({ block: "start", behavior: "instant" }), id);
+          await dormir(350);
+          await medir(`/#${id}`);
+        }
+      }
+    }
+    await ctx.close();
+    console.log(`${((Date.now() - t0) / 1000).toFixed(0)} s`);
+  }
+}
+
 let codigo = 0;
 try {
   for (const combo of combos) {
@@ -246,6 +295,7 @@ try {
     await otrasPaginas(combo, dir, nombreCombo);
     console.log(`${((Date.now() - t0) / 1000).toFixed(0)} s`);
   }
+  if (!a["sin-320"]) await medicionAngosta();
 } catch (e) {
   console.error("\ncapturas: error de ejecucion:", e);
   guardia.fallas.push({ tipo: "excepcion", detalle: String(e?.message ?? e), contexto: "capturas" });
