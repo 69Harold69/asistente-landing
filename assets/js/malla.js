@@ -142,9 +142,11 @@ function montar(hero) {
     const nuevoDpr = Math.min(window.devicePixelRatio || 1, DPR_MAX, Math.sqrt(PIXELES_MAX / Math.max(1, nuevoAncho * nuevoAlto)));
     // El canvas ocupa todo el ancho de la ventana (el hero sólo mide una columna).
     canvas.style.setProperty("--malla-izq", `${(-r.left).toFixed(1)}px`);
-    zonas = zonasTexto(canvas.getBoundingClientRect());
+    // Las zonas sólo importan cuando la malla se enciende (puntero fino); en táctil y con reduced-motion no se
+    // miden. Con el tamaño igual sólo se redibuja si hay algo encendido que pueda caer bajo el texto.
+    if (mq.matches) zonas = zonasTexto(canvas.getBoundingClientRect());
     if (nuevoAncho === ancho && nuevoAlto === alto && nuevoDpr === dpr) {
-      dibujar();
+      if (e.fuerza > 0) dibujar();
       return;
     }
     ancho = nuevoAncho;
