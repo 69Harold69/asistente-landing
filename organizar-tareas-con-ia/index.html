@@ -56,6 +56,11 @@
         "breadcrumb": { "@id": "https://yaruki.hjgr.dev/organizar-tareas-con-ia/#migas" }
       },
       {
+        "@type": "Person",
+        "@id": "https://yaruki.hjgr.dev/#autor",
+        "name": "Harold de Jesús García Ramírez"
+      },
+      {
         "@type": "BreadcrumbList",
         "@id": "https://yaruki.hjgr.dev/organizar-tareas-con-ia/#migas",
         "itemListElement": [
@@ -75,7 +80,7 @@
           {
             "@type": "Question",
             "name": "¿La IA puede borrar o cambiar mis tareas sin avisarme?",
-            "acceptedAnswer": { "@type": "Answer", "text": "En Yaruki no. Cuando le pides cambiar, mover, posponer o eliminar algo que ya tenías, te pregunta antes y tú confirmas o rechazas. Crear algo nuevo suele guardarse de inmediato, y la respuesta te dice qué anotó." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Borrar o cambiar lo que ya tenías, no: si le pides editar algo, cambiarle la fecha, posponerlo, agregarle un ítem, convertirlo en otro tipo o eliminarlo, Yaruki te pregunta antes y tú confirmas o rechazas. Otras acciones, como crear algo nuevo o marcar una tarea como hecha, suelen aplicarse de inmediato, y la respuesta te dice qué hizo." }
           },
           {
             "@type": "Question",
@@ -201,8 +206,8 @@
               </li>
               <li>
                 <strong>Acertar siempre.</strong> Es una IA: puede interpretar mal una fecha o
-                confundir un elemento con otro. Por eso lo que cambia o borra algo tuyo pasa por tu
-                confirmación (paso 3).
+                confundir un elemento con otro. Por eso, antes de editar, mover de fecha o borrar
+                algo tuyo, te pide confirmación (paso 3).
               </li>
               <li>
                 <strong>Conversar de cualquier tema.</strong> Yaruki solo organiza tareas, notas,
@@ -230,8 +235,8 @@
               <li>
                 <h3>Revisa lo que entendió</h3>
                 <p>
-                  La respuesta nombra lo que quedó guardado entre comillas. Si algo falta, Yaruki
-                  pregunta en lugar de suponer.
+                  La respuesta nombra lo que quedó guardado entre comillas. Si algo no queda claro,
+                  como una hora sin «de la mañana» o «de la noche», Yaruki pregunta en lugar de suponer.
                 </p>
                 <figure class="ejemplo-chat">
                   <p class="burbuja burbuja--usuario"><span class="solo-lectores">Tú: </span>Crea una tarea pagar la luz mañana a las 9</p>
@@ -245,10 +250,11 @@
               <li>
                 <h3>Confirma cuando vaya a cambiar o borrar algo</h3>
                 <p>
-                  Si lo que pides modifica algo que ya tenías (cambiarlo, moverlo, posponerlo,
-                  agregarle un ítem, convertirlo o eliminarlo), Yaruki siempre te pregunta antes.
-                  Respondes «sí» o tocas Confirmar; si no quieres, Rechazar. Crear algo nuevo suele
-                  guardarse de una vez, porque se puede editar o borrar después.
+                  Si le pides editar algo que ya tenías, cambiarle la fecha, posponerlo, agregarle un
+                  ítem a una lista, convertirlo en otro tipo o eliminarlo, Yaruki siempre te pregunta
+                  antes. Respondes «sí» o tocas Confirmar; si no quieres, Rechazar. Crear algo nuevo o
+                  marcar una tarea como hecha suele aplicarse de una vez, y la respuesta te dice qué
+                  hizo.
                 </p>
                 <figure class="ejemplo-chat">
                   <p class="burbuja burbuja--usuario"><span class="solo-lectores">Tú: </span>cambia pagar la luz a mañana a las 9 de la mañana</p>
@@ -318,7 +324,7 @@
                     <th scope="row">Control antes de cambiar o borrar</th>
                     <td>Total: tú haces el cambio.</td>
                     <td>Depende de lo que la herramienta pueda hacer.</td>
-                    <td>Te pregunta antes y tú confirmas o rechazas.</td>
+                    <td>Antes de editar, cambiar de fecha o borrar, te pregunta y tú confirmas o rechazas.</td>
                   </tr>
                   <tr>
                     <th scope="row">Qué pasa con tu texto</th>
@@ -391,7 +397,7 @@
             <h3>¿Qué es mejor para organizar tareas con IA: una app o un chatbot como ChatGPT?</h3>
             <p>Depende de lo que busques. Un chatbot general sirve para pensar y planear, pero una conversación no es un lugar donde guardar tareas, y no te avisa a la hora a menos que la herramienta lo ofrezca. Una app como Yaruki guarda lo que le dices en tareas, notas, listas, eventos y hábitos, y te avisa con notificaciones.</p>
             <h3>¿La IA puede borrar o cambiar mis tareas sin avisarme?</h3>
-            <p>En Yaruki no. Cuando le pides cambiar, mover, posponer o eliminar algo que ya tenías, te pregunta antes y tú confirmas o rechazas. Crear algo nuevo suele guardarse de inmediato, y la respuesta te dice qué anotó.</p>
+            <p>Borrar o cambiar lo que ya tenías, no: si le pides editar algo, cambiarle la fecha, posponerlo, agregarle un ítem, convertirlo en otro tipo o eliminarlo, Yaruki te pregunta antes y tú confirmas o rechazas. Otras acciones, como crear algo nuevo o marcar una tarea como hecha, suelen aplicarse de inmediato, y la respuesta te dice qué hizo.</p>
             <h3>¿Entiende «mañana» o «el viernes»?</h3>
             <p>Sí, con sus límites. Junto con tu mensaje, el servidor le manda al modelo la fecha y la hora de tu zona horaria para que interprete expresiones como «mañana» o «el viernes». Si dices una hora sin aclarar si es de la mañana o de la noche, te pregunta en lugar de adivinar.</p>
             <h3>¿Se puede usar en iPhone?</h3>

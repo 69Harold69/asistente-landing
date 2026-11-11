@@ -141,7 +141,11 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 - **`sitemap.xml`:** las 4 páginas públicas con URL absoluta y barra final, igual
   que los enlaces del sitio. `lastmod` es la fecha del último cambio de contenido
   visible de cada página: actualízala a mano cuando cambie el texto, no por
-  ajustes de `<head>`. Antes de abrir una PR que toque el texto de una
+  ajustes de `<head>`. Un enlace nuevo en el texto visible (por ejemplo, en el pie) cuenta como
+  cambio de contenido: Google considera significativo un cambio en «el contenido principal, los
+  datos estructurados o los enlaces de la página», no en la fecha de copyright
+  ([Build a sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)),
+  y `validar` lo exige. Antes de abrir una PR que toque el texto de una
   página, compara con la fecha del último commit de cada una:
 
   ```bash
