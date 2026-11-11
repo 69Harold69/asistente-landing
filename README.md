@@ -400,9 +400,13 @@ python3 scripts/dominio.py --origen https://yaruki.app  # fija sitio.json y rees
 python3 scripts/dominio.py                            # reescribe al origen de sitio.json
 ```
 
-Reescribe: `canonical` y `alternate`, `og:url`, `og:image`, `twitter:image`/`twitter:url`, las
-cadenas URL propias del JSON-LD (`@id`, `url`, `image`, `logo`, `item`, `mainEntityOfPage`; los
-hosts externos conocidos, como GitHub o Play, se respetan), `sitemap.xml` y `robots.txt`.
+Reescribe: `canonical` y `alternate`, `og:url`, `og:image`, `twitter:image`/`twitter:url`, cualquier
+`href`/`src`/`content` absoluto al dominio propio (por ejemplo un `<a href>` absoluto), las cadenas URL
+del JSON-LD cuyo host es el propio, `sitemap.xml` y `robots.txt`. Las páginas nuevas (carpetas con
+`index.html`) se descubren solas. Lo que **no** reescribe, lo reporta y sale con 1: una URL de otro host
+en `@id`/`url`/`image`/`logo`/`item`/`mainEntityOfPage` del JSON-LD (puede ser un sitio externo
+legítimo; si lo es, agrega su host a `EXTERNOS` en `dominio.py` y `validar.mjs`) y cualquier «fuga» del
+dominio viejo en JS, CSS, JSON/manifest, XML, TXT, SVG o texto del HTML (se corrige a mano).
 `validar` lee `sitio.json` (no tiene el dominio escrito) y su regla `dominio` falla si queda una
 URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus pruebas
 (`scripts/pruebas/test_dominio.py`, que prueban el viaje de ida y vuelta byte a byte).
@@ -422,7 +426,8 @@ URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus
 2. **Caddy: bloque nuevo.** Copia el bloque de `yaruki.hjgr.dev` de «Despliegue §3» (con el mismo `hide`,
    que debe incluir `scripts package.json package-lock.json`) cambiando solo el encabezado por
    `yaruki.app { ... }`, y agrega `www.yaruki.app { redir https://yaruki.app{uri} permanent }`.
-   El mismo clon `/var/www/asistente-landing` sirve a los dos.
+   El mismo clon `/var/www/asistente-landing` sirve a los dos. Valida y recarga:
+   `sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
 3. **En el repo** (PR normal): `python3 scripts/dominio.py --origen https://yaruki.app`, luego
    `cd scripts/pruebas && node validar.mjs` (debe dar 0), revisar `git diff` y, en `main`, `python3 scripts/versionar.py`.
    Actualiza en el README el `yaruki.hjgr.dev` de los comandos de verificación. Despliega con `git pull`.
@@ -433,7 +438,8 @@ URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus
    	root * /var/www/asistente-landing
 
    	# El archivo de verificación de Search Console sigue respondiendo 200 en el dominio viejo
-   	# (Google no sigue redirecciones al verificar), para poder usar «Cambio de dirección».
+   	# (Search Console no sigue redirecciones a otro dominio al verificar y revisa el archivo
+   	# periódicamente), para que la propiedad vieja siga verificada y «Cambio de dirección» funcione.
    	@verificacion path /google9633e8d6c904333e.html
    	handle @verificacion {
    		file_server
@@ -445,6 +451,7 @@ URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus
    }
    ```
 
+   Valida y recarga igual que en el paso 2 (`sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`).
    `{uri}` conserva ruta y query (`/privacidad/` → `https://yaruki.app/privacidad/`); `permanent` es un 301.
    Comprueba: `curl -sI https://yaruki.hjgr.dev/privacidad/ | head -3` (301 y `location: https://yaruki.app/privacidad/`),
    y lo mismo con `/`, `/terminos/`, `/eliminar-cuenta/`, `/sitemap.xml` y una URL inexistente.
