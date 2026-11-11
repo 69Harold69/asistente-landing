@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Organizar tareas con IA: guía paso a paso | Yaruki</title>
+  <meta
+    name="description"
+    content="Cómo organizar tus tareas con IA: qué puedes pedirle, cuándo te pregunta y qué límites tiene. Comparado con hacerlo a mano o con un chatbot."
+  />
+  <link rel="canonical" href="https://yaruki.hjgr.dev/organizar-tareas-con-ia/" />
+  <meta property="og:title" content="Organizar tareas con IA: guía paso a paso" />
+  <meta property="og:description" content="Cómo organizar tus tareas con IA: qué puedes pedirle, cuándo te pregunta y qué límites tiene. Comparado con hacerlo a mano o con un chatbot." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://yaruki.hjgr.dev/organizar-tareas-con-ia/" />
+  <meta property="og:site_name" content="Yaruki" />
+  <meta property="og:locale" content="es_MX" />
+  <meta property="og:image" content="https://yaruki.hjgr.dev/assets/img/og-yaruki.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Yaruki (やる気): las ganas de hacer algo. Dile lo que tienes que hacer. Yaruki se encarga de anotarlo." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Organizar tareas con IA: guía paso a paso" />
+  <meta name="twitter:description" content="Cómo organizar tus tareas con IA: qué puedes pedirle, cuándo te pregunta y qué límites tiene. Comparado con hacerlo a mano o con un chatbot." />
+  <meta name="twitter:image" content="https://yaruki.hjgr.dev/assets/img/og-yaruki.png" />
+  <meta name="twitter:image:alt" content="Yaruki (やる気): las ganas de hacer algo. Dile lo que tienes que hacer. Yaruki se encarga de anotarlo." />
+  <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#151322" media="(prefers-color-scheme: dark)" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "@id": "https://yaruki.hjgr.dev/organizar-tareas-con-ia/#articulo",
+        "headline": "Cómo organizar tus tareas con IA, hablando en vez de llenar formularios",
+        "description": "Cómo organizar tus tareas con IA: qué puedes pedirle, cuándo te pregunta y qué límites tiene. Comparado con hacerlo a mano o con un chatbot.",
+        "inLanguage": "es-MX",
+        "datePublished": "2026-11-10",
+        "dateModified": "2026-11-10",
+        "image": "https://yaruki.hjgr.dev/assets/img/og-yaruki.png",
+        "author": { "@id": "https://yaruki.hjgr.dev/#autor" },
+        "publisher": { "@id": "https://yaruki.hjgr.dev/#autor" },
+        "isPartOf": { "@id": "https://yaruki.hjgr.dev/#sitio" },
+        "about": { "@id": "https://yaruki.hjgr.dev/#app" },
+        "mainEntityOfPage": { "@id": "https://yaruki.hjgr.dev/organizar-tareas-con-ia/#pagina" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://yaruki.hjgr.dev/organizar-tareas-con-ia/#pagina",
+        "url": "https://yaruki.hjgr.dev/organizar-tareas-con-ia/",
+        "name": "Organizar tareas con IA: guía paso a paso | Yaruki",
+        "inLanguage": "es-MX",
+        "isPartOf": { "@id": "https://yaruki.hjgr.dev/#sitio" },
+        "breadcrumb": { "@id": "https://yaruki.hjgr.dev/organizar-tareas-con-ia/#migas" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://yaruki.hjgr.dev/#autor",
+        "name": "Harold de Jesús García Ramírez"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://yaruki.hjgr.dev/organizar-tareas-con-ia/#migas",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Yaruki", "item": "https://yaruki.hjgr.dev/" },
+          { "@type": "ListItem", "position": 2, "name": "Organizar tareas con IA" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://yaruki.hjgr.dev/organizar-tareas-con-ia/#preguntas",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Qué es mejor para organizar tareas con IA: una app o un chatbot como ChatGPT?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Depende de lo que busques. Un chatbot general sirve para pensar y planear, pero una conversación no es un lugar donde guardar tareas, y no te avisa a la hora a menos que la herramienta lo ofrezca. Una app como Yaruki guarda lo que le dices en tareas, notas, listas, eventos y hábitos, y te avisa con notificaciones." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿La IA puede borrar o cambiar mis tareas sin avisarme?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Borrar o cambiar lo que ya tenías, no: si le pides editar algo, cambiarle la fecha, posponerlo, agregarle un ítem, convertirlo en otro tipo o eliminarlo, Yaruki te pregunta antes y tú confirmas o rechazas. Otras acciones, como crear algo nuevo o marcar una tarea como hecha, suelen aplicarse de inmediato, y la respuesta te dice qué hizo." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Entiende «mañana» o «el viernes»?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí, con sus límites. Junto con tu mensaje, el servidor le manda al modelo la fecha y la hora de tu zona horaria para que interprete expresiones como «mañana» o «el viernes». Si dices una hora sin aclarar si es de la mañana o de la noche, te pregunta en lugar de adivinar." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Se puede usar en iPhone?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. Yaruki está en beta cerrada y solo para Android." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Es gratis? ¿Tiene anuncios?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Hoy la beta no cuesta nada y Yaruki no tiene anuncios. Algunas funciones podrían formar parte de un plan de pago en el futuro; si algún día se cobra, se avisará antes." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Qué pasa con mis datos si le cuento mis pendientes?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Tu mensaje pasa por el servidor de Yaruki, que lo envía a Gemini, en Google Cloud Vertex AI, solo para interpretarlo. Nunca se envían tu nombre ni tu correo. El texto del chat se guarda cifrado y se elimina a los 30 días, y puedes eliminar tu cuenta cuando quieras." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="icon" href="../assets/img/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
+  <link rel="stylesheet" href="../assets/css/tokens.css?v=7e55092f39" />
+  <link rel="stylesheet" href="../assets/css/fonts.css?v=7e55092f39" />
+  <link rel="stylesheet" href="../assets/css/base.css?v=7e55092f39" />
+  <link rel="stylesheet" href="../assets/css/guias.css?v=7e55092f39" />
+  <script type="module" src="../assets/js/guias.js?v=7e55092f39"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <header class="site-header guia-header">
+    <div class="container">
+      <a class="wordmark" href="/">
+        <span class="punto-vivo" aria-hidden="true"></span>
+        Yaruki
+      </a>
+      <div class="guia-header-acciones">
+        <a class="back-link" href="/">← Volver al inicio</a>
+        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Tema oscuro" aria-pressed="false">
+          <svg class="icono-sol" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.5" />
+            <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8" />
+          </svg>
+          <svg class="icono-luna" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <article class="guia">
+      <div class="container">
+        <header class="guia-cabecera">
+          <span class="chip guia-etiqueta">Guía · Yaruki está en beta cerrada para Android</span>
+          <h1>Cómo organizar tus tareas con IA, hablando en vez de llenar formularios</h1>
+          <p class="guia-autor">
+            <span>Por <strong>Harold de Jesús García Ramírez</strong>, quien desarrolla Yaruki</span>
+            <span>Publicado el <time datetime="2026-11-10">10 de noviembre de 2026</time></span>
+          </p>
+
+          <div class="en-resumen">
+            <h2>En pocas palabras</h2>
+            <p>
+              Una IA sirve para organizar tareas si hace tres cosas: entiende lo que le dices con
+              tus palabras, guarda el resultado donde puedas revisarlo y te pregunta antes de
+              cambiar o borrar algo tuyo. Aquí verás cómo se hace paso a paso, cuándo conviene más
+              un chatbot general o hacerlo a mano, y qué límites tiene Yaruki, el asistente que
+              estoy construyendo.
+            </p>
+          </div>
+
+          <nav class="toc" aria-label="En esta guía">
+            <h2>En esta guía</h2>
+            <ol>
+              <li><a href="#que-puede-hacer">Qué puede (y qué no) hacer una IA con tus tareas</a></li>
+              <li><a href="#paso-a-paso">Paso a paso con Yaruki</a></li>
+              <li><a href="#comparacion">Con IA, a mano o con un chatbot</a></li>
+              <li><a href="#frases">Frases para empezar</a></li>
+              <li><a href="#limites">Límites reales de hoy</a></li>
+              <li><a href="#datos">Qué pasa con tus datos</a></li>
+              <li><a href="#preguntas">Preguntas frecuentes</a></li>
+              <li><a href="#beta">Cómo probarlo</a></li>
+            </ol>
+          </nav>
+        </header>
+
+        <div class="guia-cuerpo">
+          <section id="que-puede-hacer" aria-labelledby="que-puede-hacer-h">
+            <h2 id="que-puede-hacer-h">Qué puede (y qué no) hacer una IA con tus tareas</h2>
+            <p>
+              La idea es que no dependas de acordarte: dices lo que tienes pendiente como se lo
+              dirías a una persona y la IA lo convierte en algo ordenado. Pero no es magia.
+            </p>
+
+            <h3>Lo que sí</h3>
+            <ul>
+              <li>Convertir una frase suelta en algo guardado: una tarea, una nota, una lista, un evento o un hábito.</li>
+              <li>Anotar varias cosas de un solo mensaje.</li>
+              <li>
+                Interpretar fechas con tus palabras, como «mañana» o «el jueves a las 10 de la
+                mañana». Para eso, junto con tu mensaje se le manda al modelo la fecha y la hora de
+                tu zona horaria
+                (<a href="/privacidad/#ia">lo explica la política de privacidad</a>).
+              </li>
+              <li>Buscar lo que ya guardaste, por ejemplo con «¿qué tengo pendiente esta semana?».</li>
+            </ul>
+
+            <h3>Lo que no</h3>
+            <ul>
+              <li>
+                <strong>Adivinar.</strong> Si dices una hora sin aclarar si es de la mañana o de la
+                noche, Yaruki te lo pregunta y te deja tocar la opción.
+              </li>
+              <li>
+                <strong>Acertar siempre.</strong> Es una IA: puede interpretar mal una fecha o
+                confundir un elemento con otro. Por eso, antes de editar, mover de fecha o borrar
+                algo tuyo, te pide confirmación (paso 3).
+              </li>
+              <li>
+                <strong>Conversar de cualquier tema.</strong> Yaruki solo organiza tareas, notas,
+                listas, eventos y hábitos. Si le pides otra cosa te lo dice: «Sólo puedo ayudarte a
+                organizar tareas, notas, listas, eventos y hábitos.»
+              </li>
+            </ul>
+          </section>
+
+          <section id="paso-a-paso" aria-labelledby="paso-a-paso-h">
+            <h2 id="paso-a-paso-h">Paso a paso con Yaruki</h2>
+            <ol class="pasos">
+              <li>
+                <h3>Dile lo que tienes pendiente</h3>
+                <p>
+                  Escríbelo o mándalo como mensaje de voz. Una frase basta; con la fecha y la hora
+                  completas, mejor.
+                </p>
+                <figure class="ejemplo-chat">
+                  <p class="burbuja burbuja--usuario"><span class="solo-lectores">Tú: </span>Recuérdame pagar la luz el jueves a las 10 de la mañana</p>
+                  <p class="burbuja burbuja--asistente"><span class="solo-lectores">Yaruki: </span>Listo, ya anoté tu tarea «Pagar la luz».</p>
+                  <figcaption>La frase es de las pruebas del asistente; la respuesta tiene el formato real de Yaruki al anotar una tarea.</figcaption>
+                </figure>
+              </li>
+              <li>
+                <h3>Revisa lo que entendió</h3>
+                <p>
+                  La respuesta nombra lo que quedó guardado entre comillas. Si algo no queda claro,
+                  como una hora sin «de la mañana» o «de la noche», Yaruki pregunta en lugar de suponer.
+                </p>
+                <figure class="ejemplo-chat">
+                  <p class="burbuja burbuja--usuario"><span class="solo-lectores">Tú: </span>Crea una tarea pagar la luz mañana a las 9</p>
+                  <div class="burbuja burbuja--asistente">
+                    <span class="solo-lectores">Yaruki: </span>¿A las 9 de la mañana o de la noche?
+                    <span class="burbuja-botones" aria-hidden="true"><span class="burbuja-boton">De la mañana</span><span class="burbuja-boton">De la noche</span></span>
+                  </div>
+                  <figcaption>Pregunta real del asistente ante una hora ambigua; en la app respondes tocando una opción.</figcaption>
+                </figure>
+              </li>
+              <li>
+                <h3>Confirma cuando vaya a cambiar o borrar algo</h3>
+                <p>
+                  Si le pides editar algo que ya tenías, cambiarle la fecha, posponerlo, agregarle un
+                  ítem a una lista, convertirlo en otro tipo o eliminarlo, Yaruki siempre te pregunta
+                  antes. Respondes «sí» o tocas Confirmar; si no quieres, Rechazar. Crear algo nuevo o
+                  marcar una tarea como hecha suele aplicarse de una vez, y la respuesta te dice qué
+                  hizo.
+                </p>
+                <figure class="ejemplo-chat">
+                  <p class="burbuja burbuja--usuario"><span class="solo-lectores">Tú: </span>cambia pagar la luz a mañana a las 9 de la mañana</p>
+                  <p class="burbuja burbuja--asistente"><span class="solo-lectores">Yaruki: </span>¿Muevo «Pagar la luz» a mañana a las 9:00? Responde para confirmar o cancelar.</p>
+                  <p class="burbuja burbuja--usuario"><span class="solo-lectores">Tú: </span>elimina la tarea de pagar la luz</p>
+                  <p class="burbuja burbuja--asistente"><span class="solo-lectores">Yaruki: </span>¿Archivo tu tarea «Pagar la luz»? Responde para confirmar o cancelar.</p>
+                  <figcaption>Textos reales de confirmación. Yaruki llama «archivar» a quitar algo de tu lista.</figcaption>
+                </figure>
+              </li>
+              <li>
+                <h3>Encuéntralo ordenado</h3>
+                <p>
+                  Lo que mencionaste aparece en sus pantallas de tareas, notas, listas, eventos y
+                  hábitos, sin que tengas que acomodarlo. Tocas una tarjeta y vas al detalle, igual
+                  que si la hubieras creado a mano.
+                </p>
+              </li>
+              <li>
+                <h3>Recibe el aviso</h3>
+                <p>
+                  Lo que tiene hora llega como notificación: las tareas a su hora, los eventos 15
+                  minutos antes y los hábitos todos los días a la hora que elegiste. Android decide
+                  al final cuándo entregarla, así que conviene revisar los permisos de notificaciones y
+                  la batería de la app.
+                </p>
+              </li>
+            </ol>
+          </section>
+
+          <section id="comparacion" aria-labelledby="comparacion-h">
+            <h2 id="comparacion-h">Con IA, a mano o con un chatbot: qué conviene</h2>
+            <p>
+              No hay una respuesta única. Esto es lo que cambia en cada caso; donde dice «depende»,
+              es porque varía según la herramienta que uses.
+            </p>
+            <div class="tabla-envoltura" role="region" aria-label="Tabla comparativa, desplazable horizontalmente" tabindex="0">
+              <table class="tabla-comparacion">
+                <caption>Tres formas de organizar tus tareas y lo que implica cada una</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Qué comparas</th>
+                    <th scope="col">A mano (papel o app de listas)</th>
+                    <th scope="col">Chatbot general</th>
+                    <th scope="col">Yaruki</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">Capturar un pendiente</th>
+                    <td>Abres, eliges el tipo y llenas campos.</td>
+                    <td>Escribes o hablas con libertad.</td>
+                    <td>Una frase; la IA llena los campos.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">¿Queda guardado y ordenado?</th>
+                    <td>Sí, como tú lo ordenes.</td>
+                    <td>Depende: una conversación no es una lista de tareas.</td>
+                    <td>Sí, como tarea, nota, lista, evento o hábito.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">¿Te avisa a la hora?</th>
+                    <td>Depende de la app.</td>
+                    <td>Depende de la herramienta.</td>
+                    <td>Sí, con notificaciones de Android (sujetas a permisos y batería).</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Control antes de cambiar o borrar</th>
+                    <td>Total: tú haces el cambio.</td>
+                    <td>Depende de lo que la herramienta pueda hacer.</td>
+                    <td>Antes de editar, cambiar de fecha o borrar, te pregunta y tú confirmas o rechazas.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Qué pasa con tu texto</th>
+                    <td>Se queda en tu papel o en esa app.</td>
+                    <td>Lo que diga la política de cada servicio.</td>
+                    <td>Pasa por un proveedor de IA (Google Vertex AI) para interpretarlo.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Disponibilidad</th>
+                    <td>La de la herramienta que elijas.</td>
+                    <td>La de cada servicio.</td>
+                    <td>Beta cerrada, solo Android, con internet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p>
+              Mi recomendación honesta: hazlo a mano si tienes pocos pendientes o prefieres no
+              mandar tu texto a un servicio de IA. Usa un chatbot general para pensar, por ejemplo
+              para ordenar prioridades o planear una semana. Y elige una app que guarde y avise
+              cuando lo que quieres es no depender de tu memoria.
+            </p>
+          </section>
+
+          <section id="frases" aria-labelledby="frases-h">
+            <h2 id="frases-h">Frases para empezar</h2>
+            <p>
+              Salen de las pruebas del asistente y de su propia respuesta de ayuda. El resultado
+              exacto depende de cómo las interprete el modelo, por eso Yaruki te muestra lo que
+              entendió.
+            </p>
+            <ul class="frases">
+              <li>«Crea una tarea para mañana a las 9»</li>
+              <li>«Agrégame una nota con la receta del pastel»</li>
+              <li>«Recuérdame en 20 minutos sacar la ropa»</li>
+              <li>«Recuérdame el 15 de noviembre pagar la tarjeta»</li>
+              <li>«¿Qué tengo pendiente esta semana?»</li>
+              <li>«Cambia pagar la luz a mañana a las 9 de la mañana»</li>
+            </ul>
+          </section>
+
+          <section id="limites" aria-labelledby="limites-h">
+            <h2 id="limites-h">Límites reales de hoy</h2>
+            <div class="aviso">
+              <strong>Antes de contar con Yaruki</strong>
+              <ul>
+                <li>Es una beta cerrada: hoy solo hay versión para Android y se entra por un grupo de testers de Google Play. No hay versión para iPhone.</li>
+                <li>Necesita conexión a internet: tus mensajes se interpretan en un servidor.</li>
+                <li>Puede equivocarse. Los <a href="/terminos/#ia">Términos</a> lo dicen igual: eres responsable de revisar lo que confirmas.</li>
+                <li>Solo organiza tareas, notas, listas, eventos y hábitos; no es un chatbot de uso general.</li>
+                <li>No se llama por teléfono con Yaruki todavía: las llamadas aparecen como «próximamente».</li>
+              </ul>
+            </div>
+          </section>
+
+          <section id="datos" aria-labelledby="datos-h">
+            <h2 id="datos-h">Qué pasa con tus datos</h2>
+            <p>
+              Cuando le escribes, es el servidor de Yaruki, nunca la app directamente, quien envía
+              tu mensaje a Gemini, en Google Cloud Vertex AI, solo para interpretarlo y responder.
+              Nunca se envían tu nombre ni tu correo. El texto del chat se guarda cifrado y se
+              elimina a los 30 días. Si quieres irte, puedes
+              <a href="/eliminar-cuenta/">eliminar tu cuenta</a>. El detalle completo está en la
+              <a href="/privacidad/">política de privacidad</a>.
+            </p>
+          </section>
+
+          <section id="preguntas" class="preguntas" aria-labelledby="preguntas-h">
+            <h2 id="preguntas-h">Preguntas frecuentes</h2>
+            <h3>¿Qué es mejor para organizar tareas con IA: una app o un chatbot como ChatGPT?</h3>
+            <p>Depende de lo que busques. Un chatbot general sirve para pensar y planear, pero una conversación no es un lugar donde guardar tareas, y no te avisa a la hora a menos que la herramienta lo ofrezca. Una app como Yaruki guarda lo que le dices en tareas, notas, listas, eventos y hábitos, y te avisa con notificaciones.</p>
+            <h3>¿La IA puede borrar o cambiar mis tareas sin avisarme?</h3>
+            <p>Borrar o cambiar lo que ya tenías, no: si le pides editar algo, cambiarle la fecha, posponerlo, agregarle un ítem, convertirlo en otro tipo o eliminarlo, Yaruki te pregunta antes y tú confirmas o rechazas. Otras acciones, como crear algo nuevo o marcar una tarea como hecha, suelen aplicarse de inmediato, y la respuesta te dice qué hizo.</p>
+            <h3>¿Entiende «mañana» o «el viernes»?</h3>
+            <p>Sí, con sus límites. Junto con tu mensaje, el servidor le manda al modelo la fecha y la hora de tu zona horaria para que interprete expresiones como «mañana» o «el viernes». Si dices una hora sin aclarar si es de la mañana o de la noche, te pregunta en lugar de adivinar.</p>
+            <h3>¿Se puede usar en iPhone?</h3>
+            <p>No. Yaruki está en beta cerrada y solo para Android.</p>
+            <h3>¿Es gratis? ¿Tiene anuncios?</h3>
+            <p>Hoy la beta no cuesta nada y Yaruki no tiene anuncios. Algunas funciones podrían formar parte de un plan de pago en el futuro; si algún día se cobra, se avisará antes.</p>
+            <h3>¿Qué pasa con mis datos si le cuento mis pendientes?</h3>
+            <p>Tu mensaje pasa por el servidor de Yaruki, que lo envía a Gemini, en Google Cloud Vertex AI, solo para interpretarlo. Nunca se envían tu nombre ni tu correo. El texto del chat se guarda cifrado y se elimina a los 30 días, y puedes eliminar tu cuenta cuando quieras.</p>
+          </section>
+
+          <section id="beta" class="guia-cta" aria-labelledby="beta-h">
+            <h2 id="beta-h">Cómo probarlo</h2>
+            <p>
+              Yaruki está en beta cerrada en Android. Entras en dos pasos, con tu cuenta de Google.
+            </p>
+            <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/">Únete a la beta</a>
+            <ol class="pasos-beta" aria-label="Cómo unirte a la beta">
+              <li>
+                <span class="pasos-beta-numero" aria-hidden="true">1</span>
+                <span>Únete al <a href="https://groups.google.com/g/yaruki-beta/">grupo de testers</a> con tu cuenta de Google.</span>
+              </li>
+              <li>
+                <span class="pasos-beta-numero" aria-hidden="true">2</span>
+                <span>Espera unos minutos y acepta la <a href="https://play.google.com/apps/testing/dev.hjgr.yaruki">invitación en Google Play</a> con la misma cuenta. Desde ahí la descargas.</span>
+              </li>
+            </ol>
+          </section>
+
+          <section aria-labelledby="mas-h">
+            <h2 id="mas-h">Sigue leyendo</h2>
+            <ul class="sigue-leyendo">
+              <li>
+                <a href="/">
+                  <strong>Qué es Yaruki</strong>
+                  La portada, con el recorrido completo por el chat, los elementos y los avisos.
+                </a>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Yaruki — Harold de Jesús García Ramírez, Guadalajara, Jalisco, México.</p>
+      <ul class="footer-links">
+        <li><a href="/">Inicio</a></li>
+        <li><a href="/organizar-tareas-con-ia/" aria-current="page">Organizar tareas con IA</a></li>
+        <li><a href="/privacidad/">Privacidad</a></li>
+        <li><a href="/terminos/">Términos</a></li>
+        <li><a href="/eliminar-cuenta/">Eliminar cuenta</a></li>
+      </ul>
+    </div>
+  </footer>
+</body>
+</html>

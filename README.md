@@ -16,6 +16,7 @@ asistente-landing/
 ├── privacidad/index.html   Política de privacidad
 ├── terminos/index.html     Términos y condiciones
 ├── eliminar-cuenta/index.html  Cómo eliminar tu cuenta
+├── organizar-tareas-con-ia/index.html  Guía (Article) para «ia para organizar tareas»
 ├── 404.html                Página de error, servida por el handle_errors de Caddy
 ├── sitemap.xml             URLs canónicas con su lastmod (sin 404 ni la verificación de Google)
 ├── robots.txt              Permite todo y apunta al sitemap
@@ -26,10 +27,12 @@ asistente-landing/
 │   │   ├── fonts.css    @font-face de las páginas legales y 404 (assets/fonts/)
 │   │   ├── fuentes-portada.css  @font-face de la portada (recortes latinos de assets/fuentes/)
 │   │   ├── base.css     Layout, grid con escenario sticky, componentes compartidos
+│   │   ├── guias.css    Páginas-guía: resumen, pasos, ejemplos de chat en CSS, tabla comparativa, cierre con la beta
 │   │   ├── phone.css    El teléfono 3D (marco, bisel, isla, canto en capas, espalda)
 │   │   └── scenes.css   Contenido de cada escena dentro de la pantalla del teléfono
 │   ├── js/
 │   │   ├── config.js    BRAND_NAME / BETA_URL
+│   │   ├── guias.js     Solo el toggle de tema de las páginas-guía (sin GSAP ni teléfono)
 │   │   ├── theme.js     Toggle sol/luna (revelado circular con View Transitions, crossfade de respaldo)
 │   │   ├── theme-demo.js  Demo de tema al cargar, una vez por visita, con la pista junto al toggle
 │   │   ├── stage.js     Coreografía de scroll y modo de inspección `?escena=&cara=&angulo=`
@@ -138,7 +141,11 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 - **`sitemap.xml`:** las 4 páginas públicas con URL absoluta y barra final, igual
   que los enlaces del sitio. `lastmod` es la fecha del último cambio de contenido
   visible de cada página: actualízala a mano cuando cambie el texto, no por
-  ajustes de `<head>`. Antes de abrir una PR que toque el texto de una
+  ajustes de `<head>`. Un enlace nuevo en el texto visible (por ejemplo, en el pie) cuenta como
+  cambio de contenido: Google considera significativo un cambio en «el contenido principal, los
+  datos estructurados o los enlaces de la página», no en la fecha de copyright
+  ([Build a sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)),
+  y `validar` lo exige. Antes de abrir una PR que toque el texto de una
   página, compara con la fecha del último commit de cada una:
 
   ```bash
@@ -174,6 +181,16 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
     `scripts/pruebas/test_jsonld.py` (defectos sembrados). No existe un validador offline mantenido y de licencia limpia
     (`structured-data-testing-tool` no se actualiza desde 2022), así que además pega la URL publicada, o el bloque, en el
     [Rich Results Test](https://search.google.com/test/rich-results) y en el [validador de schema.org](https://validator.schema.org/).
+  - **Páginas-guía (`Article`):** un `@graph` con `Article`, `WebPage`, `BreadcrumbList` y, si hay preguntas visibles,
+    `FAQPage`. Se usa `Article` (y no solo `WebPage`) porque son guías con autor y fechas, que es el caso para el que Google
+    documenta ese marcado (ninguna propiedad es obligatoria; recomienda `author`, `datePublished`, `dateModified`, `headline`
+    e `image`). `author`/`publisher`/`isPartOf`/`about` referencian por `@id` los nodos `#autor`, `#sitio` y `#app` de la
+    portada (`validar` los resuelve contra la portada). No se usa `HowTo`: los pasos van en el texto. Reglas de `validar`
+    para toda página con `Article` (regla `guias`): `title` ≤ 60, description ≤ 155, `headline` ≤ 110, autor y `<time datetime>`
+    visibles e iguales a `datePublished`/`dateModified`, y enlazada desde la portada (sin páginas huérfanas). Regla
+    `faq-visible` (cualquier página): cada pregunta y respuesta del `FAQPage` debe aparecer idéntica en el texto visible.
+    Defectos sembrados: `scripts/pruebas/test_guias.py`. Una guía nueva se agrega a `sitemap.xml` y al bloque «Guías» del pie
+    de la portada; si no, `validar` falla.
 - **`hreflang`: no se usa.** Google lo define para sitios con varias versiones de idioma o región; esta landing tiene una
   sola (es-MX), y `<html lang="es-MX">`, `og:locale` `es_MX` e `inLanguage` ya lo declaran. Se agrega solo si aparece otra versión.
 - **`theme-color`** claro y oscuro y `og:image:alt`/`twitter:image:alt` en las 4 páginas públicas (`validar` los exige).
