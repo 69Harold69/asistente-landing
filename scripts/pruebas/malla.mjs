@@ -66,7 +66,9 @@ async function abrir({ tema = "light", reducido = false, js = true, ancho = 1440
   await page.goto(srv.url + "/", { waitUntil: "load" });
   if (js) {
     await esperarCarga(page, { portada: true });
-    await dormir(900); // la malla arranca en requestIdleCallback tras el primer pintado
+    // La malla arranca en requestIdleCallback tras el primer pintado (con la máquina cargada puede tardar).
+    await page.waitForSelector("canvas.malla-hero", { state: "attached", timeout: 6000 }).catch(() => {});
+    await dormir(400);
   }
   return { ctx, page };
 }
@@ -281,7 +283,8 @@ try {
       await page.addInitScript(scriptInicial({ tema }));
       await page.goto(srv.url + "/", { waitUntil: "load" });
       await esperarCarga(page, { portada: true });
-      await dormir(1200);
+      await page.waitForSelector("canvas.malla-hero", { state: "attached", timeout: 6000 }).catch(() => {});
+      await dormir(600);
       const bloques = await page.evaluate((B) => {
         const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
         return B.map(([n, s]) => {
