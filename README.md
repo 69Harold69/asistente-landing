@@ -29,7 +29,7 @@ asistente-landing/
 │   │   ├── phone.css    El teléfono 3D (marco, bisel, isla, canto en capas, espalda)
 │   │   └── scenes.css   Contenido de cada escena dentro de la pantalla del teléfono
 │   ├── js/
-│   │   ├── config.js    BRAND_NAME / BETA_URL
+│   │   ├── config.js    BRAND_NAME (el enlace de la beta vive en el `href` de `index.html`)
 │   │   ├── theme.js     Toggle sol/luna (revelado circular con View Transitions, crossfade de respaldo)
 │   │   ├── theme-demo.js  Demo de tema al cargar, una vez por visita, con la pista junto al toggle
 │   │   ├── stage.js     Coreografía de scroll y modo de inspección `?escena=&cara=&angulo=`
@@ -512,7 +512,7 @@ URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus
 8. **App Android:** `app/src/main/res/values/enlaces_legales.xml` tiene escritas las URLs legales de
    `yaruki.hjgr.dev`. Siguen funcionando mientras el 301 exista, pero conviene cambiarlas en la siguiente versión
    (y su prueba `AbrirEnlaceExternoTest`). Backend: solo un comentario en `config/legal.php` y los runbooks.
-9. **`BETA_URL`:** es el Google Group de testers; no depende del dominio. No cambia.
+9. **Enlace de la beta** (`href` de los botones `[data-cta-beta]` de `index.html`; antes `BETA_URL`): es el Google Group de testers; no depende del dominio. No cambia.
 10. **Política de privacidad y Términos:** no nombran el dominio del sitio (solo el correo): no requieren texto nuevo.
 11. **Ficha de Play Console:** actualiza la **URL de la política de privacidad** (Contenido de la app), el sitio web
     del desarrollador, el enlace de eliminación de cuenta del formulario de Seguridad de los datos y el correo/URL de

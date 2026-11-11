@@ -6,6 +6,7 @@
     - los dos CTA «Únete a la beta» son enlaces navegables (href https real al grupo, sin estado deshabilitado);
     - ningún elemento de contenido con texto queda con opacidad 0 ni oculto (salvo las etiquetas de hover
       de la navegación por puntos, que son decoración que aparece al pasar el mouse);
+    - ninguna sección reserva alto de pantalla (min-height) pensado para el teléfono: sin él son huecos;
     - nada que solo funcione con JS se ve roto: el teléfono (decorativo, vacío sin JS) y el toggle de tema
       (inerte sin JS) no se muestran, y el teléfono no tapa el texto.
   Uso: node sin-js.mjs [--salida DIR]   (con --salida guarda capturas de cada combo)
@@ -21,7 +22,7 @@ const dirSalida = a.salida ? carpetaSalida(a.salida) : null;
 
 const CTA_BETA = "https://groups.google.com/g/yaruki-beta/";
 const PAGINAS = ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/no-existe"];
-const TAMANOS = { escritorio: { width: 1440, height: 900 }, movil: { width: 390, height: 844 } };
+const TAMANOS = { escritorio: { width: 1440, height: 900 }, tablet: { width: 820, height: 1180 }, movil: { width: 390, height: 844 } };
 const IGNORAR_OPACIDAD = "nav-recorrido-etiqueta";
 
 const fallas = [];
@@ -72,6 +73,10 @@ try {
               sinHref,
               h1: document.querySelector("h1")?.textContent.trim().length ?? 0,
               palabras: document.body.innerText.split(/\s+/).filter(Boolean).length,
+              // Sin teléfono, ninguna sección debe reservar alto de pantalla (min-height) para la coreografía.
+              reservas: [...document.querySelectorAll(".seccion")]
+                .filter((e) => parseFloat(getComputedStyle(e).minHeight) > 0)
+                .map((e) => `#${e.id} min-height ${getComputedStyle(e).minHeight}`),
               escenario: visible("#stage"),
               toggle: visible("[data-theme-toggle]"),
             };
@@ -91,6 +96,7 @@ try {
             if (c.chip) falla(combo, "CTA con chip «Próximamente» sin JS");
             if (c.pointerEvents === "none") falla(combo, "CTA sin eventos de puntero (no se puede tocar)");
           }
+          for (const x of r.reservas) falla(combo, `sección con alto de pantalla reservado sin JS (hueco): ${x}`);
           if (r.escenario) falla(combo, "el teléfono (decorativo, vacío sin JS) se muestra y tapa el texto");
           if (r.toggle) falla(combo, "el toggle de tema se muestra pero no funciona sin JS");
         }
@@ -108,4 +114,4 @@ if (fallas.length) {
   for (const f of fallas) console.error(`  FALLA ${f}`);
   process.exit(1);
 }
-console.log("sin-js: OK (texto visible, CTA navegables, nada invisible ni roto, en claro/oscuro × escritorio/móvil)");
+console.log("sin-js: OK (texto visible, CTA navegables, nada invisible ni roto, en claro/oscuro × escritorio/tablet/móvil)");
