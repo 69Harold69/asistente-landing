@@ -1857,6 +1857,13 @@ main > .bloque:last-child {
   mask-composite: intersect;
 }
 
+@media (max-width: 1023px) {
+  /* Sin espacio a la izquierda en pantallas angostas: que el fondo no se corte contra el borde. */
+  #fase-chat::before {
+    margin-left: -1.25rem;
+  }
+}
+
 /* La tarjeta. Respaldo sólido primero; el vidrio solo donde hay soporte. */
 #fase-chat::after {
   z-index: 1;

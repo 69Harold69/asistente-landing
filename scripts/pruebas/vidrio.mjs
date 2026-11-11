@@ -215,3 +215,143 @@ if (modo === "depurar2") {
   console.log(r.join("\n"), "\nvh", await page.evaluate(() => innerHeight));
   await nav.close();
 }
+
+/* ---- rendimiento: cuadros y trabajo de composición al recorrer #fase-chat ---- */
+const mediana = (v) => { const o = [...v].sort((x, y) => x - y); return o.length % 2 ? o[(o.length - 1) / 2] : (o[o.length / 2 - 1] + o[o.length / 2]) / 2; };
+const pct = (v, p) => { const o = [...v].sort((x, y) => x - y); return o[Math.min(o.length - 1, Math.floor(o.length * p))]; };
+
+async function recorrerYMedir(nav, url, { tam, cpu, tema }) {
+  const { ctx, page } = await abrir(nav, url, { tema, tam });
+  const cdp = await ctx.newCDPSession(page);
+  if (cpu > 1) await cdp.send("Emulation.setCPUThrottlingRate", { rate: cpu });
+  const top = await page.evaluate(() => Math.round(document.getElementById("fase-chat").getBoundingClientRect().top + scrollY));
+  const vh = TAMANOS[tam].viewport.height;
+  const desde = Math.max(0, top - vh * 0.9), hasta = top + vh * 1.1;
+  await ruedaHasta(page, desde, { paso: 300, pausaMs: 20, tolerancia: 20 });
+  await dormir(1500);
+  await page.evaluate(() => {
+    window.__f = [];
+    let p = performance.now();
+    const t = (n) => { window.__f.push(n - p); p = n; window.__r = requestAnimationFrame(t); };
+    window.__r = requestAnimationFrame(t);
+  });
+  await cdp.send("Performance.enable");
+  const m0 = Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics.map((x) => [x.name, x.value]));
+  const trazas = [];
+  cdp.on("Tracing.dataCollected", (d) => trazas.push(...d.value));
+  const fin = new Promise((r) => cdp.once("Tracing.tracingComplete", r));
+  await cdp.send("Tracing.start", { categories: "disabled-by-default-devtools.timeline,devtools.timeline,gpu,viz,cc,benchmark", transferMode: "ReportEvents" });
+  let y = desde;
+  const t0 = Date.now();
+  while (y < hasta) { await page.mouse.wheel(0, 28); await dormir(14); y += 28; }
+  await dormir(400);
+  const ms = Date.now() - t0;
+  await cdp.send("Tracing.end");
+  await fin;
+  const m1 = Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics.map((x) => [x.name, x.value]));
+  const f = await page.evaluate(() => { cancelAnimationFrame(window.__r); return window.__f.slice(1); });
+  if (a.guardarTraza) fs.writeFileSync(a.guardarTraza, JSON.stringify(trazas));
+  // Trabajo de la GPU/compositor en la traza (µs → ms).
+  const suma = (nombre) => trazas.filter((e) => e.name === nombre && e.ph === "X").reduce((s, e) => s + e.dur, 0) / 1000;
+  const r = {
+    cuadros: f.length, ms,
+    fps: +(f.length / (ms / 1000)).toFixed(1),
+    intervaloMed: +mediana(f).toFixed(1), intervaloP95: +pct(f, 0.95).toFixed(1), intervaloMax: +Math.max(...f).toFixed(0),
+    largos33: f.filter((d) => d > 33.4).length,
+    tarea: +((m1.TaskDuration - m0.TaskDuration) * 1000).toFixed(0),
+    estilo: +((m1.RecalcStyleDuration - m0.RecalcStyleDuration) * 1000).toFixed(0),
+    layout: +((m1.LayoutDuration - m0.LayoutDuration) * 1000).toFixed(0),
+    raster: +suma("RasterTask").toFixed(0),
+    // Compositor de software de Chromium sin GPU: el desenfoque se paga aquí (cota pesimista frente a un teléfono con GPU).
+    dibujo: +suma("Display::DrawAndSwap").toFixed(0),
+    cuadrosDibujados: trazas.filter((e) => e.name === "Display::DrawAndSwap" && e.ph === "X").length,
+  };
+  await ctx.close();
+  return r;
+}
+
+if (modo === "traza") {
+  const nav = await lanzarChromium();
+  console.log(JSON.stringify(await recorrerYMedir(nav, a.url, { tam: a.tam ?? "escritorio", cpu: Number(a.cpu ?? 1), tema: "oscuro" })));
+  await nav.close();
+}
+
+if (modo === "rendimiento") {
+  const nav = await lanzarChromium();
+  const n = Number(a.corridas ?? 5);
+  const salidaJson = {};
+  for (const [tam, cpu, etiqueta] of [["escritorio", 1, "escritorio"], ["movil", 4, "móvil, CPU x4"]]) for (const tema of ["claro", "oscuro"]) {
+    const res = { antes: [], despues: [] };
+    for (let i = 0; i < n; i++) for (const [k, url] of [["antes", a.antes], ["despues", a.despues]]) res[k].push(await recorrerYMedir(nav, url, { tam, cpu, tema }));
+    const med = (k, campo) => +mediana(res[k].map((r) => r[campo])).toFixed(1);
+    console.log(`\n== ${etiqueta}, ${tema} (mediana de ${n}, intercalado antes/después) ==`);
+    console.log("métrica".padEnd(16), "antes".padStart(9), "después".padStart(9));
+    for (const c of ["fps", "intervaloMed", "intervaloP95", "intervaloMax", "largos33", "tarea", "estilo", "layout", "raster", "dibujo", "cuadrosDibujados"]) console.log(c.padEnd(16), String(med("antes", c)).padStart(9), String(med("despues", c)).padStart(9));
+    salidaJson[`${tam}-${tema}`] = res;
+  }
+  await nav.close();
+  fs.writeFileSync(path.join(salida, "rendimiento.json"), JSON.stringify(salidaJson, null, 2));
+}
+
+/* ---- costo de carga por variante (CPU x4): reescribe base.css al vuelo para aislar qué parte del vidrio cuesta ---- */
+if (modo === "variantes") {
+  const nav = await lanzarChromium();
+  const base = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "../../assets/css/base.css"), "utf8");
+  const i0 = base.indexOf("PROTOTIPO (#59");
+  const comienzo = base.lastIndexOf("/* ====", i0);
+  const sinVidrio = base.slice(0, comienzo);
+  const bloque = base.slice(comienzo);
+  const quitar = (re) => base.slice(0, comienzo) + bloque.replace(re, "");
+  const variantes = {
+    completo: base,
+    sin_vidrio: sinVidrio,
+    sin_animacion: quitar(/@supports \(animation-timeline: view\(\)\) \{[\s\S]*?\n\}\n\n@keyframes[\s\S]*?\n\}\n/),
+    sin_backdrop: bloque.length ? base.replace(/-webkit-backdrop-filter: blur\([^;]*;\n\s*backdrop-filter: blur\([^;]*;/g, "") : base,
+    sin_fondo: base.replace(/#fase-chat::before \{[\s\S]*?\n\}\n/, "#fase-chat::before { content: none; }\n"),
+  };
+  const n = Number(a.corridas ?? 6);
+  const res = Object.fromEntries(Object.keys(variantes).map((k) => [k, []]));
+  for (let i = 0; i < n; i++) for (const [k, css] of Object.entries(variantes)) {
+    const t = TAMANOS.movil;
+    const ctx = await nav.newContext({ viewport: t.viewport, isMobile: true, hasTouch: true, colorScheme: "light", locale: "es-MX" });
+    await ctx.addInitScript(scriptInicial({ tema: "light" }));
+    await ctx.route("**/assets/css/base.css*", (r) => r.fulfill({ status: 200, contentType: "text/css", body: css }));
+    const page = await ctx.newPage();
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+    await cdp.send("Performance.enable");
+    await page.goto(a.url + "/", { waitUntil: "load" });
+    await dormir(3500);
+    const m = Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics.map((x) => [x.name, x.value]));
+    res[k].push({ tarea: m.TaskDuration * 1000, estilo: m.RecalcStyleDuration * 1000, layout: m.LayoutDuration * 1000, script: m.ScriptDuration * 1000 });
+    await ctx.close();
+  }
+  console.log("variante".padEnd(16), "tarea".padStart(8), "estilo".padStart(8), "layout".padStart(8), "script".padStart(8), " (ms, mediana de", n, ", CPU x4, carga + 3.5 s)");
+  for (const [k, v] of Object.entries(res)) console.log(k.padEnd(16), ...["tarea", "estilo", "layout", "script"].map((c) => mediana(v.map((x) => x[c])).toFixed(0).padStart(8)));
+  await nav.close();
+}
+
+/* ---- video del scroll por #fase-chat (bajando y subiendo), antes y después, en claro y oscuro ---- */
+if (modo === "video") {
+  const nav = await lanzarChromium();
+  const tam = a.tam ?? "escritorio";
+  for (const tema of ["claro", "oscuro"]) for (const [k, url] of [["antes", a.antes], ["despues", a.despues]]) {
+    const dir = path.join(salida, "_v", `${k}-${tema}-${tam}`);
+    fs.mkdirSync(dir, { recursive: true });
+    const { ctx, page } = await abrir(nav, url, { tema, tam, video: dir });
+    const top = await page.evaluate(() => Math.round(document.getElementById("fase-chat").getBoundingClientRect().top + scrollY));
+    const vh = TAMANOS[tam].viewport.height;
+    const desde = Math.max(0, top - vh * 0.9), hasta = top + vh * 1.2;
+    await ruedaHasta(page, desde, { paso: 300, pausaMs: 20, tolerancia: 20 });
+    await dormir(1200);
+    let y = desde;
+    while (y < hasta) { await page.mouse.wheel(0, 16); await dormir(16); y += 16; }
+    await dormir(900);
+    while (y > desde) { await page.mouse.wheel(0, -24); await dormir(16); y -= 24; }
+    await dormir(600);
+    const v = page.video();
+    await ctx.close();
+    fs.renameSync(await v.path(), path.join(salida, `scroll-${k}-${tema}-${tam}.webm`));
+  }
+  await nav.close();
+}
