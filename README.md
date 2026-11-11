@@ -42,8 +42,8 @@ asistente-landing/
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
 │   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, avisos, llamada, dashboard (+ contar.js)
 │   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
-│   ├── fonts/     .woff2 completos + OFL.txt (páginas legales)
-│   ├── fuentes/   los mismos pesos recortados al rango latino + OFL.txt (portada)
+│   ├── fonts/     .woff2 completos + un `OFL-<Familia>.txt` por familia (páginas legales)
+│   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (portada)
 │   └── img/       favicon.svg, favicon-32.png, apple-touch-icon.png y og-yaruki.png (ver "Íconos e imagen para compartir")
 ├── scripts/versionar.py    Cache busting (`?v=<hash>`), ver más abajo
 └── README.md
@@ -252,13 +252,19 @@ falta — no quedó ningún `node_modules/`/`package.json` en el repo.
   de Webflow (dueño de GSAP desde la adquisición a GreenSock) — gratuita
   para uso comercial o no comercial en sitios/apps siempre que la persona
   que usa el sitio no pague una cuota por acceder a él o a una parte de él
-  (que es el caso de esta landing: pública y gratuita). Texto completo
-  citado y verificado el 2026-10-04 en `assets/js/vendor/LICENSE-GSAP.txt`,
-  fuente <https://gsap.com/standard-license/>.
+  (que es el caso de esta landing: pública y gratuita). Texto oficial
+  íntegro (incluye cláusulas de Amendments, FAQ y fechas: vigente 2025-04-30,
+  modificada 2025-05-30) en `assets/js/vendor/LICENSE-GSAP.txt`, fuente
+  <https://gsap.com/standard-license/>, recotejado el 2026-11-10 (el
+  2026-10-04 se había citado de forma abreviada). Los dos `.min.js` son
+  idénticos byte a byte a `dist/` de `npm pack gsap@3.15.0`.
 - **canvas-confetti 1.9.4** (`canvas-confetti.min.js`) — el confeti del
   logro. No va en el `<head>`: `scenes/logro.js` lo carga recién cuando monta
   la escena (al acercarse a Hábitos) y nunca con reduced-motion. Licencia **ISC** (permisiva, equivalente a
-  MIT/BSD-2), texto completo en `assets/js/vendor/LICENSE-canvas-confetti.txt`.
+  MIT/BSD-2), texto completo en `assets/js/vendor/LICENSE-canvas-confetti.txt`
+  (idéntico al `LICENSE` de `npm pack canvas-confetti@1.9.4`; el
+  `canvas-confetti.min.js` es byte a byte `dist/confetti.browser.js` de ese
+  paquete, verificado el 2026-11-10).
 
 ## Fuentes autoalojadas
 
@@ -278,18 +284,49 @@ estaba instalado y no había `pip`/`pipx` disponibles en este entorno — si se
 necesita subsetting más agresivo más adelante, instalar
 `pip install --user fonttools brotli` y usar `fonttools subset`).
 
-Licencia: **SIL Open Font License 1.1**, texto completo en
-`assets/fonts/OFL.txt`. La cabecera de copyright que puse (`Copyright 2019 The
-Baloo 2 Project Authors` / `Copyright 2018 The Manrope Project Authors`) es la
-que recuerdo de los metadatos de Google Fonts para estas dos familias, **pero
-no la verifiqué contra el archivo `OFL.txt` original de cada familia en este
-pase** — pendiente de confirmar antes de publicar (no cambia los términos de
-la licencia, sólo la atribución exacta).
+Licencia: **SIL Open Font License 1.1**, un archivo por familia, **copia
+byte a byte** del `OFL.txt` canónico (en `assets/fonts/` y `assets/fuentes/`):
+
+| Familia | Archivo | Copyright (línea 1, tal cual) | Reserved Font Name |
+|---|---|---|---|
+| Baloo 2 (Ek Type) | `OFL-Baloo2.txt` | `Copyright 2019 The Baloo 2 Project Authors (https://github.com/EkType/Baloo2)` | ninguno |
+| Manrope (Mikhail Sharanda) | `OFL-Manrope.txt` | `Copyright 2018 The Manrope Project Authors (https://github.com/googlefonts/manrope)` | ninguno |
+
+**Verificado el 2026-11-10** contra `google/fonts@5bb2873` (`main` ese día):
+`ofl/baloo2/OFL.txt` (último cambio `8e0cd05`) y `ofl/manrope/OFL.txt`
+(último cambio `16c2976`); URLs
+<https://github.com/google/fonts/blob/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/baloo2/OFL.txt>
+y `.../ofl/manrope/OFL.txt`. Baloo 2 coincide también con los repos de origen
+(`EkType/Baloo2-Variable` y `yanone/Baloo2-Variable` en `da523df`, la
+referencia de `ofl/baloo2/upstream_info.md`). Manrope: `aaronbell/manrope` en
+`6f81ebe` (byte a byte el `.ttf` de google/fonts) trae "Copyright 2018 ...
+(sharanda/manrope)", repo hoy borrado.
+
+- **Qué estaba mal:** un solo `OFL.txt` con los dos copyright juntos (no existe
+  en ninguna fuente), con el texto de la licencia re-envuelto y el aviso de
+  Manrope sin URL. Ahora cada familia lleva su archivo exacto.
+- **Reserved Font Name:** ninguna de las dos familias lo declara (la línea
+  "with Reserved Font Name ..." no existe en ninguno de los dos OFL). Los
+  `.woff2` completos y los recortes a rango latino (`fonttools subset`)
+  conservan los nombres originales sin problema; la cláusula 3 no aplica.
+  Convertir a woff2 y recortar son "Modified Version" permitidas por la
+  cláusula de permiso; se redistribuyen con la misma licencia y su aviso
+  (cláusulas 2 y 5).
+- **Discrepancia de upstream (informativa):** la cadena de copyright
+  *incrustada* en los `.ttf` de Manrope (name ID 0) dice "Copyright 2019 ...
+  (https://github.com/sharanda/manrope)", mientras los OFL de google/fonts y de
+  aaronbell dicen 2018, y el `METADATA.pb` de google/fonts dice 2019 +
+  googlefonts/manrope. Se conserva el OFL canónico de google/fonts y no se
+  modifican los metadatos de las fuentes. Los 14 `.woff2` se comprobaron: son
+  Baloo 2 v1.700 y Manrope v4.504 (nombres internos intactos).
+- **Verificación automática:** `python3 -I scripts/pruebas/licencias.py`
+  (hashes de los OFL canónicos, copyright, ausencia de RFN, licencias de
+  `vendor/`).
 
 ## Pendientes / marcadores (no inventar al publicar)
 
 1. ~~Retención de backups~~ → **resuelto 2026-10-04: 30 días** (decisión del dueño), con cron de rotación en el droplet. El plazo ARCO usa el artículo 31 de la LFPDPPP 2025 (20 días para responder, 15 para hacer efectivo, ampliables una vez).
-2. **Atribución exacta de las fuentes** (ver arriba).
+2. ~~Atribución exacta de las fuentes~~ → **resuelto 2026-11-10** (ver "Fuentes autoalojadas": OFL canónicos de google/fonts@5bb2873, sin Reserved Font Name; licencia de GSAP completada).
 3. El badge de App Store en `index.html` queda deshabilitado (decisión 3.2 del
    plan). "Únete a la beta" ya está activo (prueba cerrada, 2026-10-13); cuando
    haya ficha pública en producción cambia a "Descárgala en Google Play"
