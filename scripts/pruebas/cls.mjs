@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
   cls: Layout Instability API en Chromium con red limitada (las fuentes llegan tarde, como en un
-  teléfono) sobre las páginas legales, la 404 y la portada, 3 corridas por combo.
+  teléfono) sobre las páginas legales, las dos guías, la 404 y la portada, 3 corridas por combo.
   Falla si el CLS de alguna corrida pasa de --max (0.02 por defecto) y muestra los desplazamientos.
   Causa típica: el cambio de la fuente de respaldo a la real reacomoda renglones (los respaldos de
   `fonts.css` y `fuentes-portada.css` deben tener las métricas de la fuente real: size-adjust y
@@ -41,7 +41,7 @@ import { lanzarChromium, leerArgs, lista, salir } from "./lib/comun.mjs";
 
 const a = leerArgs();
 if (a.ayuda || a.help) salir(0, "Uso: node cls.mjs [--paginas /,/eliminar-cuenta/] [--max 0.02] [--max-reacomodo 0.15] [--corridas 3] [--android DIR] [--verbose]");
-const paginas = lista(a.paginas, ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/404.html"]);
+const paginas = lista(a.paginas, ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/organizar-tareas-con-ia/", "/recordatorios-por-voz/", "/404.html"]);
 const max = a.max && a.max !== true ? Number(a.max) : 0.02;
 const corridas = a.corridas && a.corridas !== true ? Number(a.corridas) : 3;
 const TAMANOS = { escritorio: { width: 1350, height: 940 }, movil: { width: 412, height: 823 } };
