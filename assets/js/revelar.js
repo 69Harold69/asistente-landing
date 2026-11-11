@@ -22,6 +22,10 @@
   todavía en opacidad 0 (prueba `foco-visible.mjs`). Solo el de teclado: el
   foco que deja un clic de mouse (Ctrl+clic, o al volver con Atrás) no cuenta,
   si no el bloque se quedaba visible y el teléfono le pasaba por encima.
+  En escritorio el foco manda solo mientras la persona no se va: en cuanto
+  hace scroll por su cuenta (rueda, flechas, Espacio) vuelve a mandar el giro
+  del teléfono, si no el bloque con foco se quedaba visible y el teléfono le
+  pasaba por encima (pasada 3).
   El hero tiene su propia entrada al cargar, en CSS (base.css).
 */
 
@@ -30,6 +34,8 @@ const ENTRADA_DESDE = 0.6;
 const SALIDA_HASTA = 0.35;
 
 const limitar01 = (v) => Math.min(Math.max(v, 0), 1);
+// Scroll propio (px) a partir del cual el bloque con foco deja de forzarse visible.
+const SOLTAR_FOCO_PX = 32;
 
 function revelarAlEntrar(seccion) {
   const piezas = [...seccion.children];
@@ -94,12 +100,16 @@ export function inicializarReveals(escenario) {
       ])
     );
 
+    // Bloque con el foco de teclado (`:focus-visible`, no el que deja un clic de mouse) y el scroll que tenía al
+    // recibirlo. `y` se toma un cuadro después: con `focus()` el navegador desplaza hasta el enlace después del evento.
+    let forzado = null;
+    const bloqueDe = (el) => (el instanceof Element ? el.closest("#hero, .secciones > .seccion") : null);
+    const conFoco = (id) => forzado?.id === id;
+
     function sincronizar(y) {
       const geo = escenario.geometria;
       if (!geo?.escritorio) return;
       let previa = "hero";
-      // Solo el foco de teclado (`:focus-visible`), no el que deja un clic de mouse.
-      const conFoco = (id) => !!document.getElementById(id)?.querySelector(":focus-visible");
       for (const s of geo.segmentos) {
         if (s.tipo !== "giro") continue;
         const p = limitar01((y - s.ini) / (s.fin - s.ini));
@@ -109,12 +119,28 @@ export function inicializarReveals(escenario) {
       }
     }
 
-    const alEstado = (ev) => sincronizar(ev.detail.y);
+    const alEstado = (ev) => {
+      if (forzado) {
+        if (forzado.y === null) forzado.y = window.scrollY;
+        else if (Math.abs(window.scrollY - forzado.y) > SOLTAR_FOCO_PX) forzado = null;
+      }
+      sincronizar(ev.detail.y);
+    };
     // Solo si el foco entra o sale de un bloque del recorrido: el clic en el toggle de tema (en el header) no
     // debe pagar un `sincronizar` completo dentro de su interacción (~25 ms más con CPU ×4, rendimiento.mjs).
-    const enBloque = (el) => el instanceof Element && !!el.closest("#hero, .secciones > .seccion");
     const alFoco = (ev) => {
-      if (enBloque(ev.target) || enBloque(ev.relatedTarget)) sincronizar(escenario.y);
+      if (!bloqueDe(ev.target) && !bloqueDe(ev.relatedTarget)) return;
+      const activo = document.activeElement;
+      const bloque = bloqueDe(activo);
+      if (!bloque || !activo.matches(":focus-visible")) forzado = null;
+      else if (forzado?.id !== bloque.id || ev.type === "focusin") {
+        const nuevo = { id: bloque.id, y: null };
+        forzado = nuevo;
+        requestAnimationFrame(() => {
+          if (forzado === nuevo && nuevo.y === null) nuevo.y = window.scrollY;
+        });
+      }
+      sincronizar(escenario.y);
     };
     telefono.addEventListener("yaruki:estado", alEstado);
     document.addEventListener("focusin", alFoco);
