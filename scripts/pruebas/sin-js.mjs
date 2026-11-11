@@ -23,7 +23,7 @@ const dirSalida = a.salida ? carpetaSalida(a.salida) : null;
 
 const CTA_BETA = "https://groups.google.com/g/yaruki-beta/";
 const PAGINAS = ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/organizar-tareas-con-ia/", "/recordatorios-por-voz/", "/no-existe"];
-const TAMANOS = { escritorio: { width: 1440, height: 900 }, tablet: { width: 820, height: 1180 }, tablet768: { width: 768, height: 1024 }, tabletapaisada: { width: 1024, height: 768 }, movil: { width: 390, height: 844 } };
+const TAMANOS = { escritorio: { width: 1440, height: 900 }, tablet: { width: 820, height: 1180 }, tablet768: { width: 768, height: 1024 }, tabletapaisada: { width: 1024, height: 768 }, movil: { width: 390, height: 844 }, angosto: { width: 320, height: 568 } };
 const IGNORAR_OPACIDAD = "nav-recorrido-etiqueta";
 
 const fallas = [];
@@ -117,4 +117,4 @@ if (fallas.length) {
   for (const f of fallas) console.error(`  FALLA ${f}`);
   process.exit(1);
 }
-console.log("sin-js: OK (texto visible, CTA navegables, nada invisible ni roto, en claro/oscuro × escritorio/tablet/móvil)");
+console.log("sin-js: OK (texto visible, CTA navegables, nada invisible ni roto, en claro/oscuro × escritorio/tablet/móvil/320 px)");
