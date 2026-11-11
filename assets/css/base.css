@@ -284,6 +284,21 @@ strong {
   margin-bottom: var(--space-2);
 }
 
+/*
+  Por debajo de 360 px (#48) el chip de vigencia de las legales y la etiqueta
+  de las guías no caben en un renglón y su `nowrap` empujaba la página a lo
+  ancho: ahí se parten en dos renglones, con radio de tarjeta en vez de
+  píldora. De 360 px para arriba no cambia nada.
+*/
+@media (max-width: 359.98px) {
+  .legal-head .chip,
+  .guia-etiqueta {
+    white-space: normal;
+    text-wrap: balance;
+    border-radius: var(--radius-sm);
+  }
+}
+
 .legal-head h1 {
   font-size: var(--text-2xl);
 }
