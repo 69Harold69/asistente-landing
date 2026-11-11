@@ -78,6 +78,14 @@ class ReglasDePortada(unittest.TestCase):
             "promesa absoluta en las preguntas": (lambda t: t.replace("<p>Hoy sí: durante la beta no se cobra nada", "<p>Nunca actúa a tus espaldas. Hoy sí: durante la beta no se cobra nada", 1), "[portada]"),
             "FAQPage con otra pregunta que las visibles": (lambda t: t.replace('"name": "¿Es gratis?"', '"name": "¿Cuesta algo?"', 1), "[portada]"),
             "FAQPage: respuesta distinta de la visible": (lambda t: t.replace('"text": "Todavía no: Yaruki', '"text": "No: Yaruki', 1), "[faq-visible]"),
+            "tarjeta de «Lo que viene» sin chip": (lambda t: t.replace('<h3>Finanzas</h3>\n              <span class="chip">Próximamente</span>', '<h3>Finanzas</h3>', 1), "[portada]"),
+            "«pronto» en Lo que viene": (lambda t: t.replace("Estamos trabajando en estilos", "Pronto habrá estilos", 1).replace("pronto habrá", "pronto habrá"), "[portada]"),
+            "precio o Premium en Lo que viene": (lambda t: t.replace("Una versión para iPhone está planeada en serio", "Una versión Premium para iPhone está planeada en serio", 1), "[portada]"),
+            "fecha en Lo que viene": (lambda t: t.replace("pero todavía no\n              tiene fecha.", "para diciembre.", 1), "[portada]"),
+            "Finanzas sin la aclaración de bancos": (lambda t: t.replace("Sin conexión a tus bancos y\n              sin asesoría financiera: solo lo que tú le cuentas.", "Solo lo que tú le cuentas.", 1), "[portada]"),
+            "Quién está detrás con correo personal": (lambda t: t.replace('<a href="/privacidad/">política de privacidad</a>.\n        </p>\n      </div>\n    </section>\n  </main>', '<a href="/privacidad/">política de privacidad</a>. <a href="mailto:yo@example.com">Escríbeme</a>.\n        </p>\n      </div>\n    </section>\n  </main>', 1), "[portada]"),
+            "testimonio publicado": (lambda t: t.replace('  </main>', '    <blockquote>Me encantó.</blockquote>\n  </main>', 1), "[portada]"),
+            "aviso de iPhone con la constante vacía": (lambda t: t.replace('Más en <a href="#lo-que-viene">Lo que viene</a>.', 'Más en <a href="#lo-que-viene">Lo que viene</a>. <a data-aviso-iphone href="https://groups.google.com/g/yaruki-iphone/">Avísame cuando salga</a>.', 1), "[portada]"),
             "sin FAQPage en la portada": (lambda t: re.sub(r',\n      \{\n        "@type": "FAQPage".*?\n        \]\n      \}', "", t, count=1, flags=re.S), "[portada]"),
         }
         for nombre, (f, regla) in casos.items():
@@ -90,6 +98,32 @@ class ReglasDePortada(unittest.TestCase):
                 r = self.validar()
                 self.assertEqual(r.returncode, 1, f"no se detectó «{nombre}»:\n{r.stdout}")
                 self.assertIn(regla, r.stdout, f"«{nombre}» debe fallar por {regla}:\n{r.stdout}")
+
+    URL = "https://groups.google.com/g/yaruki-iphone/"
+    ENLACE = f'<p class="aviso-iphone"><a data-aviso-iphone href="{URL}">Avísame cuando salga la versión para iPhone</a></p>'
+
+    def con_url(self, url, enlace):
+        cfg = self.raiz / "assets/js/config.js"
+        cfg.write_text(cfg.read_text(encoding="utf-8").replace('IPHONE_AVISO_URL = "";', f'IPHONE_AVISO_URL = "{url}";'), encoding="utf-8")
+        if enlace:
+            self.mutar("Una versión para iPhone está planeada en serio, pero todavía no\n              tiene fecha.\n            </p>", "Una versión para iPhone está planeada en serio, pero todavía no\n              tiene fecha.\n            </p>\n            " + enlace)
+
+    def test_aviso_iphone_ramas(self):
+        # URL vacía y sin enlace: es el estado de hoy (lo cubre test_arbol_real_en_regla).
+        casos = {
+            "URL con valor y enlace igual en el HTML": (self.URL, self.ENLACE, 0, ""),
+            "URL con valor pero el HTML no trae el enlace": (self.URL, None, 1, "[portada]"),
+            "URL con valor y href distinto": (self.URL, self.ENLACE.replace("yaruki-iphone", "otro"), 1, "[portada]"),
+            "URL que no es un Google Group": ("https://example.com/aviso", self.ENLACE.replace(self.URL, "https://example.com/aviso"), 1, "[portada]"),
+        }
+        for nombre, (url, enlace, codigo, regla) in casos.items():
+            with self.subTest(nombre):
+                self.nueva_copia()
+                self.con_url(url, enlace)
+                r = self.validar()
+                self.assertEqual(r.returncode, codigo, f"«{nombre}»:\n{r.stdout}")
+                if regla:
+                    self.assertIn(regla, r.stdout)
 
 
 if __name__ == "__main__":

@@ -1625,3 +1625,111 @@ main > .bloque:last-child {
   color: var(--color-text-secondary);
   text-wrap: pretty;
 }
+
+/* Lo que viene: tarjetas sobrias, cada una con su chip «Próximamente». Rejilla de 6 columnas:
+   3 + 2 en escritorio, 2 por fila en tablet, 1 en móvil. */
+.viene-lista {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.tarjeta-viene {
+  grid-column: span 2;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.tarjeta-viene:nth-child(n + 4) {
+  grid-column: span 3;
+}
+
+@media (max-width: 900px) {
+  .viene-lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tarjeta-viene,
+  .tarjeta-viene:nth-child(n + 4) {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .viene-lista {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tarjeta-viene-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.tarjeta-viene h3 {
+  margin: 0;
+  font-size: var(--text-md);
+  text-wrap: balance;
+}
+
+.tarjeta-viene .chip {
+  flex: none;
+}
+
+.tarjeta-viene p {
+  margin: 0;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+  text-wrap: pretty;
+}
+
+.tarjeta-viene p + p {
+  margin-top: var(--space-1);
+}
+
+/* Aviso de iPhone: solo existe en el HTML cuando IPHONE_AVISO_URL tiene valor (README, «Aviso de iPhone»). */
+.aviso-iphone a {
+  font-weight: 600;
+}
+
+/* Quién está detrás: una línea, sin tarjeta. */
+.bloque--breve .bloque-intro {
+  max-width: 42rem;
+}
+
+/* Testimonios: PREPARADO Y SIN USAR. No hay ningún `.testimonios` en el HTML hasta tener permiso por escrito de cada
+   persona (README, «Testimonios»); `validar` falla si aparece marcado de testimonios. */
+.testimonios {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.testimonio {
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-lg);
+}
+
+.testimonio blockquote {
+  margin: 0 0 var(--space-2);
+  line-height: 1.65;
+}
+
+.testimonio figcaption {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
