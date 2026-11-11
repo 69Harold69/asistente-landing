@@ -41,7 +41,8 @@ asistente-landing/
 │   │   ├── progreso.js  Barra de avance (respaldo JS) y "Desliza para descubrir"
 │   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
 │   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
-│   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto)
+│   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto) y mirada de la mascota
+│   │   ├── malla.js     Malla de fondo del hero (canvas 2D que reacciona al cursor)
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
 │   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, avisos, llamada, dashboard (+ contar.js)
@@ -271,6 +272,44 @@ al primer clic en el toggle).
   `aria-current="location"` y salto a la posición en la que cada sección
   queda en lectura.
 - **Mascota del header:** respira y se infla con el hover de un CTA de la beta o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
+- **Malla de fondo (`malla.js`, #26):** `<canvas class="malla-hero">` creado por el
+  módulo como primer hijo de `#hero`, decorativo (`aria-hidden`, `pointer-events:
+  none`), a todo el ancho de la ventana y detrás del texto (`z-index: -1` dentro del
+  contexto de `#hero`), con una máscara que lo desvanece hacia abajo. Tamaño y
+  desfase por CSSOM (`--malla-ancho/alto/izq`), nítido en HiDPI (`devicePixelRatio`
+  con tope 2 y como máximo 8 Mpx de canvas, ~1.5x en 2560×1440) y redimensionado con `ResizeObserver`. Valores (Notion «Ideas para V2»):
+  cuadrícula de 128 px, radio 300 px, empuje `38 px × (1 − d/r)²`, líneas de
+  1.1 px, puntos de 1.35 px (+3 px). **Colores y opacidades de los tokens**
+  (`tokens.css`): reposo `--color-border-card`, encendido `--color-accent`, y las
+  opacidades `--malla-linea-*`/`--malla-punto-*` (tenues en claro). **Contraste AA:**
+  dentro de las cajas del texto del hero (líneas de texto, botones y chips, con 8 px de
+  margen para el foco) la malla se deforma con el cursor pero **no se enciende**: se
+  dibuja en reposo, en un solo trazo y un solo relleno (sin apilar opacidades), y el
+  texto secundario queda en ≥ 4.5:1 en los dos temas. Fuera del texto el encendido es
+  el de siempre. `scripts/pruebas/malla.mjs` lo mide en píxeles renderizados (peor
+  píxel con el cursor real barriendo cada bloque). Un
+  `MutationObserver` sobre `data-theme` y el cambio de `prefers-color-scheme`
+  redibujan en el mismo microtask, así que el revelado circular y la demo de tema la
+  repintan bien. **Sin trabajo en reposo:** no hay bucle continuo; el único
+  `requestAnimationFrame` (la función `cuadro`) corre mientras la malla converge hacia el cursor
+  y se detiene al asentarse; tampoco corre con el hero fuera de pantalla
+  (`IntersectionObserver`) ni con la pestaña oculta. Con `prefers-reduced-motion` y en
+  táctil (sin `hover`/puntero fino) se dibuja una vez, estática: en táctil el dedo hace
+  scroll y una animación solo gastaría batería. Arranca tras `load` + `requestIdleCallback`
+  (el LCP es el titular). Sin JS no existe el canvas y el hero queda igual.
+- **Mirada de la mascota (`tilt.js`, `scenes.css`, `phone.css`, #27):** la mascota de la app es un
+  punto sin rasgos (`ic_launcher_foreground.xml`), así que no hay ojos que separar: la «mirada» es un
+  desplazamiento pequeño del punto hacia el cursor, en el Splash (`.ps-splash .ps-dot`, hasta 7 dp) y
+  en la espalda del teléfono (`.phone-mascota-halo`, hasta 9 % de su tamaño). El mismo `pointermove`
+  pasivo y el mismo rAF de la inclinación alimentan `--mira-x/--mira-y` (-1..1, `gsap.quickTo` de 0.45 s,
+  un poco más rápido que el tilt de 0.7 s) en `.phone-tilt`. Se aplica con la propiedad `translate`,
+  que se compone con el `transform` de la coreografía (la escala de `.ps-dot-escala`, el giro de
+  `.phone`, la respiración del punto) sin pisarlo. Se apaga —y vuelve suave al centro— durante los
+  giros/vuelos (`yaruki:estado.enGiro`), mientras la mascota del hero crece con el scroll
+  (`mascota > 1.02`) y al salir el cursor; no existe en táctil ni con reduced-motion (mismo
+  `matchMedia` que el tilt). La inclinación del teléfono sigue en ±4° (Notion sugiere 8° laterales y
+  6° verticales: opción pendiente de Harold). Como la espalda solo se ve durante un giro, en la
+  práctica su mirada se ve en el modo de inspección `?cara=espalda` o con el scroll detenido sobre ella.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
   magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del

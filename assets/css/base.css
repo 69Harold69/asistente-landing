@@ -954,6 +954,25 @@ strong {
   }
 }
 
+/*
+  Malla de fondo del hero (malla.js): el canvas lo crea el módulo, ocupa todo el
+  ancho de la ventana (el hero sólo mide una columna) y va DETRÁS del texto
+  (`#hero` es un contexto de apilamiento: z-index 1). El tamaño y el desfase
+  llegan por CSSOM en `--malla-*`. Se desvanece hacia abajo para no dejar un
+  corte seco donde termina el hero.
+*/
+.malla-hero {
+  position: absolute;
+  top: 0;
+  left: var(--malla-izq, 0);
+  width: var(--malla-ancho, 100%);
+  height: var(--malla-alto, 100%);
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+}
+
 .hero-significado {
   font-family: var(--font-display);
   font-weight: 600;
