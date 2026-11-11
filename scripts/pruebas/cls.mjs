@@ -8,20 +8,30 @@
   ascent/descent-override).
 
   Portada (#49): las dos fuentes del hero van con `preload` y casi siempre llegan antes del primer
-  pintado, así que su CLS con red limitada sale 0 aunque el respaldo esté mal. Por eso en la portada,
-  y solo en anchos de teléfono (360, 390 y 412 px):
-    - el CLS se mide además con las fuentes RETRASADAS 1.5 s (llegan con el texto ya pintado);
-    - «reacomodo»: el hero con las fuentes bloqueadas (solo respaldo) contra el hero con las fuentes
-      cargadas debe tener los mismos renglones en el titular, el significado, el subtítulo (el LCP) y
-      la nota, y nada debajo puede moverse más de 1 px.
+  pintado, así que su CLS con red limitada sale 0 aunque el respaldo esté mal. Por eso en la portada:
+    - en anchos de teléfono (360, 390 y 412 px), el CLS se mide además con las fuentes RETRASADAS
+      1.5 s (llegan con el texto ya pintado);
+    - «reacomodo», en un barrido de 320 a 480 px cada 4 px: el hero con las fuentes bloqueadas (solo
+      respaldo) contra el hero con las fuentes cargadas (renglones del titular, el significado, el
+      subtítulo, el LCP, y la nota; nada debajo puede moverse más de 1 px). Falla si se reacomoda en
+      más de --max-reacomodo (15 %) de los anchos. No se exige cero: con `text-wrap: pretty/balance`
+      un renglón al límite salta con diferencias de 0.1 % de ancho, y afinar el `size-adjust` para
+      que no salte en un ancho dado es sobreajustar a un texto (auditoría de #49). Sin respaldo
+      ajustado, con Roboto, salta en ~25 % de los anchos; con el respaldo medido, en ~5 %.
   Tablet y escritorio quedan fuera de la portada: ahí el titular se reacomoda por su `max-width: 13ch`
   (el `ch` sale de la fuente de respaldo), con Arial y con Roboto por igual (issue #53).
 
-  --android DIR simula Android: Chromium con un fontconfig propio que solo ve las fuentes de DIR
-  (p. ej. Roboto-Regular.ttf y Roboto-Bold.ttf) más Noto, con `sans-serif`, `system-ui` y
-  `ui-rounded` → Roboto, sin Arial ni Liberation Sans y sin hinting (como Android). Sin la bandera se usan las fuentes del sistema.
+  --android DIR simula Android: Chromium con un fontconfig propio que solo ve las fuentes de DIR más
+  Noto, con `sans-serif`, `system-ui` y `ui-rounded` → Roboto, sin Arial ni Liberation Sans y sin
+  hinting (como Android). Lo más fiel es la Roboto variable del propio Android (`Roboto-Regular.ttf`,
+  Roboto 3, un solo archivo con eje `wght`): viene en el SDK/Android Studio
+  (`plugins/design-tools/resources/layoutlib/data/fonts/Roboto-Regular.ttf`) y en AOSP
+  (`external/roboto-fonts`). Sirven también las estáticas de Roboto 3 (`Roboto-Regular.ttf` y
+  `Roboto-Bold.ttf`, https://github.com/googlefonts/roboto-3-classic/releases o Google Fonts); los
+  anchos de Regular son idénticos. Licencia: SIL OFL 1.1 (Roboto 3; Roboto 2 era Apache-2.0). No las
+  metas al repo. Sin la bandera se usan las fuentes del sistema.
 
-  Uso: node cls.mjs [--paginas /,/eliminar-cuenta/] [--max 0.02] [--corridas 3] [--android DIR] [--verbose]
+  Uso: node cls.mjs [--paginas /,/eliminar-cuenta/] [--max 0.02] [--max-reacomodo 0.15] [--corridas 3] [--android DIR] [--verbose]
 */
 import fs from "node:fs";
 import os from "node:os";
@@ -30,13 +40,15 @@ import { iniciarServidor } from "./lib/servidor.mjs";
 import { lanzarChromium, leerArgs, lista, salir } from "./lib/comun.mjs";
 
 const a = leerArgs();
-if (a.ayuda || a.help) salir(0, "Uso: node cls.mjs [--paginas /,/eliminar-cuenta/] [--max 0.02] [--corridas 3] [--android DIR] [--verbose]");
+if (a.ayuda || a.help) salir(0, "Uso: node cls.mjs [--paginas /,/eliminar-cuenta/] [--max 0.02] [--max-reacomodo 0.15] [--corridas 3] [--android DIR] [--verbose]");
 const paginas = lista(a.paginas, ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/404.html"]);
 const max = a.max && a.max !== true ? Number(a.max) : 0.02;
 const corridas = a.corridas && a.corridas !== true ? Number(a.corridas) : 3;
 const TAMANOS = { escritorio: { width: 1350, height: 940 }, movil: { width: 412, height: 823 } };
 const TAMANOS_PORTADA = { "movil-360": { width: 360, height: 740 }, "movil-390": { width: 390, height: 844 }, movil: { width: 412, height: 823 } };
 const RETRASO_FUENTES = 1500;
+const maxReacomodo = a["max-reacomodo"] && a["max-reacomodo"] !== true ? Number(a["max-reacomodo"]) : 0.15;
+const ANCHOS_BARRIDO = Array.from({ length: 41 }, (_, i) => 320 + 4 * i);
 const HERO = ["#titular", ".hero-significado", ".subtitulo-hero", ".cta-nota"];
 
 /** fontconfig temporal que solo ve las fuentes de `dir` (+ Noto): Android sin Arial ni Liberation. */
@@ -115,7 +127,11 @@ try {
         }
         if (a.verbose || fallas.length) console.log(`${ruta} ${tam}${retraso ? " fuentes tarde" : ""}: ${valores.map((v) => v.toFixed(3)).join(" ")}`);
       }
-      if (portada) {
+    }
+    if (portada) {
+      const saltos = [];
+      for (const width of ANCHOS_BARRIDO) {
+        const viewport = { width, height: 800 };
         const respaldo = await heroCon(viewport, true);
         const real = await heroCon(viewport, false);
         const difs = [];
@@ -125,9 +141,11 @@ try {
           if (x.renglones !== y.renglones) difs.push(`${s} ${x.renglones}→${y.renglones} renglones`);
           if (Math.abs(y.top - x.top) > 1) difs.push(`${s} se mueve ${y.top - x.top} px`);
         }
-        if (difs.length) fallas.push(`/ ${tam} reacomodo del hero al llegar las fuentes: ${difs.join("; ")}`);
-        if (a.verbose || difs.length) console.log(`/ ${tam} reacomodo: ${difs.length ? difs.join("; ") : "ninguno"}`);
+        if (difs.length) saltos.push(`${width} px: ${difs.join("; ")}`);
       }
+      const resumen = `/ reacomodo del hero al llegar las fuentes en ${saltos.length} de ${ANCHOS_BARRIDO.length} anchos (320–480 px; máximo ${Math.floor(maxReacomodo * ANCHOS_BARRIDO.length)})`;
+      if (saltos.length > maxReacomodo * ANCHOS_BARRIDO.length) fallas.push(`${resumen}: ${saltos.join(" | ")}`);
+      if (a.verbose || saltos.length) console.log(`${resumen}${saltos.length ? "\n  " + saltos.join("\n  ") : ""}`);
     }
   }
 } finally {
@@ -141,4 +159,4 @@ if (fallas.length) {
   for (const f of fallas) console.error(`  FALLA ${f}`);
   process.exit(1);
 }
-console.log(`cls: OK${donde} (CLS <= ${max} en ${paginas.length} páginas × ${corridas} corridas; portada también con fuentes tarde y sin reacomodo del hero)`);
+console.log(`cls: OK${donde} (CLS <= ${max} en ${paginas.length} páginas × ${corridas} corridas; portada también con fuentes tarde y reacomodo del hero acotado)`);
