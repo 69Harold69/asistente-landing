@@ -141,6 +141,53 @@ class Reescritura(Base):
                 self.assertEqual(huella(self.raiz), original)
 
 
+class Auditoria(Base):
+    """Casos de la auditoría de #31: fugas, enlaces absolutos, hosts parecidos, páginas nuevas, URLs externas."""
+
+    def test_enlace_absoluto_propio_en_el_cuerpo_se_reescribe(self):
+        self.reemplazar("index.html", '<a href="#', f'<a href="https://{VIEJO}/privacidad/">x</a><a href="#')
+        self.assertEqual(correr(self.raiz, "--origen", NUEVO).returncode, 0)
+        self.assertIn(f'<a href="{NUEVO}/privacidad/">x</a>', (self.raiz / "index.html").read_text(encoding="utf-8"))
+
+    def test_fuga_en_js_manifest_o_texto_se_reporta_y_falla(self):
+        (self.raiz / "assets/js/zz-prueba.js").write_text(f'const U = "https://{VIEJO}/";\n', encoding="utf-8")
+        r = correr(self.raiz, "--origen", NUEVO)
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("assets/js/zz-prueba.js:1", r.stdout)
+        self.assertEqual(correr(self.raiz, "--check").returncode, 0, "tras la mudanza el viejo ya no es propio")
+        shutil.rmtree(self.raiz)
+        shutil.copytree(RAIZ, self.raiz, ignore=IGNORAR)
+        (self.raiz / "manifest.webmanifest").write_text(f'{{"start_url": "https://{VIEJO}/"}}\n', encoding="utf-8")
+        self.assertEqual(correr(self.raiz, "--check").returncode, 0, "con el mismo origen, no es fuga")
+        r = correr(self.raiz, "--origen", NUEVO)
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("manifest.webmanifest:1", r.stdout)
+
+    def test_url_externa_en_clave_propia_no_se_secuestra(self):
+        # Una web personal del autor (p. ej. https://hjgr.dev/) en "url" NO es el sitio: no se reescribe, se reporta.
+        self.reemplazar("index.html", '"@type": "Person",', '"@type": "Person", "url": "https://hjgr.dev/",')
+        r = correr(self.raiz, "--origen", NUEVO)
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn('"url": "https://hjgr.dev/"', (self.raiz / "index.html").read_text(encoding="utf-8"))
+
+    def test_host_que_contiene_al_propio_no_se_toca(self):
+        self.reemplazar("index.html", '<a href="#', f'<a href="https://{VIEJO}.mx/">x</a><a href="#')
+        self.assertEqual(correr(self.raiz, "--origen", NUEVO).returncode, 0)
+        self.assertIn(f'https://{VIEJO}.mx/', (self.raiz / "index.html").read_text(encoding="utf-8"))
+
+    def test_pagina_nueva_se_descubre_sola(self):
+        (self.raiz / "nueva").mkdir()
+        (self.raiz / "nueva/index.html").write_text(f'<link rel="canonical" href="https://{VIEJO}/nueva/" />\n', encoding="utf-8")
+        self.assertEqual(correr(self.raiz, "--origen", NUEVO).returncode, 0)
+        self.assertIn(f'href="{NUEVO}/nueva/"', (self.raiz / "nueva/index.html").read_text(encoding="utf-8"))
+
+    def test_correo_api_y_paquete_no_se_tocan(self):
+        correr(self.raiz, "--origen", NUEVO)
+        idx = (self.raiz / "index.html").read_text(encoding="utf-8")
+        self.assertIn("mailto:privacidad@hjgr.dev", idx)
+        self.assertIn("play.google.com/apps/testing/dev.hjgr.yaruki", idx)
+
+
 @unittest.skipUnless(shutil.which("node") and (RAIZ / "scripts/pruebas/node_modules").exists(), "requiere node y npm ci en scripts/pruebas")
 class ReglaValidar(Base):
     """La regla `dominio` de validar.mjs, apuntada a una copia (YARUKI_RAIZ)."""
