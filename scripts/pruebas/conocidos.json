@@ -2,13 +2,6 @@
   "descripcion": "Fallos conocidos de la línea base (origin/main). Cada entrada lleva su issue y se acota con archivo (ruta exacta), contiene (texto opcional) y cuantos (número EXACTO de hallazgos que cubre): si aparecen más, los de sobra salen como FALLA; si hay menos, XPASS. Cuando la PR que lo arregla deja la regla en verde, borra la entrada (o baja cuantos): validar reporta XPASS y falla si queda. La sección navegador cubre lo que ven capturas y tactil en la consola (sin XPASS, porque puede ser intermitente): bórrala en la PR que arregle el issue.",
   "conocidos": [
     {
-      "regla": "cta-sin-href",
-      "archivo": "index.html",
-      "cuantos": 2,
-      "issue": 21,
-      "motivo": "Los dos CTA «Únete a la beta» (hero y #cta) no tienen href en el HTML; solo main.js se lo pone."
-    },
-    {
       "regla": "csp-js",
       "archivo": "assets/js/scenes/chat.js",
       "contiene": "style=",
