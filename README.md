@@ -25,7 +25,7 @@ asistente-landing/
 ├── assets/
 │   ├── css/
 │   │   ├── tokens.css   Colores/tipografía/espaciado/tema (claro, oscuro, y el `data-theme` del toggle)
-│   │   ├── fonts.css    @font-face de las páginas legales y 404 (assets/fonts/)
+│   │   ├── fonts.css    @font-face de las legales, las guías y la 404 (los mismos recortes de assets/fuentes/)
 │   │   ├── fuentes-portada.css  @font-face de la portada (recortes latinos de assets/fuentes/)
 │   │   ├── base.css     Layout, grid con escenario sticky, componentes compartidos
 │   │   ├── guias.css    Páginas-guía: resumen, pasos, ejemplos de chat en CSS, tabla comparativa, cierre con la beta
@@ -47,8 +47,8 @@ asistente-landing/
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
 │   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, avisos, llamada, dashboard (+ contar.js)
 │   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
-│   ├── fonts/     .woff2 completos + un `OFL-<Familia>.txt` por familia (páginas legales)
-│   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (portada)
+│   ├── fonts/     .woff2 completos + un `OFL-<Familia>.txt` por familia (ninguna página los usa: son la fuente de los recortes)
+│   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (todas las páginas)
 │   └── img/       favicon.svg, favicon-32.png, apple-touch-icon.png y og-yaruki.png (ver "Íconos e imagen para compartir")
 ├── scripts/versionar.py    Cache busting (`?v=<hash>`), ver más abajo
 ├── scripts/pruebas/        Pruebas y revisión visual (Playwright, Lighthouse, validar); ver «Pruebas y revisión visual»
@@ -439,8 +439,14 @@ pesos hechos con `fonttools subset` (rango: U+0000-00FF, U+0131, U+0152-0153,
 U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122,
 U+2190-2193, U+2212, U+2713, U+2022; `--layout-features='*'`). De 431 KB a
 109 KB. Si se agrega texto con caracteres fuera de ese rango, regenerarlos
-desde `assets/fonts/` con el mismo comando. Las páginas legales siguen con
-los originales de `assets/fonts/` vía `fonts.css`, cuyas fuentes de respaldo
+desde `assets/fonts/` con el mismo comando (por eso se conservan, aunque ya ninguna página los
+carga). Las legales, las guías y la 404
+usan los mismos recortes vía `fonts.css` (desde la auditoría integral, pasada 1:
+con los originales de 291 KB la simulación de Lighthouse móvil ponía las
+fuentes en la ruta del LCP en ~1 de cada 3–5 corridas, LCP ~2.85 s; con los
+recortes, ~1.65 s). Las guías además precargan Baloo 2 ExtraBold y Manrope
+Regular (sin eso el titular largo de `/organizar-tareas-con-ia/` ganaba un
+renglón al llegar la fuente: CLS 0.026 a 412 px). Las fuentes de respaldo de `fonts.css`
 ("Baloo 2 Fallback", "Manrope Fallback": Arial con `size-adjust` y
 `ascent/descent-override` medidos con fonttools contra la fuente real, una cara
 por grupo de pesos) evitan el CLS del cambio de fuente (#24, antes 0.134 en
