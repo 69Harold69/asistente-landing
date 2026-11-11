@@ -6,6 +6,7 @@
     - los dos CTA «Únete a la beta» son enlaces navegables (href https real al grupo, sin estado deshabilitado);
     - ningún elemento de contenido con texto queda con opacidad 0 ni oculto (salvo las etiquetas de hover
       de la navegación por puntos, que son decoración que aparece al pasar el mouse);
+    - ninguna página tiene scroll horizontal (#46);
     - ninguna sección reserva alto de pantalla (min-height) pensado para el teléfono: sin él son huecos;
     - nada que solo funcione con JS se ve roto: el teléfono (decorativo, vacío sin JS) y el toggle de tema
       (inerte sin JS) no se muestran, y el teléfono no tapa el texto.
@@ -14,7 +15,7 @@
 */
 import path from "node:path";
 import { iniciarServidor } from "./lib/servidor.mjs";
-import { lanzarChromium, leerArgs, carpetaSalida, salir, slug } from "./lib/comun.mjs";
+import { lanzarChromium, leerArgs, carpetaSalida, salir, slug, medirScrollHorizontal } from "./lib/comun.mjs";
 
 const a = leerArgs();
 if (a.ayuda || a.help) salir(0, "Uso: node sin-js.mjs [--salida DIR]");
@@ -84,6 +85,8 @@ try {
           { ignorar: IGNORAR_OPACIDAD },
         );
 
+        const ancho = await medirScrollHorizontal(page);
+        if (ancho) falla(combo, `scroll horizontal: ${ancho}`);
         if (!r.h1) falla(combo, "no hay <h1> con texto");
         if (r.palabras < 30) falla(combo, `muy poco texto visible (${r.palabras} palabras)`);
         for (const v of r.vacios) falla(combo, `texto invisible sin JS: ${v}`);

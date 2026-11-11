@@ -16,7 +16,7 @@ import path from "node:path";
 import { iniciarServidor } from "./lib/servidor.mjs";
 import {
   leerArgs, lista, lanzarChromium, carpetaSalida, crearGuardia, scriptInicial, esperarCarga,
-  leerEstado, SECCIONES_PORTADA, ORDEN_ESCENAS, dormir, slug, salir,
+  leerEstado, SECCIONES_PORTADA, ORDEN_ESCENAS, dormir, slug, salir, medirScrollHorizontal,
 } from "./lib/comun.mjs";
 import { ruedaHasta, reposo } from "./lib/scroll.mjs";
 
@@ -168,8 +168,8 @@ async function recorridoPortada(combo, dir, nombreCombo) {
   if (alRegresar.y > 4) guardia.fallas.push({ tipo: "coreografia", detalle: `la rueda no regresó arriba (y=${alRegresar.y})`, contexto: nombreCombo });
   exigir(alRegresar, "hero");
   await foto(page, dir, "portada-regreso-arriba");
-  const ancho = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
-  if (ancho[0] > ancho[1]) guardia.fallas.push({ tipo: "scroll-horizontal", detalle: `scrollWidth ${ancho[0]} > ${ancho[1]}`, contexto: nombreCombo });
+  const ancho = await medirScrollHorizontal(page);
+  if (ancho) guardia.fallas.push({ tipo: "scroll-horizontal", detalle: `/ ${ancho}`, contexto: nombreCombo });
   informe.combos.push({ combo: nombreCombo, estados });
 
   const video = conVideo ? page.video() : null;
@@ -193,6 +193,9 @@ async function otrasPaginas(combo, dir, nombreCombo) {
     if (!es404 && resp && resp.status() >= 400) guardia.fallas.push({ tipo: "http", detalle: `${resp.status()} ${ruta}`, contexto: nombreCombo });
     await esperarCarga(page, { portada: ruta === "/" });
     await verificarTema(page, combo, `${nombreCombo} ${ruta}`);
+    // Antes solo se medía al final del recorrido de la portada: las legales y la 404 nunca (#46).
+    const ancho = await medirScrollHorizontal(page);
+    if (ancho) guardia.fallas.push({ tipo: "scroll-horizontal", detalle: `${ruta} ${ancho}`, contexto: nombreCombo });
     if (ruta === "/") {
       await foto(page, dir, "portada-pagina-completa", { fullPage: true });
     } else {
