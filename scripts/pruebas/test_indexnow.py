@@ -109,6 +109,7 @@ class Envio(Base):
 
         srv = http.server.HTTPServer(("127.0.0.1", 0), H)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.server_close)
         self.addCleanup(srv.shutdown)
         r = correr(self.raiz, "--urls", f"{ORIGEN}/", "--enviar", "--sin-verificar", "--endpoint", f"http://127.0.0.1:{srv.server_port}/indexnow")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)

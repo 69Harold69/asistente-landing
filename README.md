@@ -388,6 +388,29 @@ referencia de `ofl/baloo2/upstream_info.md`). Manrope: `aaronbell/manrope` en
     <https://www.piranirisk.com/es/hub-regulatorio/lfpdppp-ley-proteccion-datos-mexico>
   - Plazo ARCO (sección 9 de la política y `/eliminar-cuenta`): **artículo 31 de la LFPDPPP 2025**, indicado por el dueño el 2026-10-04: máximo 20 días para comunicar la respuesta desde que se recibe la solicitud y 15 días para hacerla efectiva, ampliables una sola vez por un periodo igual. Se escribe como "días", sin "hábiles".
 
+## Después de publicar (IndexNow)
+
+IndexNow avisa a Bing, Yandex, Seznam, Naver y otros de las URLs que cambiaron (Google no participa: para Google
+siguen valiendo Search Console y el sitemap). La clave vive en `72d573f4443baf5a20fc8627fb495555.txt`, en la raíz:
+el protocolo exige publicarla (no es un secreto) y su contenido es exactamente la clave. Caddy no la oculta
+(`hide` solo cubre `.git`, `README.md`, `scripts`, `package*.json`). Tras el primer `git pull` en el droplet:
+
+```bash
+curl -s https://yaruki.hjgr.dev/72d573f4443baf5a20fc8627fb495555.txt   # debe imprimir exactamente la clave
+```
+
+Después de cada publicación, desde tu laptop y con el repo ya actualizado (avisa solo de las páginas del
+sitemap cuyo HTML cambió en el rango de commits):
+
+```bash
+python3 scripts/indexnow.py --desde <commit-publicado-antes>          # SIMULACIÓN: imprime lo que mandaría
+python3 scripts/indexnow.py --desde <commit-publicado-antes> --enviar # lo manda (api.indexnow.org)
+```
+
+También: `--urls URL ...` (URLs explícitas del mismo host) y `--todas`. Con `--enviar` comprueba antes que la clave
+ya esté publicada y responde `200`/`202` (ok) o `403`/`422` (clave sin publicar / URLs de otro host). El dominio sale
+de `scripts/sitio.json`, así que tras la mudanza a dominio propio el aviso sigue solo (la clave viaja con el repo).
+
 ## Mudanza a dominio propio
 
 El dominio vive en **un solo lugar**: `scripts/sitio.json` (`{"origen": "https://yaruki.hjgr.dev"}`).
