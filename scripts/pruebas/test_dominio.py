@@ -18,7 +18,7 @@ DOMINIO = RAIZ / "scripts" / "dominio.py"
 VIEJO = "yaruki.hjgr.dev"
 NUEVO = "https://yaruki.app"
 # Unicos sitios donde el dominio viejo PUEDE seguir apareciendo tras mudarse (ver README, «Mudanza a dominio propio»):
-EXCEPCIONES = {"README.md"}
+EXCEPCIONES = {"README.md", "scripts/pruebas/test_dominio.py"}  # el README documenta la mudanza; esta prueba usa el dominio como dato
 IGNORAR = shutil.ignore_patterns(".git", "node_modules")
 
 
@@ -139,6 +139,38 @@ class Reescritura(Base):
                 r = correr(self.raiz, "--origen", malo)
                 self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
                 self.assertEqual(huella(self.raiz), original)
+
+
+@unittest.skipUnless(shutil.which("node") and (RAIZ / "scripts/pruebas/node_modules").exists(), "requiere node y npm ci en scripts/pruebas")
+class ReglaValidar(Base):
+    """La regla `dominio` de validar.mjs, apuntada a una copia (YARUKI_RAIZ)."""
+
+    def validar(self):
+        import os
+        env = {**os.environ, "YARUKI_RAIZ": str(self.raiz)}
+        return subprocess.run(["node", str(RAIZ / "scripts/pruebas/validar.mjs"), "--solo", "dominio", "--estricto"], capture_output=True, text=True, env=env)
+
+    def test_arbol_en_regla(self):
+        r = self.validar()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_detecta_dominio_ajeno_en_cada_contexto(self):
+        casos = {
+            "canonical": ("index.html", f'<link rel="canonical" href="https://{VIEJO}/"'),
+            "og:image": ("privacidad/index.html", f'<meta property="og:image" content="https://{VIEJO}/'),
+            "twitter:image": ("terminos/index.html", f'<meta name="twitter:image" content="https://{VIEJO}/'),
+            "json-ld": ("index.html", f'"@id": "https://{VIEJO}/#sitio"'),
+            "sitemap": ("sitemap.xml", f"<loc>https://{VIEJO}/terminos/"),
+            "robots": ("robots.txt", f"Sitemap: https://{VIEJO}/"),
+        }
+        for nombre, (ruta, frag) in casos.items():
+            with self.subTest(nombre):
+                shutil.rmtree(self.raiz)
+                shutil.copytree(RAIZ, self.raiz, ignore=IGNORAR)
+                self.reemplazar(ruta, frag, frag.replace(f"https://{VIEJO}", "https://otro.example"))
+                r = self.validar()
+                self.assertEqual(r.returncode, 1, f"validar no detecto «{nombre}»:\n{r.stdout}")
+                self.assertIn("[dominio]", r.stdout)
 
 
 if __name__ == "__main__":
