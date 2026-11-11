@@ -10,6 +10,7 @@
     - se desvanece con los puntos (`data-fuera`) pasado el recorrido y reaparece al volver;
     - con prefers-reduced-motion el relleno no tiene transición (es posición, no animación);
     - sin JavaScript no hay relleno (queda el conector tenue entre los puntos, que siguen siendo anclas);
+    - el hover de los puntos sigue respondiendo en los puntos ya recorridos (el punto se aviva);
     - consola limpia (sin console.error, pageerror ni violaciones de CSP).
   Uso: node progreso.mjs [--url http://...] [--salida DIR]   (sale con 1 si algo falla)
 */
@@ -207,6 +208,22 @@ try {
       }
       await ctx.close();
     }
+  }
+
+  console.log("\n== hover en un punto recorrido");
+  {
+    const { ctx, page } = await abrir({});
+    const y = await page.evaluate(() => document.getElementById("fase-avisos").getBoundingClientRect().top + scrollY - innerHeight * 0.5 + 60);
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), y);
+    await dormir(600);
+    const op = () => page.evaluate(() => Number(getComputedStyle(document.querySelectorAll(".nav-recorrido a")[1], "::before").opacity));
+    const pasado = await page.evaluate(() => document.querySelectorAll(".nav-recorrido a")[1].hasAttribute("data-pasado"));
+    const reposo = await op();
+    await page.locator(".nav-recorrido a").nth(1).hover();
+    await dormir(400);
+    const encima = await op();
+    ok(pasado && encima >= reposo + 0.2, `el punto recorrido responde al hover (opacidad ${reposo} → ${encima})`);
+    await ctx.close();
   }
 
   console.log("\n== prefers-reduced-motion");
