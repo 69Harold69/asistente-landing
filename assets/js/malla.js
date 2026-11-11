@@ -36,6 +36,9 @@ const GROSOR_LINEA = 1.1;
 const RADIO_PUNTO = 1.35;
 const CRECE_PUNTO = 3;
 const DPR_MAX = 2;
+// Tope de píxeles del canvas (≈ 32 MB de RGBA): a 2560×1440@2x el hero pediría 5120×2688 (52 MB) para una
+// decoración; con el tope baja a ~1.5x, que sigue nítido para líneas de 1.1 px.
+const PIXELES_MAX = 8e6;
 const TAU_CURSOR = 90; // ms: inercia con la que la malla sigue al cursor
 const TAU_FUERZA = 170; // ms: cuánto tarda en encenderse / apagarse
 
@@ -136,7 +139,7 @@ function montar(hero) {
     const r = hero.getBoundingClientRect();
     const nuevoAncho = raiz.clientWidth;
     const nuevoAlto = Math.round(r.height);
-    const nuevoDpr = Math.min(window.devicePixelRatio || 1, DPR_MAX);
+    const nuevoDpr = Math.min(window.devicePixelRatio || 1, DPR_MAX, Math.sqrt(PIXELES_MAX / Math.max(1, nuevoAncho * nuevoAlto)));
     // El canvas ocupa todo el ancho de la ventana (el hero sólo mide una columna).
     canvas.style.setProperty("--malla-izq", `${(-r.left).toFixed(1)}px`);
     zonas = zonasTexto(canvas.getBoundingClientRect());
