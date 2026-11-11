@@ -14,6 +14,7 @@ import { inicializarReveals } from "./revelar.js?v=7e55092f39";
 import { inicializarProgreso } from "./progreso.js?v=7e55092f39";
 import { inicializarMagneticos } from "./magnetico.js?v=7e55092f39";
 import { inicializarNavRecorrido } from "./nav-recorrido.js?v=7e55092f39";
+import { inicializarMalla } from "./malla.js?v=7e55092f39";
 import { BETA_URL } from "./config.js?v=7e55092f39";
 
 /*
@@ -27,6 +28,8 @@ import { BETA_URL } from "./config.js?v=7e55092f39";
 inicializarTema();
 const escenario = inicializarEscenario();
 inicializarTilt();
+// La malla del hero arranca sola tras `load` + idle: nunca retrasa el titular (LCP).
+inicializarMalla(document.getElementById("hero"));
 
 /*
   Toggle sol/luna: el mismo revelado circular que la demo. El primer clic

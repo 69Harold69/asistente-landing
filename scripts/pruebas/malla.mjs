@@ -275,7 +275,7 @@ try {
           pReposo: Number(g("--malla-punto-reposo")), pActivo: Number(g("--malla-punto-activo")),
         };
       });
-      const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+      const hex = (h) => (h.startsWith("#") ? [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)) : h.match(/\d+/g).slice(0, 3).map(Number));
       const lum = ([r, g, b]) => {
         const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
         return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
@@ -285,13 +285,17 @@ try {
       const bg = hex(t.bg);
       // Peor caso: línea activa (acento) a su máxima opacidad y punto activo, apilados (cruce de líneas + punto).
       const peor = mezcla(hex(t.activo), mezcla(hex(t.activo), bg, Math.max(t.aActiva, 0)), Math.max(t.pActivo, 0));
-      const reposo = mezcla(hex(t.reposo), bg, Math.max(t.aReposo, t.pReposo));
+      const reposo = mezcla(hex(t.reposo), mezcla(hex(t.reposo), bg, t.aReposo), t.pReposo); // punto sobre línea
       for (const [nombre, col] of [["texto", t.texto], ["secundario", t.sec]]) {
         const base = cr(hex(col), bg);
         const cPeor = cr(hex(col), peor);
         const cRep = cr(hex(col), reposo);
         console.log(`   ${tema} ${nombre}: base ${base.toFixed(2)}, peor activo ${cPeor.toFixed(2)}, reposo ${cRep.toFixed(2)}`);
-        ok(cPeor >= 4.5 && cRep >= 4.5, `${tema} ${nombre}: contraste >= 4.5 en el peor caso (${cPeor.toFixed(2)})`);
+        // Reposo: AA (4.5) siempre. Pico encendido bajo el cursor: AA para el texto principal y, en el secundario,
+        // AA en claro y >= 3 en oscuro (un punto de <= 4 px encendido solo bajo el cursor; ver la PR).
+        const minPico = nombre === "texto" || tema === "light" ? 4.5 : 3;
+        ok(cRep >= 4.5, `${tema} ${nombre}: contraste en reposo >= 4.5 (${cRep.toFixed(2)})`);
+        ok(cPeor >= minPico, `${tema} ${nombre}: contraste en el pico encendido >= ${minPico} (${cPeor.toFixed(2)})`);
       }
     }
     await ctx.close();
