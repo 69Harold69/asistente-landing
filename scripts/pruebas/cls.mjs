@@ -9,7 +9,7 @@
 
   Portada (#49): las dos fuentes del hero van con `preload` y casi siempre llegan antes del primer
   pintado, así que su CLS con red limitada sale 0 aunque el respaldo esté mal. Por eso en la portada:
-    - en anchos de teléfono (360, 390 y 412 px), el CLS se mide además con las fuentes RETRASADAS
+    - en 360, 390, 412, 820, 1024 y 1440 px, el CLS se mide además con las fuentes RETRASADAS
       1.5 s (llegan con el texto ya pintado);
     - «reacomodo», en un barrido de 320 a 480 px cada 4 px: el hero con las fuentes bloqueadas (solo
       respaldo) contra el hero con las fuentes cargadas (renglones del titular, el significado, el
@@ -18,8 +18,8 @@
       un renglón al límite salta con diferencias de 0.1 % de ancho, y afinar el `size-adjust` para
       que no salte en un ancho dado es sobreajustar a un texto (auditoría de #49). Sin respaldo
       ajustado, con Roboto, salta en ~25 % de los anchos; con el respaldo medido, en ~5 %.
-  Tablet y escritorio quedan fuera de la portada: ahí el titular se reacomoda por su `max-width: 13ch`
-  (el `ch` sale de la fuente de respaldo), con Arial y con Roboto por igual (issue #53).
+  Tablet y escritorio entran con fuentes tarde (#53): el titular ya no depende del `ch` de la fuente
+  que esté pintando (su `max-width` va en `em`, que sale del `font-size` y no de la fuente).
 
   --android DIR simula Android: Chromium con un fontconfig propio que solo ve las fuentes de DIR más
   Noto, con `sans-serif`, `system-ui` y `ui-rounded` → Roboto, sin Arial ni Liberation Sans y sin
@@ -45,7 +45,7 @@ const paginas = lista(a.paginas, ["/", "/privacidad/", "/terminos/", "/eliminar-
 const max = a.max && a.max !== true ? Number(a.max) : 0.02;
 const corridas = a.corridas && a.corridas !== true ? Number(a.corridas) : 3;
 const TAMANOS = { escritorio: { width: 1350, height: 940 }, movil: { width: 412, height: 823 } };
-const TAMANOS_PORTADA = { "movil-360": { width: 360, height: 740 }, "movil-390": { width: 390, height: 844 }, movil: { width: 412, height: 823 } };
+const TAMANOS_PORTADA = { "movil-360": { width: 360, height: 740 }, "movil-390": { width: 390, height: 844 }, movil: { width: 412, height: 823 }, "tablet-820": { width: 820, height: 1180 }, "escritorio-1024": { width: 1024, height: 768 }, "escritorio-1440": { width: 1440, height: 900 } };
 const RETRASO_FUENTES = 1500;
 const maxReacomodo = a["max-reacomodo"] && a["max-reacomodo"] !== true ? Number(a["max-reacomodo"]) : 0.15;
 const ANCHOS_BARRIDO = Array.from({ length: 41 }, (_, i) => 320 + 4 * i);
