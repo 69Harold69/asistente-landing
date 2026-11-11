@@ -14,11 +14,18 @@ Uso:
 
 Qué reescribe (y nada más; el texto visible y los enlaces relativos no se tocan):
   - <link rel="canonical|alternate" href>, y <meta> og:url, og:image(:url|:secure_url), twitter:url, twitter:image.
-  - Cadenas URL dentro de <script type="application/ld+json">: las claves @id, url, image, logo,
-    item y mainEntityOfPage (salvo hosts externos conocidos: ver EXTERNOS) y cualquier otra
-    cadena cuyo host sea uno de los dominios propios detectados en canonical/sitemap/robots.
+  - Cualquier atributo href/src/content de cualquier etiqueta HTML cuyo valor sea una URL de un
+    dominio propio (p. ej. un <a href="https://<propio>/privacidad/"> absoluto).
+  - Cadenas URL dentro de <script type="application/ld+json"> cuyo host sea uno de los dominios
+    propios detectados en canonical/og/sitemap/robots. Una URL de otro host en las claves @id, url,
+    image, logo, item o mainEntityOfPage (salvo EXTERNOS) NO se reescribe (podría ser un sitio
+    externo legítimo, p. ej. la web personal del autor): se reporta para revisarla a mano.
   - <loc> y xhtml:link de sitemap.xml; líneas Sitemap:/Host: de robots.txt.
-No toca scripts/, README.md, /.well-known/, correos (mailto:) ni el identificador de Play.
+Además, tras reescribir, busca «fugas»: cualquier https?://<dominio propio viejo> que quede en un
+archivo de texto del sitio (HTML fuera de esos atributos, JS, CSS, JSON, manifest, XML, TXT, SVG).
+No las reescribe (pueden ser texto visible): las reporta y sale con 1, igual que --check.
+Páginas nuevas (carpetas con index.html) se descubren solas. No toca scripts/, README.md,
+/.well-known/, google*.html, correos (mailto:) ni el identificador de Play.
 Solo biblioteca estándar.
 """
 import json
@@ -31,7 +38,9 @@ SITIO = pathlib.Path("scripts") / "sitio.json"
 # Hosts que pueden aparecer a propósito en claves "propias" del JSON-LD (perfil del autor, ficha de Play...).
 EXTERNOS = {"schema.org", "github.com", "play.google.com", "groups.google.com", "www.linkedin.com", "linkedin.com"}
 CLAVES_PROPIAS = {"@id", "url", "image", "logo", "item", "mainEntityOfPage"}
-EXCLUIDOS = {".git", "node_modules", "scripts", ".worktrees"}
+EXCLUIDOS = {".git", "node_modules", "scripts", ".worktrees", ".well-known"}
+EXT_TEXTO = {".html", ".js", ".mjs", ".css", ".json", ".webmanifest", ".xml", ".txt", ".svg"}
+NO_REVISAR = {"README.md"}
 
 RE_ORIGEN_VALIDO = re.compile(r"^https://[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+(:\d+)?$")
 RE_URL = re.compile(r"^(https?://[^/?#\"'\s<>]+)(.*)$", re.S)
@@ -75,7 +84,12 @@ def hosts_propios(textos, origen):
     return hosts - EXTERNOS
 
 
-def reescribir_html(t, origen, propios):
+def re_host(hosts):
+    """https?://<host> exacto (sin aceptar <host>.mx ni sub.<host>)."""
+    return re.compile(r"(?<![\w.-])https?://(?:" + "|".join(sorted(map(re.escape, hosts))) + r")(?::\d+)?(?![\w.-])", re.I) if hosts else None
+
+
+def reescribir_html(t, origen, propios, sospechosas=None, nombre=""):
     def attr_url(etq, atributo):
         return RE_ATTR(atributo).sub(lambda m: m.group(1) + con_origen(m.group(2), origen) + m.group(3), etq, count=1)
 
@@ -92,14 +106,30 @@ def reescribir_html(t, origen, propios):
     def cadena(m):
         u, k = m.group("u"), m.group("k")
         host = HOST_DE(u)
-        propia = host in propios or (k in CLAVES_PROPIAS and host not in EXTERNOS)
-        return m.group(0).replace(u, con_origen(u, origen), 1) if propia else m.group(0)
+        if host in propios:
+            return m.group(0).replace(u, con_origen(u, origen), 1)
+        if k in CLAVES_PROPIAS and host not in EXTERNOS and sospechosas is not None:
+            sospechosas.append(f"{nombre} JSON-LD «{k}»: {u}")
+        return m.group(0)
 
     def ld(m):
         return m.group(1) + RE_CADENA_URL.sub(cadena, m.group(2)) + m.group(3)
 
+    rh = re_host(propios)
+
+    def atributo(m):
+        return m.group(1) + con_origen(m.group(2), origen) + m.group(3) if rh.match(m.group(2)) else m.group(0)
+
+    def fuera_de_ld(texto):
+        partes = RE_LD.split(texto)  # [fuera, abre, dentro, cierra, fuera, ...]
+        for i in range(0, len(partes), 4):
+            partes[i] = re.sub(r'(\b(?:href|src|content)\s*=\s*")(https?://[^"]*)(")', atributo, partes[i], flags=re.I)
+        return "".join(partes)
+
     t = RE_META.sub(meta, t)
     t = RE_LINK.sub(link, t)
+    if rh:
+        t = fuera_de_ld(t)
     return RE_LD.sub(ld, t)
 
 
@@ -121,21 +151,37 @@ def archivos(raiz):
             yield raiz / n
 
 
-def calcular(raiz, origen):
-    """Devuelve {ruta_relativa: (texto_actual, texto_nuevo)} solo de los archivos que cambiarían."""
+def textos_del_sitio(raiz):
+    for p in sorted(raiz.rglob("*")):
+        rel = p.relative_to(raiz)
+        if p.is_file() and p.suffix in EXT_TEXTO and not (set(rel.parts) & EXCLUIDOS) and str(rel) not in NO_REVISAR \
+                and not re.fullmatch(r"google[0-9a-f]+\.html", p.name):
+            yield str(rel), p
+
+
+def calcular(raiz, origen, sospechosas=None):
+    """Devuelve ({ruta_relativa: (texto_actual, texto_nuevo)} de los archivos que cambiarían, [fugas])."""
     textos = {str(p.relative_to(raiz)): p.read_bytes().decode("utf-8") for p in archivos(raiz)}
     propios = hosts_propios(textos, origen)
     cambios = {}
     for nombre, t in textos.items():
         if nombre.endswith(".html"):
-            n = reescribir_html(t, origen, propios)
+            n = reescribir_html(t, origen, propios, sospechosas if sospechosas is not None else [], nombre)
         elif nombre == "sitemap.xml":
             n = reescribir_sitemap(t, origen)
         else:
             n = reescribir_robots(t, origen)
         if n != t:
             cambios[nombre] = (t, n)
-    return cambios
+    # Fugas: el dominio propio viejo en cualquier otro lugar del sitio (JS, CSS, manifest, texto...).
+    viejos = propios - {HOST_DE(origen)}
+    rh, fugas = re_host(viejos), []
+    if rh:
+        for nombre, p in textos_del_sitio(raiz):
+            t = cambios[nombre][1] if nombre in cambios else p.read_bytes().decode("utf-8", "replace")
+            for m in rh.finditer(t):
+                fugas.append(f"{nombre}:{t.count(chr(10), 0, m.start()) + 1} {m.group(0)}")
+    return cambios, fugas
 
 
 def diferencias(viejo, nuevo):
@@ -169,13 +215,25 @@ def main(argv):
     if not RE_ORIGEN_VALIDO.match(destino):
         print(f"{SITIO}: origen inválido «{destino}»", file=sys.stderr)
         return 2
-    cambios = calcular(raiz, destino)
+    sospechosas = []
+    cambios, fugas = calcular(raiz, destino, sospechosas)
+
+    def reportar_manuales():
+        for s in sospechosas:
+            print(f"FALLA [dominio] URL de otro host en una clave propia: {s}: si es externa legítima, agrega su host a "
+                  "EXTERNOS (scripts/dominio.py y validar.mjs); si es del sitio, corrígela a mano")
+        for f in fugas:
+            print(f"FALLA [dominio] fuga del dominio viejo (no se reescribe sola; corrígela a mano): {f}")
+        return bool(sospechosas or fugas)
+
     if solo_revisar:
         for nombre, (v, n) in cambios.items():
             for linea, x, y in diferencias(v, n):
                 print(f"FALLA [dominio] {nombre}:{linea} debe usar {destino}\n    hay:  {x}\n    debe: {y}")
+        manuales = reportar_manuales()
         if cambios:
             print(f"\n{len(cambios)} archivo(s) no coinciden con {destino}. Corre: python3 scripts/dominio.py")
+        if cambios or manuales:
             return 1
         print(f"OK: todas las URLs absolutas usan {destino}.")
         return 0
@@ -185,7 +243,7 @@ def main(argv):
         (raiz / nombre).write_bytes(n.encode("utf-8"))
         print(f"reescrito {nombre}")
     print(f"Origen: {destino}. " + (f"{len(cambios)} archivo(s) reescrito(s)." if cambios else "Nada que cambiar."))
-    return 0
+    return 1 if reportar_manuales() else 0
 
 
 if __name__ == "__main__":
