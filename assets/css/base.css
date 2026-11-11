@@ -877,7 +877,7 @@ strong {
 */
 @media (max-width: 1023px) {
   .seccion:not(.seccion-hero) {
-    padding-top: 46vh;
+    padding-top: calc(var(--franja-alto, 44vh) + 2vh);
     min-height: 100vh;
   }
 
@@ -1783,4 +1783,62 @@ main > .bloque:last-child {
 .testimonio figcaption {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+}
+
+/*
+  Tablet vertical (768–1023 px, más alto que ancho): una columna bien compuesta. La franja del teléfono
+  (sticky, arriba) crece de 44vh a 50vh y el teléfono la llena; el hero va centrado y compacto para que
+  titular y teléfono compartan el primer pantallazo. `--franja-alto` ya gobierna la franja (phone.css), el
+  `padding-top` de cada sección (arriba) y la zona de lectura de stage.js. Móvil y escritorio no cambian.
+*/
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
+  .layout-con-stage {
+    --franja-alto: 50vh;
+  }
+
+  .seccion {
+    max-width: 38rem;
+    margin-inline: auto;
+  }
+
+  .seccion-hero {
+    max-width: 46rem;
+    padding-top: var(--space-1);
+    padding-bottom: 0;
+    text-align: center;
+  }
+
+  /* El teléfono ya asoma entero bajo el hero: la pista de «desliza» sobra y robaría alto al primer pantallazo. */
+  .seccion-hero .pista-scroll {
+    display: none;
+  }
+
+  .titular-hero {
+    font-size: 2.75rem;
+    max-width: none; /* sin `ch`: depende de la fuente cargada (#53) */
+    margin-inline: auto;
+  }
+
+  .subtitulo-hero {
+    max-width: 34rem;
+    margin-inline: auto;
+    margin-bottom: var(--space-3);
+  }
+
+  .seccion-hero .cta-row {
+    justify-content: center;
+  }
+
+  .seccion-hero .cta-nota {
+    max-width: 32rem;
+    margin-inline: auto;
+  }
+
+  .seccion:not(.seccion-hero) .fase-titulo {
+    font-size: 2.4rem;
+  }
+
+  .seccion:not(.seccion-hero) .fase-texto {
+    font-size: 1.125rem;
+  }
 }

@@ -41,7 +41,7 @@ asistente-landing/
 │   │   ├── progreso.js  Barra de avance (respaldo JS) y "Desliza para descubrir"
 │   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
 │   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
-│   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto)
+│   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto) y mirada de la mascota
 │   │   ├── malla.js     Malla de fondo del hero (canvas 2D que reacciona al cursor)
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
@@ -104,11 +104,19 @@ ScrollTrigger y `gsap.matchMedia()` con 3 ramas:
   y el texto de cada sección va en la columna libre; la escena cambia al 50%
   del progreso (de espaldas). Sin movimiento, el teléfono salta de columna
   apagado y reaparece cuando la columna nueva quedó libre de texto.
-- **Móvil (<1024px) con movimiento:** el mismo giro 360°, en el lugar, con el
+- **Móvil y tablet vertical (<1024px) con movimiento:** el mismo giro 360°, en el lugar, con el
   teléfono en la franja sticky de 44vh. En horizontal (alto ≤520px) el layout
   pasa a 2 columnas.
 - **`prefers-reduced-motion: reduce`:** sin giros ni vuelo; cada fase cruza
   con un fundido discreto cuando su sección llega a la mitad del viewport.
+
+**Tablet vertical (opción B, #61):** entre 768 y 1023 px y en vertical la rama móvil se compone aparte (fin de
+`base.css`, `phone.css`): `--franja-alto` (44vh por defecto, 50vh en tablet) gobierna la altura de la franja, el
+`padding-top` de cada sección (`franja + 2vh`) y, en `stage.js`, la zona de lectura (`mqTabletVertical`: usa el alto real
+de la franja). Como franja y texto se mueven juntos, los tramos (`TRAMOS.movil`) no cambian. El teléfono llena la franja
+(`(franja − 3.5rem) × 0.4615` de ancho), el hero va centrado y compacto (sin la pista «Desliza») para que titular y
+teléfono compartan el primer pantallazo, y las secciones se centran en un bloque de 38rem. Tablet apaisada de 768–1023 px
+sigue en la rama móvil de siempre.
 
 **Sincronía texto ↔ teléfono (`TRAMOS`):** cada sección mide al menos una
 pantalla y cada vuelo termina ANTES de que su texto llegue al centro
@@ -297,6 +305,19 @@ al primer clic en el toggle).
   táctil (sin `hover`/puntero fino) se dibuja una vez, estática: en táctil el dedo hace
   scroll y una animación solo gastaría batería. Arranca tras `load` + `requestIdleCallback`
   (el LCP es el titular). Sin JS no existe el canvas y el hero queda igual.
+- **Mirada de la mascota (`tilt.js`, `scenes.css`, `phone.css`, #27):** la mascota de la app es un
+  punto sin rasgos (`ic_launcher_foreground.xml`), así que no hay ojos que separar: la «mirada» es un
+  desplazamiento pequeño del punto hacia el cursor, en el Splash (`.ps-splash .ps-dot`, hasta 7 dp) y
+  en la espalda del teléfono (`.phone-mascota-halo`, hasta 9 % de su tamaño). El mismo `pointermove`
+  pasivo y el mismo rAF de la inclinación alimentan `--mira-x/--mira-y` (-1..1, `gsap.quickTo` de 0.45 s,
+  un poco más rápido que el tilt de 0.7 s) en `.phone-tilt`. Se aplica con la propiedad `translate`,
+  que se compone con el `transform` de la coreografía (la escala de `.ps-dot-escala`, el giro de
+  `.phone`, la respiración del punto) sin pisarlo. Se apaga —y vuelve suave al centro— durante los
+  giros/vuelos (`yaruki:estado.enGiro`), mientras la mascota del hero crece con el scroll
+  (`mascota > 1.02`) y al salir el cursor; no existe en táctil ni con reduced-motion (mismo
+  `matchMedia` que el tilt). La inclinación del teléfono sigue en ±4° (Notion sugiere 8° laterales y
+  6° verticales: opción pendiente de Harold). Como la espalda solo se ve durante un giro, en la
+  práctica su mirada se ve en el modo de inspección `?cara=espalda` o con el scroll detenido sobre ella.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
   magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
@@ -785,7 +806,7 @@ Herramientas en `scripts/pruebas/` (detalle de cada comando y de las decisiones 
 
 ```bash
 node validar.mjs                         # rápido, sin navegador: HTML, CSP, JSON-LD, sitemap, metadatos, enlaces, CTA, voseo
-node capturas.mjs --salida DIR           # claro/oscuro × 1440×900, 820×1180, 390×844 + reduced-motion; capturas y video
+node capturas.mjs --salida DIR           # claro/oscuro × 1440×900, 820×1180, 390×844 + reduced-motion; capturas y video (--tamanos suma tablet768 = 768×1024 y tabletapaisada = 1024×768)
 node tactil.mjs  --salida DIR            # gestos táctiles reales (Pixel 7, iPhone 15), video
 node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-base del monorepo
 node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + pruebas python + capturas + lighthouse (+ tactil)
