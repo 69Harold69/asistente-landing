@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /*
   todo: corre validar + sin-js + cls + licencias + dominio (--check y sus pruebas) + las pruebas de JSON-LD,
-  IndexNow y guías + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese orden, sin detenerse
-  en la primera falla, y sale con 1 si CUALQUIERA falla.
+  IndexNow, guías y portada + malla + mirada + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese
+  orden, sin detenerse en la primera falla, y sale con 1 si CUALQUIERA falla.
   Antes de todo, la guardia «registro» (#50): falla si en esta carpeta (o en lib/) hay un `test_*.py` o un
   `.mjs` que ningún paso corre y que no está en EXCEPCIONES.
 
@@ -43,6 +43,10 @@ const pasos = [
   // Reglas de las páginas-guía (Article, FAQ visible, sitemap): defectos sembrados que validar debe atrapar (#50).
   ["guias-pruebas", "python3", ["-I", "test_guias.py"]],
   ["portada-pruebas", "python3", ["-I", "test_portada.py"]],
+  // Malla del hero (#26): pausas, reduced-motion, costo por cuadro y contraste AA en píxeles reales.
+  ["malla", process.execPath, ["malla.mjs", "--salida", path.join(salida, "malla")]],
+  // Mirada de la mascota (#27): dirección y tope, giros, transform intacto, reduced-motion y táctil.
+  ["mirada", process.execPath, ["mirada.mjs", "--salida", path.join(salida, "mirada")]],
   ["capturas", process.execPath, ["capturas.mjs", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
   ["lighthouse", process.execPath, ["lighthouse.mjs", "--salida", path.join(salida, "lighthouse"), ...paginas, ...(a.corridas ? ["--corridas", String(a.corridas)] : []), ...(a.comparar ? ["--comparar", path.resolve(String(a.comparar).replace(/^~(?=$|\/)/, os.homedir()))] : [])]],
 ];
