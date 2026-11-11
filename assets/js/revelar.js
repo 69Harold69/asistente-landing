@@ -17,9 +17,11 @@
   Sin JS o con "reducir movimiento", el texto está visible desde el
   principio: el estado oculto lo pone este módulo, nunca el CSS.
   Foco visible (WCAG 2.4.7): una sección que tiene el foco del teclado
-  (`:focus-within`) se muestra completa al instante, aunque el teléfono no
-  haya terminado su giro; si no, con Tab el foco caía en un botón todavía en
-  opacidad 0 (prueba `foco-visible.mjs`).
+  (`:focus-visible` dentro) se muestra completa al instante, aunque el
+  teléfono no haya terminado su giro; si no, con Tab el foco caía en un botón
+  todavía en opacidad 0 (prueba `foco-visible.mjs`). Solo el de teclado: el
+  foco que deja un clic de mouse (Ctrl+clic, o al volver con Atrás) no cuenta,
+  si no el bloque se quedaba visible y el teléfono le pasaba por encima.
   El hero tiene su propia entrada al cargar, en CSS (base.css).
 */
 
@@ -42,7 +44,9 @@ function revelarAlEntrar(seccion) {
     paused: true,
   });
   // Foco visible: si el teclado llega antes que el umbral de scroll, la sección se muestra entera ya.
-  seccion.addEventListener("focusin", () => entrada.progress(1));
+  seccion.addEventListener("focusin", (ev) => {
+    if (ev.target.matches(":focus-visible")) entrada.progress(1);
+  });
   ScrollTrigger.create({
     trigger: piezas[0],
     start: "top 84%",
@@ -94,7 +98,8 @@ export function inicializarReveals(escenario) {
       const geo = escenario.geometria;
       if (!geo?.escritorio) return;
       let previa = "hero";
-      const conFoco = (id) => !!document.getElementById(id)?.matches(":focus-within");
+      // Solo el foco de teclado (`:focus-visible`), no el que deja un clic de mouse.
+      const conFoco = (id) => !!document.getElementById(id)?.querySelector(":focus-visible");
       for (const s of geo.segmentos) {
         if (s.tipo !== "giro") continue;
         const p = limitar01((y - s.ini) / (s.fin - s.ini));

@@ -89,4 +89,4 @@ for (const [bloque, destino] of [["hero", "fase-chat"], ["cta", "fase-llamada"]]
 await navegador.close();
 await srv.cerrar();
 if (fallas.length) salir(1, `foco-visible: ${fallas.length} falla(s)\n  - ${fallas.join("\n  - ")}`);
-salir(0, "foco-visible: OK (todo lo que recibe el foco con Tab se ve de inmediato, escritorio y móvil)");
+salir(0, "foco-visible: OK (todo lo que recibe el foco con Tab se ve de inmediato, escritorio y móvil; el foco de un clic no fuerza bloques visibles)");
