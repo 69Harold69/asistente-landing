@@ -37,6 +37,8 @@ const pasos = [
   ["compresion", process.execPath, ["compresion.mjs"]],
   // Presupuesto de rendimiento de la portada: LCP texto del hero, CLS, TBT, sin scripts en el <head> e interacciones ≤ 200 ms (CPU ×4).
   ["rendimiento", process.execPath, ["rendimiento.mjs"]],
+  // Escritorio: el teléfono nace en su columna, sin encimarse al titular ni saltar al llegar la coreografía.
+  ["arranque-telefono", process.execPath, ["arranque-telefono.mjs"]],
   // Licencias de fuentes y librerías vendorizadas (issue #15): solo biblioteca estándar de Python.
   ["licencias", "python3", ["-I", "licencias.py"]],
   // El dominio vive en scripts/sitio.json; --check sale ≠ 0 si alguna URL absoluta no coincide (issue #28).
