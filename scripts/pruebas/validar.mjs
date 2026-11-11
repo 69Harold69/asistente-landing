@@ -253,8 +253,13 @@ function git(...args) {
     return null;
   }
 }
+/*
+  Fechas en la hora de México (la del sitio y la de los commits, `%cs`), no en UTC: con
+  toISOString(), de 18:00 a 23:59 de México «hoy» ya era mañana y daba falsos rojos.
+*/
+const fechaMx = (ms = Date.now()) => new Date(ms).toLocaleDateString("sv-SE", { timeZone: "America/Mexico_City" });
 function fechaUltimoCambioDeTexto(p) {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = fechaMx();
   const cabeza = git("show", `HEAD:${p.r}`);
   if (cabeza !== null && textoVisible(parse(cabeza)) !== textoVisible(p.arbol)) return { fecha: hoy, por: "texto sin commitear" };
   const commits = (git("log", "--no-merges", "--format=%H %cs", "-30", "--", p.r) ?? "").split("\n").filter(Boolean);
@@ -292,7 +297,7 @@ if (activa("sitemap") || activa("lastmod")) {
       const ult = fechaUltimoCambioDeTexto(p);
       if (a.verbose) console.log(`lastmod ${p.r}: sitemap ${e.lastmod}, último cambio de texto ${ult ? `${ult.fecha} (${ult.por})` : "?"}`);
       if (ult && e.lastmod < ult.fecha) falla("lastmod", "sitemap.xml", `${e.loc}: lastmod ${e.lastmod} es anterior al último cambio de texto visible (${ult.fecha}, ${ult.por}); actualízalo`);
-      if (e.lastmod > new Date(Date.now() + 864e5).toISOString().slice(0, 10)) falla("lastmod", "sitemap.xml", `${e.loc}: lastmod ${e.lastmod} está en el futuro`);
+      if (e.lastmod > fechaMx(Date.now() + 864e5)) falla("lastmod", "sitemap.xml", `${e.loc}: lastmod ${e.lastmod} está en el futuro`);
     }
   }
   for (const p of indexables) {
@@ -449,8 +454,16 @@ if (!a.estricto) {
   const f = new URL("./conocidos.json", import.meta.url);
   if (fs.existsSync(f)) conocidos = JSON.parse(fs.readFileSync(f, "utf8")).conocidos ?? [];
 }
-const esConocido = (h) => conocidos.find((c) => c.regla === h.regla && (!c.contiene || `${h.donde} ${h.mensaje}`.includes(c.contiene)));
-const usados = new Set();
+/*
+  Cada entrada se acota con `archivo` (ruta exacta, sin la línea), `contiene` (texto en donde+mensaje)
+  y `cuantos` (número EXACTO de hallazgos que cubre). Sin `cuantos`, una entrada taparía cualquier
+  hallazgo nuevo de la misma regla (falso verde): por eso los que pasen de `cuantos` salen como FALLA,
+  y si hay menos, la entrada está vieja y sale XPASS (actualiza `cuantos` o bórrala).
+*/
+const archivoDeDonde = (donde) => donde.replace(/:\d+$/, "");
+const coincide = (c, h) =>
+  c.regla === h.regla && (!c.archivo || archivoDeDonde(h.donde) === c.archivo) && (!c.contiene || `${h.donde} ${h.mensaje}`.includes(c.contiene));
+const cubiertos = new Map(conocidos.map((c) => [c, 0]));
 const errores = [];
 const xfails = [];
 const avisos = [];
@@ -459,13 +472,20 @@ for (const h of hallazgos) {
     avisos.push(h);
     continue;
   }
-  const c = esConocido(h);
-  if (c) {
-    xfails.push({ ...h, issue: c.issue });
-    usados.add(c);
-  } else errores.push(h);
+  const c = conocidos.find((x) => coincide(x, h));
+  if (!c) {
+    errores.push(h);
+    continue;
+  }
+  cubiertos.set(c, cubiertos.get(c) + 1);
+  if (c.cuantos !== undefined && cubiertos.get(c) > c.cuantos)
+    errores.push({ ...h, mensaje: `${h.mensaje}  (hay más hallazgos que los ${c.cuantos} conocidos del issue #${c.issue}: este o uno de los otros es NUEVO)` });
+  else xfails.push({ ...h, issue: c.issue });
 }
-const xpass = conocidos.filter((c) => !usados.has(c) && (!solo || solo.has(c.regla)));
+const xpass = conocidos
+  .filter((c) => !solo || solo.has(c.regla))
+  .filter((c) => cubiertos.get(c) === 0 || (c.cuantos !== undefined && cubiertos.get(c) < c.cuantos))
+  .map((c) => ({ ...c, encontrados: cubiertos.get(c) }));
 
 if (a.json) console.log(JSON.stringify({ errores, xfails, avisos, xpass }, null, 2));
 else {
@@ -473,7 +493,12 @@ else {
   imprimir("AVISO ", avisos);
   imprimir("XFAIL ", xfails);
   imprimir("FALLA ", errores);
-  for (const c of xpass) console.log(`XPASS  [${c.regla}] ${c.contiene ?? ""} ya no falla: borra su entrada de scripts/pruebas/conocidos.json (issue #${c.issue})`);
+  for (const c of xpass)
+    console.log(
+      c.encontrados
+        ? `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ahora hay ${c.encontrados} de ${c.cuantos}: baja "cuantos" en scripts/pruebas/conocidos.json (issue #${c.issue})`
+        : `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ya no falla: borra su entrada de scripts/pruebas/conocidos.json (issue #${c.issue})`,
+    );
   const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "cta-sin-href", "voseo"].filter(activa))];
   console.log("\nResumen por regla:");
   for (const r of reglas) {
