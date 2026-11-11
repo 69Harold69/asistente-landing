@@ -3,7 +3,7 @@
   validar: comprobaciones rapidas y SIN navegador. Sale con 1 si alguna regla falla.
 
   Reglas (id): html-validate, csp-estatica, csp-js, csp-readme, json-ld, sitemap, lastmod,
-  meta, guias, faq-visible, enlaces, cta-sin-href, voseo, dominio. Cada falla se imprime como `FALLA [regla] archivo:linea mensaje`.
+  meta, guias, faq-visible, portada, enlaces, cta-sin-href, voseo, dominio. Cada falla se imprime como `FALLA [regla] archivo:linea mensaje`.
 
   Fallos conocidos: `conocidos.json` lista reglas (opcionalmente acotadas con "contiene") que HOY
   fallan y tienen issue. Se imprimen como XFAIL y no rompen la salida. Si una regla conocida
@@ -336,6 +336,9 @@ if (activa("json-ld")) {
   aparezca IDÉNTICO en el texto visible de esa página.
 */
 const normaliza = (s) => String(s).replace(/\s+/g, " ").trim();
+// El texto visible se arma uniendo los nodos de texto con un espacio: «<a>política</a>.» queda «política .».
+// Para comparar con el JSON-LD se quitan los espacios antes de puntuación de cierre y después de la de apertura.
+const sinHuecosDePuntuacion = (s) => normaliza(s).replace(/\s+([,.;:!?)»])/g, "$1").replace(/([(«¿¡])\s+/g, "$1");
 const hrefsDe = (p) => etiquetas(p.arbol, "a").map((x) => attr(x, "href")).filter(Boolean);
 const enlazaA = (origen, destino) =>
   hrefsDe(origen).some((h) => {
@@ -348,12 +351,12 @@ const enlazaA = (origen, destino) =>
 if (activa("guias") || activa("faq-visible")) {
   for (const p of paginas) {
     const nodos = nodosDeLd(p);
-    const visible = normaliza(textoVisible(p.arbol));
+    const visible = sinHuecosDePuntuacion(textoVisible(p.arbol));
     if (activa("faq-visible")) {
       for (const f of nodos.filter((n) => [].concat(n?.["@type"] ?? []).includes("FAQPage"))) {
         for (const q of [].concat(f.mainEntity ?? [])) {
           for (const [que, texto] of [["pregunta", q?.name], ["respuesta", q?.acceptedAnswer?.text]]) {
-            if (texto && !visible.includes(normaliza(texto))) falla("faq-visible", p.r, `FAQPage: la ${que} «${normaliza(texto).slice(0, 60)}…» no aparece idéntica en el texto visible de la página`);
+            if (texto && !visible.includes(sinHuecosDePuntuacion(texto))) falla("faq-visible", p.r, `FAQPage: la ${que} «${normaliza(texto).slice(0, 60)}…» no aparece idéntica en el texto visible de la página`);
           }
         }
       }
@@ -379,6 +382,109 @@ if (activa("guias") || activa("faq-visible")) {
     if (art.dateModified > new Date(Date.now() + 864e5).toLocaleDateString("sv-SE", { timeZone: "America/Mexico_City" })) falla("guias", p.r, `dateModified (${art.dateModified}) está en el futuro`);
     const portada = paginas.find((x) => x.url === "/");
     if (portada && !enlazaA(portada, p)) falla("guias", p.r, "la portada no enlaza esta guía (página huérfana)");
+  }
+}
+
+/* ---------- 3c. contenido indexable de la portada (fuera de la coreografía del teléfono) ---------- */
+/*
+  `portada`: «Cómo funciona» (#como-funciona: 3 pasos en un <ol>) y «Preguntas frecuentes» (#preguntas: <details>)
+  son texto plano en el HTML, dentro de <main> pero FUERA de `.layout-con-stage` (el teléfono y su sticky terminan
+  antes), y el FAQPage del JSON-LD de la portada repite, en el mismo orden, exactamente las preguntas visibles.
+  En ese contenido nuevo no valen las promesas absolutas («nunca cambia ni borra nada sin preguntarte»,
+  «nunca actúa a tus espaldas»): el asistente no pide confirmación al crear ni al marcar como hecho.
+*/
+const PROMESAS_ABSOLUTAS = /sin preguntarte|a tus espaldas|nunca (?:cambia|borra|actúa|hace)|siempre te pide confirmación (?:antes de )?cualquier/i;
+const porId = (arbol, id) => [...recorrer(arbol)].find((n) => n.nodeName && attr(n, "id") === id);
+const dentroDe = (n, pred) => {
+  for (let x = n.parentNode; x; x = x.parentNode) if (x.nodeName && pred(x)) return true;
+  return false;
+};
+const textoDeNodo = (n) => textoDe(n).join(" ").replace(/\s+/g, " ").trim();
+const PREGUNTAS_MINIMAS = 7;
+/* «Lo que viene»: ideas, no compromisos. Sin fechas, precios, Premium ni lenguaje de promesa (decisión de Harold, 2026-11-10). */
+const PROMESA_DE_FUTURO = /\bpronto\b|próxima versión|próximas versiones|llegará|llegarán|\bpremium\b|\bprecio|\$\s?\d|\b20\d\d\b|\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b|gratis para siempre/i;
+const TARJETAS_VIENE = 5;
+const URL_GRUPO_AVISO = /^https:\/\/groups\.google\.com\/g\/[A-Za-z0-9._-]+\/?$/;
+if (activa("portada")) {
+  const p = paginas.find((x) => x.url === "/");
+  if (p) {
+    const d = (n) => `${p.r}:${linea(n)}`;
+    const main = etiquetas(p.arbol, "main")[0];
+    const enRecorrido = (n) => dentroDe(n, (x) => (attr(x, "class") ?? "").split(/\s+/).includes("layout-con-stage"));
+    const revisar = (id, nombre) => {
+      const sec = porId(p.arbol, id);
+      if (!sec) { falla("portada", p.r, `falta la sección #${id} (${nombre})`); return null; }
+      if (sec.nodeName !== "section") falla("portada", d(sec), `#${id} debe ser una <section>`);
+      if (!main || !dentroDe(sec, (x) => x === main)) falla("portada", d(sec), `#${id} debe estar dentro de <main>`);
+      if (enRecorrido(sec)) falla("portada", d(sec), `#${id} está dentro de .layout-con-stage: no puede formar parte de la coreografía del teléfono`);
+      if (!etiquetas(sec, "h2").length) falla("portada", d(sec), `#${id} necesita su <h2>`);
+      const m = textoDeNodo(sec).match(PROMESAS_ABSOLUTAS);
+      if (m) falla("portada", d(sec), `#${id}: promesa absoluta «${m[0]}» (revisa contra /organizar-tareas-con-ia/)`);
+      return sec;
+    };
+    const como = revisar("como-funciona", "Cómo funciona");
+    if (como) {
+      const ol = etiquetas(como, "ol")[0];
+      const pasos = ol ? hijos(ol).filter((h) => h.nodeName === "li") : [];
+      if (!ol) falla("portada", d(como), "#como-funciona debe llevar una lista ordenada <ol>");
+      else if (pasos.length !== 3) falla("portada", d(ol), `#como-funciona debe tener exactamente 3 pasos y tiene ${pasos.length}`);
+    }
+    const viene = revisar("lo-que-viene", "Lo que viene");
+    if (viene) {
+      const tarjetas = etiquetas(viene, "li").filter((x) => (attr(x, "class") ?? "").split(/\s+/).includes("tarjeta-viene"));
+      if (tarjetas.length !== TARJETAS_VIENE) falla("portada", d(viene), `#lo-que-viene debe tener ${TARJETAS_VIENE} tarjetas (.tarjeta-viene) y tiene ${tarjetas.length}`);
+      for (const t of tarjetas) if (!/Próximamente/.test(textoDeNodo(t))) falla("portada", d(t), "tarjeta de «Lo que viene» sin el chip «Próximamente»");
+      const m = textoDeNodo(viene).match(PROMESA_DE_FUTURO);
+      if (m) falla("portada", d(viene), `#lo-que-viene: «${m[0]}» suena a compromiso, fecha o precio (solo «estamos trabajando en», «queremos que»…)`);
+      for (const [clave, re] of [["Finanzas", /sin conexión a tus bancos|sin conexión a bancos/i], ["Finanzas", /sin asesoría financiera/i]])
+        if (!re.test(textoDeNodo(viene))) falla("portada", d(viene), `${clave} debe decir «${re.source}»`);
+    }
+    const quien = revisar("quien-esta-detras", "Quién está detrás");
+    if (quien) {
+      const t = textoDeNodo(quien);
+      if (!t.includes("Harold de Jesús García Ramírez") || !t.includes("Guadalajara")) falla("portada", d(quien), "#quien-esta-detras debe nombrar a Harold de Jesús García Ramírez y Guadalajara (solo lo que el sitio ya publica)");
+      const enlaces = etiquetas(quien, "a").map((x) => attr(x, "href"));
+      if (!enlaces.includes("/privacidad/")) falla("portada", d(quien), "#quien-esta-detras debe enlazar a /privacidad/");
+      if (enlaces.some((h) => !h?.startsWith("/")) || etiquetas(quien, "img").length) falla("portada", d(quien), "#quien-esta-detras: sin fotos, redes ni correos personales nuevos");
+    }
+    /* Aviso «avísame cuando salga» de iPhone: IPHONE_AVISO_URL (assets/js/config.js) vacía => no hay nada en el HTML; con URL => el enlace real está en el HTML. */
+    {
+      const cfg = fs.readFileSync(path.join(RAIZ_SITIO, "assets/js/config.js"), "utf8");
+      const mc = cfg.match(/export const IPHONE_AVISO_URL\s*=\s*"([^"]*)"\s*;/);
+      const avisos = etiquetas(p.arbol, "a").filter((x) => tiene(x, "data-aviso-iphone"));
+      const promete = /av[ií]same/i.test(textoVisible(p.arbol));
+      if (!mc) falla("portada", "assets/js/config.js", "falta `export const IPHONE_AVISO_URL = \"\";`");
+      else if (mc[1] === "") {
+        if (avisos.length || promete) falla("portada", p.r, "IPHONE_AVISO_URL está vacía: el HTML no puede tener el enlace [data-aviso-iphone] ni texto que prometa el aviso («avísame…»)");
+      } else {
+        if (!URL_GRUPO_AVISO.test(mc[1])) falla("portada", "assets/js/config.js", `IPHONE_AVISO_URL debe ser un Google Group (https://groups.google.com/g/…), no «${mc[1]}»`);
+        if (avisos.length !== 1) falla("portada", p.r, `IPHONE_AVISO_URL tiene valor: el HTML debe traer exactamente un <a data-aviso-iphone> y trae ${avisos.length}`);
+        else {
+          if (attr(avisos[0], "href") !== mc[1]) falla("portada", d(avisos[0]), "el href de [data-aviso-iphone] debe ser IPHONE_AVISO_URL");
+          if (viene && !dentroDe(avisos[0], (x) => x === viene)) falla("portada", d(avisos[0]), "[data-aviso-iphone] va dentro de #lo-que-viene");
+        }
+      }
+    }
+    /* Testimonios: todavía no. Nada publicado hasta tener permiso por escrito de cada persona (README, «Testimonios»). */
+    if (etiquetas(p.arbol, "blockquote").length || /testimonio/i.test(p.fuente.replace(/<!--[\s\S]*?-->/g, "")))
+      falla("portada", p.r, "hay marcado de testimonios en la portada: solo con permiso por escrito de cada persona (README); quita esta comprobación en la PR que los agregue");
+    const faq = revisar("preguntas", "Preguntas frecuentes");
+    if (faq) {
+      const dets = etiquetas(faq, "details");
+      if (dets.length < PREGUNTAS_MINIMAS) falla("portada", d(faq), `#preguntas debe tener al menos ${PREGUNTAS_MINIMAS} preguntas (<details>) y tiene ${dets.length}`);
+      const visibles = dets.map((x) => {
+        const s = etiquetas(x, "summary")[0];
+        if (!s) falla("portada", d(x), "<details> sin <summary>");
+        return s ? textoDeNodo(s) : "";
+      });
+      const ld = nodosDeLd(p).find((n) => [].concat(n?.["@type"] ?? []).includes("FAQPage"));
+      if (!ld) falla("portada", p.r, "falta el FAQPage en el JSON-LD de la portada");
+      else {
+        const enLd = [].concat(ld.mainEntity ?? []).map((q) => normaliza(q?.name ?? ""));
+        if (JSON.stringify(enLd) !== JSON.stringify(visibles.map(normaliza)))
+          falla("portada", p.r, `las preguntas del FAQPage (${enLd.length}) no son las mismas, en el mismo orden, que las visibles (${visibles.length})`);
+      }
+    }
   }
 }
 
@@ -670,7 +776,7 @@ else {
         ? `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ahora hay ${c.encontrados} de ${c.cuantos}: baja "cuantos" en scripts/pruebas/conocidos.json (issue #${c.issue})`
         : `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ya no falla: borra su entrada de scripts/pruebas/conocidos.json (issue #${c.issue})`,
     );
-  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "guias", "faq-visible", "cta-sin-href", "voseo", "dominio"].filter(activa))];
+  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "guias", "faq-visible", "portada", "cta-sin-href", "voseo", "dominio"].filter(activa))];
   console.log("\nResumen por regla:");
   for (const r of reglas) {
     const e = errores.filter((h) => h.regla === r).length;
