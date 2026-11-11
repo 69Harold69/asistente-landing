@@ -17,6 +17,7 @@ asistente-landing/
 ├── terminos/index.html     Términos y condiciones
 ├── eliminar-cuenta/index.html  Cómo eliminar tu cuenta
 ├── organizar-tareas-con-ia/index.html  Guía (Article) para «ia para organizar tareas»
+├── recordatorios-por-voz/index.html    Guía (Article) para «recordatorios por voz android»
 ├── 404.html                Página de error, servida por el handle_errors de Caddy
 ├── sitemap.xml             URLs canónicas con su lastmod (sin 404 ni la verificación de Google)
 ├── robots.txt              Permite todo y apunta al sitemap
