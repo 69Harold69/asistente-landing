@@ -222,8 +222,13 @@ al primer clic en el toggle).
   cuadrícula de 128 px, radio 300 px, empuje `38 px × (1 − d/r)²`, líneas de
   1.1 px, puntos de 1.35 px (+3 px). **Colores y opacidades de los tokens**
   (`tokens.css`): reposo `--color-border-card`, encendido `--color-accent`, y las
-  opacidades `--malla-linea-*`/`--malla-punto-*` (tenues en claro; el contraste del
-  texto del hero contra el peor caso lo mide `scripts/pruebas/malla.mjs`). Un
+  opacidades `--malla-linea-*`/`--malla-punto-*` (tenues en claro). **Contraste AA:**
+  dentro de las cajas del texto del hero (líneas de texto, botones y chips, con 8 px de
+  margen para el foco) la malla se deforma con el cursor pero **no se enciende**: se
+  dibuja en reposo, en un solo trazo y un solo relleno (sin apilar opacidades), y el
+  texto secundario queda en ≥ 4.5:1 en los dos temas. Fuera del texto el encendido es
+  el de siempre. `scripts/pruebas/malla.mjs` lo mide en píxeles renderizados (peor
+  píxel con el cursor real barriendo cada bloque). Un
   `MutationObserver` sobre `data-theme` y el cambio de `prefers-color-scheme`
   redibujan en el mismo microtask, así que el revelado circular y la demo de tema la
   repintan bien. **Sin trabajo en reposo:** no hay bucle continuo; el único

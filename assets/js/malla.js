@@ -23,6 +23,8 @@
   - Arranca después del primer pintado (`load` + `requestIdleCallback`): el LCP
     es el titular y la malla nunca lo retrasa. Sin JS el hero queda igual que
     antes (el canvas lo crea este módulo).
+  - Contraste AA: dentro de las cajas del texto del hero la malla se deforma pero
+    no se enciende (se dibuja en reposo); ver `zonasTexto`.
   - CSP: sin estilos inline; el tamaño y la posición van por CSSOM
     (`style.setProperty`) y el resto por la clase `.malla-hero` (base.css).
 */
@@ -77,6 +79,8 @@ function montar(hero) {
   let c = null; // colores y opacidades leídos de los tokens
   let visible = false;
   let raton = null; // última posición del cursor (viewport)
+  // Zonas de texto del hero (coordenadas del canvas): ahí la malla se deforma pero no se enciende (AA, ver zonasTexto).
+  let zonas = [];
   let pendiente = 0;
   let ultimoT = 0;
   // Estado suavizado: posición del cursor en coordenadas del canvas y fuerza (0..1).
@@ -101,6 +105,33 @@ function montar(hero) {
   const mezcla = (t) => c.reposo.map((v, i) => Math.round(v + (c.activo[i] - v) * t));
   const lerp = (a, b, t) => a + (b - a) * t;
 
+  /*
+    Contraste AA (#26, auditoría): el encendido bajo el texto del hero bajaba el texto
+    secundario hasta 1.9:1 en oscuro y 2.9:1 en claro (peor píxel real; el peor caso es
+    un encendido intermedio: color a medio camino con la opacidad aún alta, y líneas que
+    se cruzan apilando alfa). Dentro de estas cajas (líneas de
+    texto, botones y chips, con margen para el foco) la malla se dibuja SIEMPRE con el
+    estilo de reposo (un solo trazo y un solo relleno, sin apilar opacidades), que da
+    ≥ 4.5:1; sigue deformándose con el cursor, pero no se enciende. Fuera del texto el
+    efecto queda igual. Se recalculan en `medir` (resize y ResizeObserver).
+  */
+  const MARGEN_ZONA = 8;
+  function zonasTexto(base) {
+    const out = [];
+    const agregar = (q) => {
+      if (q.width < 1 || q.height < 1) return;
+      out.push([q.left - base.left - MARGEN_ZONA, q.top - base.top - MARGEN_ZONA, q.width + 2 * MARGEN_ZONA, q.height + 2 * MARGEN_ZONA]);
+    };
+    const rango = document.createRange();
+    for (const el of hero.children) {
+      if (el === canvas) continue;
+      rango.selectNodeContents(el);
+      for (const q of rango.getClientRects()) agregar(q);
+    }
+    for (const el of hero.querySelectorAll("a, button, [role='link'], .button, .chip")) agregar(el.getBoundingClientRect());
+    return out;
+  }
+
   function medir() {
     const r = hero.getBoundingClientRect();
     const nuevoAncho = raiz.clientWidth;
@@ -108,7 +139,11 @@ function montar(hero) {
     const nuevoDpr = Math.min(window.devicePixelRatio || 1, DPR_MAX);
     // El canvas ocupa todo el ancho de la ventana (el hero sólo mide una columna).
     canvas.style.setProperty("--malla-izq", `${(-r.left).toFixed(1)}px`);
-    if (nuevoAncho === ancho && nuevoAlto === alto && nuevoDpr === dpr) return;
+    zonas = zonasTexto(canvas.getBoundingClientRect());
+    if (nuevoAncho === ancho && nuevoAlto === alto && nuevoDpr === dpr) {
+      dibujar();
+      return;
+    }
     ancho = nuevoAncho;
     alto = nuevoAlto;
     dpr = nuevoDpr;
@@ -156,11 +191,22 @@ function montar(hero) {
       }
     }
 
-    // Líneas: todas las de reposo en un solo trazo; las encendidas una por una.
     ctx.lineWidth = GROSOR_LINEA;
     ctx.lineCap = "round";
     const [rr, rg, rb] = c.reposo;
-    ctx.strokeStyle = `rgba(${rr},${rg},${rb},${c.lineaReposo})`;
+    const lineaReposo = `rgba(${rr},${rg},${rb},${c.lineaReposo})`;
+    const puntoReposo = `rgba(${rr},${rg},${rb},${c.puntoReposo})`;
+    const enZonas = activo && zonas.length > 0;
+    // Las cajas se enciman (líneas contiguas con margen): siempre se trazan como unión (regla nonzero, todas en
+    // el mismo sentido); nada de evenodd, que volvería a encender las intersecciones.
+    const trazarZonas = () => {
+      ctx.beginPath();
+      for (const [x, y, an, al] of zonas) ctx.rect(x, y, an, al);
+    };
+
+    // Toda la malla: líneas de reposo en un solo trazo y las encendidas una por una (dentro de las zonas de
+    // texto se borra después y se vuelve a dibujar en reposo).
+    ctx.strokeStyle = lineaReposo;
     ctx.beginPath();
     const encendidas = [];
     const unir = (a, b) => {
@@ -192,7 +238,7 @@ function montar(hero) {
     }
 
     // Puntos.
-    ctx.fillStyle = `rgba(${rr},${rg},${rb},${c.puntoReposo})`;
+    ctx.fillStyle = puntoReposo;
     ctx.beginPath();
     for (let k = 0; k < n; k++) {
       if (w[k] > 0.003) continue;
@@ -209,6 +255,44 @@ function montar(hero) {
       ctx.arc(px[k], py[k], RADIO_PUNTO + CRECE_PUNTO * t, 0, Math.PI * 2);
       ctx.fill();
     }
+    if (!enZonas) return;
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = "#000"; // borra del todo: destination-out usa el alfa de la fuente
+    trazarZonas();
+    ctx.fill();
+    ctx.restore();
+
+    // Dentro de las zonas de texto: la malla deformada pero con el estilo de reposo, todas las líneas en
+    // un solo trazo y todos los puntos en un solo relleno (sin apilar opacidades): el contraste del texto
+    // es el mismo que en reposo (>= 4.5:1, scripts/pruebas/malla.mjs lo mide en píxeles reales).
+    ctx.save();
+    trazarZonas();
+    ctx.clip();
+    ctx.strokeStyle = lineaReposo;
+    ctx.beginPath();
+    for (let j = 0; j < filas; j++) {
+      for (let i = 0; i < cols; i++) {
+        const k = j * cols + i;
+        if (i + 1 < cols) {
+          ctx.moveTo(px[k], py[k]);
+          ctx.lineTo(px[k + 1], py[k + 1]);
+        }
+        if (j + 1 < filas) {
+          ctx.moveTo(px[k], py[k]);
+          ctx.lineTo(px[k + cols], py[k + cols]);
+        }
+      }
+    }
+    ctx.stroke();
+    ctx.fillStyle = puntoReposo;
+    ctx.beginPath();
+    for (let k = 0; k < n; k++) {
+      ctx.moveTo(px[k] + RADIO_PUNTO, py[k]);
+      ctx.arc(px[k], py[k], RADIO_PUNTO, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.restore();
   }
 
   const puedeAnimar = () => mq.matches && visible && !document.hidden && ancho > 0;
@@ -222,6 +306,7 @@ function montar(hero) {
   function cuadro(t) {
     pendiente = 0;
     if (!puedeAnimar()) return;
+    if (!ultimoT) zonas = zonasTexto(canvas.getBoundingClientRect()); // inicio de una ráfaga: el texto pudo moverse
     const dt = Math.min(ultimoT ? t - ultimoT : 16, 50);
     ultimoT = t;
     let objetivo = 0;
