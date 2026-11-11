@@ -74,6 +74,8 @@
     /* Abarca el ancho completo del layout y pinta encima del texto: sin
        eventos de puntero, para no tapar enlaces ni botones. */
     overflow: visible;
+    /* Contenedor para `cqw`: el teléfono nace en su columna (abajo). */
+    container-type: inline-size;
   }
 }
 
@@ -90,6 +92,21 @@
   /* Vuelo de una columna a la otra: la perspectiva viaja con el teléfono,
      así el giro se ve simétrico en cualquier punto del recorrido. */
   transform: translateX(var(--vuelo-x, 0px)) scale(var(--vuelo-escala, 1));
+}
+
+@media (min-width: 1024px) {
+  /*
+    Posición inicial del teléfono antes de que llegue la coreografía: el
+    centro de la columna derecha (la del hero, `LADO_HERO` en stage.js), la
+    misma cuenta que `columnas["1"]` (`.seccion--derecha`: (ancho + hueco) / 4
+    desde el centro del escenario). Sin esto nacía en el centro, encima del
+    final del titular, y saltaba a su columna cuando stage.js fijaba
+    `--vuelo-x` (0.05–0.35 s, también con reduced-motion; auditoría integral,
+    prueba `arranque-telefono.mjs`). Si GSAP no carga, se queda aquí.
+  */
+  .escenario-3d {
+    transform: translateX(var(--vuelo-x, calc((100cqw + var(--hueco, 0px)) / 4))) scale(var(--vuelo-escala, 1));
+  }
 }
 
 /* Inclinación sutil con el mouse (tilt.js), compuesta aparte del giro. */
