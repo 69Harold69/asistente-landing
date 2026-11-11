@@ -560,7 +560,8 @@ if (activa("enlaces")) {
     for (const url of externos) {
       try {
         let r = await fetch(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(15000) });
-        if (r.status === 405 || r.status === 403) r = await fetch(url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(15000) });
+        // support.google.com responde 404 a HEAD y 200 a GET: ante 403/404/405 se confirma con GET.
+        if ([403, 404, 405].includes(r.status)) r = await fetch(url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(15000) });
         if (r.status >= 400) falla("enlaces", "(externo)", `${url} responde ${r.status}`);
       } catch (e) {
         falla("enlaces", "(externo)", `${url} no responde: ${e.message}`);
