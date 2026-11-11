@@ -9,6 +9,9 @@
   `prefers-reduced-motion`: en cada cuadro (requestAnimationFrame desde antes del primer pintado) guarda el rectángulo del
   `#escenario-3d` y del `#titular`. Falla si en algún cuadro con el teléfono visible su rectángulo se cruza con el del
   titular, o si el centro del teléfono se mueve más de --salto px (por defecto 6) entre el primer cuadro visible y el reposo.
+  Pantalla vacía (pasada 2): hasta que llegan los módulos y GSAP, `#pantalla-telefono` está vacía (en red lenta, ~2 s). Antes
+  se veía blanca (o del fondo oscuro) y de golpe se pintaba el Splash morado. Falla si en algún cuadro visible con la
+  pantalla vacía su fondo no es el del Splash (`--color-accent`, el mismo de `.ps-splash`).
   Uso: node arranque-telefono.mjs [--salto 6] [--url http://...] [--verbose]
 */
 import { iniciarServidor } from "./lib/servidor.mjs";
@@ -34,7 +37,18 @@ const muestreo = () => {
     if (tel && tit) {
       const cs = getComputedStyle(tel);
       const visible = cs.visibility !== "hidden" && Number(cs.opacity) > 0.05 && getComputedStyle(tel.parentElement).display !== "none";
-      window.__cuadros.push({ t: performance.now() - t0, tel: rect(tel), tit: rect(tit), visible, vendor: !!window.gsap });
+      const pantalla = document.getElementById("pantalla-telefono");
+      const splash = document.querySelector(".ps-splash");
+      window.__cuadros.push({
+        t: performance.now() - t0,
+        tel: rect(tel),
+        tit: rect(tit),
+        visible,
+        vendor: !!window.gsap,
+        vacia: !!pantalla && pantalla.childElementCount === 0,
+        fondo: pantalla ? getComputedStyle(pantalla).backgroundColor : null,
+        fondoSplash: splash ? getComputedStyle(splash).backgroundColor : null,
+      });
     }
     if (performance.now() - t0 < 9000) requestAnimationFrame(tick);
   };
@@ -69,10 +83,15 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1024, height: 768
       const final = centro(visibles.at(-1).tel);
       const salto = Math.abs(final - primero);
       const msgs = [];
+      const colorSplash = cuadros.find((c) => c.fondoSplash)?.fondoSplash;
+      const vacias = visibles.filter((c) => c.vacia);
+      const malColor = vacias.filter((c) => c.fondo !== colorSplash);
+      if (!colorSplash) msgs.push("el Splash nunca se montó");
+      else if (malColor.length) msgs.push(`pantalla vacía con fondo ${malColor[0].fondo} (no el del Splash, ${colorSplash}) en ${malColor.length} cuadro(s), de ${Math.round(malColor[0].t)} a ${Math.round(malColor.at(-1).t)} ms`);
       if (encima.length) msgs.push(`encima del titular en ${encima.length} cuadro(s), de ${Math.round(encima[0].t)} a ${Math.round(encima.at(-1).t)} ms`);
       if (salto > saltoMax) msgs.push(`el centro se movió ${salto.toFixed(1)} px entre el primer cuadro visible y el reposo`);
       if (msgs.length) fallas.push(`${nombre}: ${msgs.join("; ")}`);
-      if (a.verbose || msgs.length) console.log(`  ${msgs.length ? "FALLA" : "ok   "} ${nombre}: ${cuadros.length} cuadros, primer visible ${Math.round(visibles[0].t)} ms, salto ${salto.toFixed(1)} px${msgs.length ? ` — ${msgs.join("; ")}` : ""}`);
+      if (a.verbose || msgs.length) console.log(`  ${msgs.length ? "FALLA" : "ok   "} ${nombre}: ${cuadros.length} cuadros, primer visible ${Math.round(visibles[0].t)} ms, salto ${salto.toFixed(1)} px, ${vacias.length} cuadro(s) con la pantalla vacía${msgs.length ? ` — ${msgs.join("; ")}` : ""}`);
     }
   }
 }
@@ -80,4 +99,4 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1024, height: 768
 await navegador.close();
 await srv.cerrar();
 if (fallas.length) salir(1, `arranque-telefono: ${fallas.length} falla(s)\n  - ${fallas.join("\n  - ")}`);
-salir(0, "arranque-telefono: OK (el teléfono nace en su columna, sin encimarse al titular ni saltar)");
+salir(0, "arranque-telefono: OK (el teléfono nace en su columna, sin encimarse al titular ni saltar, y con el fondo del Splash mientras la pantalla está vacía)");
