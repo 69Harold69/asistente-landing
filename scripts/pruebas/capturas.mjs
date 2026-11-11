@@ -194,9 +194,9 @@ async function otrasPaginas(combo, dir, nombreCombo) {
         await page.waitForLoadState("networkidle").catch(() => {});
         await page.waitForSelector(".phone-pantalla .escena", { timeout: 10000 }).catch(() => {});
         await page.evaluate(() => document.fonts.ready);
-        // El chat arma el reproductor de audio con retraso: esperarlo hace determinista el CSP (chat.js).
-        if (escena === "chat") await page.waitForSelector(".ps-audio", { timeout: 9000 }).catch(() => {});
-        await dormir(escena === "avisos" || escena === "llamada" ? 1500 : 500);
+        // En modo de inspeccion la escena se monta SIN coreografia ni play(): se ve su estado inicial
+        // (p. ej. el chat vacio). Los estados animados se capturan en `portada-seccion-*`.
+        await dormir(500);
         const tel = page.locator("#escenario-3d");
         const caja = await tel.boundingBox();
         const opciones = caja ? { clip: { x: Math.max(0, caja.x - 12), y: Math.max(0, caja.y - 12), width: caja.width + 24, height: Math.min(caja.height + 24, TAMANOS[combo.tam].viewport.height) } } : {};

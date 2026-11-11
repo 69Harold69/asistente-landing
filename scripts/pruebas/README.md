@@ -43,6 +43,8 @@ regla nueva que falle con un caso nuevo NO queda cubierta: la entrada se acota c
 - **Rueda y toque reales:** `capturas` recorre con `mouse.wheel` en pasos (nunca `scrollTo`) y `tactil` con
   `Input.dispatchTouchEvent`; la coreografía ya reacciona a `wheel`/`touchstart`.
 - **INP:** no hay forma de laboratorio útil (Lighthouse solo lo calcula en modo timespan con interacciones); se usa TBT.
+- **Escenas en modo de inspección:** `?escena=` monta la escena sin coreografía ni `play()`, así que se ve su estado inicial (el chat
+  sale vacío, la llamada sin avance). Para revisar los estados animados usa `portada-seccion-*` y el video.
 - **Video:** `recordVideo` escalado a ≤ 1000 px del lado mayor (a tamaño real el codificador software tarda 4×).
 - **Ruido de Lighthouse:** la mediana de 3 corridas amortigua, pero el rendimiento oscila ±1-2 puntos en este equipo (ver README del
   sitio, «Línea base»). Por eso `--comparar` tolera 2 puntos solo en rendimiento.
