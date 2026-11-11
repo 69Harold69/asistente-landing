@@ -47,8 +47,8 @@ asistente-landing/
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
 │   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, avisos, llamada, dashboard (+ contar.js)
 │   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
-│   ├── fonts/     .woff2 completos + un `OFL-<Familia>.txt` por familia (páginas legales)
-│   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (portada)
+│   ├── fonts/     .woff2 completos + un `OFL-<Familia>.txt` por familia (ninguna página los usa: son la fuente de los recortes)
+│   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (todas las páginas)
 │   └── img/       favicon.svg, favicon-32.png, apple-touch-icon.png y og-yaruki.png (ver "Íconos e imagen para compartir")
 ├── scripts/versionar.py    Cache busting (`?v=<hash>`), ver más abajo
 ├── scripts/pruebas/        Pruebas y revisión visual (Playwright, Lighthouse, validar); ver «Pruebas y revisión visual»
@@ -439,7 +439,8 @@ pesos hechos con `fonttools subset` (rango: U+0000-00FF, U+0131, U+0152-0153,
 U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122,
 U+2190-2193, U+2212, U+2713, U+2022; `--layout-features='*'`). De 431 KB a
 109 KB. Si se agrega texto con caracteres fuera de ese rango, regenerarlos
-desde `assets/fonts/` con el mismo comando. Las legales, las guías y la 404
+desde `assets/fonts/` con el mismo comando (por eso se conservan, aunque ya ninguna página los
+carga). Las legales, las guías y la 404
 usan los mismos recortes vía `fonts.css` (desde la auditoría integral, pasada 1:
 con los originales de 291 KB la simulación de Lighthouse móvil ponía las
 fuentes en la ruta del LCP en ~1 de cada 3–5 corridas, LCP ~2.85 s; con los
