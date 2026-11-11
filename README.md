@@ -866,7 +866,9 @@ nota y el TBT. Se corrigió inyectando GSAP desde `main.js` (que solo corre cuan
 pintado el hero): el FCP simulado ya no se infla (0 de 14 corridas, contra 3 de 10 en `main`) y el TBT de Lighthouse baja
 (mediana ~15 ms, contra colas de 75–123 ms en `main`). **No elimina toda la bimodalidad:** la auditoría (servidor que negocia
 como Caddy, 10 + 10 corridas intercaladas) vio LCP simulado de 2.25–2.56 s con FCP de 1.05 s en la rama (3 de 14 corridas)
-y también en `main` (1 de 10); el candidato es el mismo mecanismo con la cascada de módulos de `main.js` (prioridad High), no GSAP. En el
+y también en `main` (1 de 10). No es GSAP ni la cascada de módulos: el mismo modo sale en `/privacidad/`, que no carga JS
+(LCP simulado 2.85 s con FCP 1.05 s en ~1 de 5 corridas, igual con gzip que con zstd); el candidato son las fuentes del
+elemento LCP, sin confirmar. En el
 navegador real tampoco cambia el LCP. Es, sobre todo, una mejora de la medición (nota y TBT de Lighthouse), no de lo que ve
 el visitante. Costo: el teléfono monta su primera
 escena ~0.2 s más tarde en el caso extremo (CPU ×4, 4G lenta), porque GSAP ya no se ejecuta mientras esperan los módulos.
