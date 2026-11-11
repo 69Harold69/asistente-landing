@@ -36,8 +36,8 @@
   --color-on-accent-ui: #ffffff;
 
   /* Tipografía */
-  --font-display: "Baloo 2", "Baloo 2 Fallback", ui-rounded, system-ui, sans-serif;
-  --font-body: "Manrope", "Manrope Fallback", system-ui, -apple-system, sans-serif;
+  --font-display: "Baloo 2", "Baloo 2 Fallback", "Baloo 2 Fallback Roboto", ui-rounded, system-ui, sans-serif;
+  --font-body: "Manrope", "Manrope Fallback", "Manrope Fallback Roboto", system-ui, -apple-system, sans-serif;
 
   /* Escala tipográfica (base 17px, proporción ~1.2) */
   --text-sm: 0.875rem;

@@ -124,11 +124,13 @@ function formatearDuracion(segundos) {
 
 /** Reproductor del chat (`ReproductorAudioChat`): play, onda de barras y duración m:ss. */
 function crearReproductor(segundos, semilla) {
-  const barras = Array.from({ length: N_BARRAS_AUDIO }, (_, i) => `<i style="--h:${Math.round(amplitud(i, semilla) * 100)}%"></i>`).join("");
+  const barras = "<i></i>".repeat(N_BARRAS_AUDIO);
   const el = document.createElement("div");
   el.className = "ps-audio";
   el.setAttribute("aria-hidden", "true");
   el.innerHTML = `${ICONO_PLAY}<span class="ps-audio-onda">${barras}</span><span class="ps-audio-duracion">${formatearDuracion(segundos)}</span>`;
+  // La altura va por CSSOM: un `style=""` inline lo bloquea la CSP (`style-src 'self'`).
+  el.querySelectorAll(".ps-audio-onda i").forEach((barra, i) => barra.style.setProperty("--h", `${Math.round(amplitud(i, semilla) * 100)}%`));
   return el;
 }
 

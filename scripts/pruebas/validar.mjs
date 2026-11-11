@@ -3,7 +3,7 @@
   validar: comprobaciones rapidas y SIN navegador. Sale con 1 si alguna regla falla.
 
   Reglas (id): html-validate, csp-estatica, csp-js, csp-readme, json-ld, sitemap, lastmod,
-  meta, enlaces, cta-sin-href, voseo. Cada falla se imprime como `FALLA [regla] archivo:linea mensaje`.
+  meta, guias, faq-visible, enlaces, cta-sin-href, voseo, dominio. Cada falla se imprime como `FALLA [regla] archivo:linea mensaje`.
 
   Fallos conocidos: `conocidos.json` lista reglas (opcionalmente acotadas con "contiene") que HOY
   fallan y tienen issue. Se imprimen como XFAIL y no rompen la salida. Si una regla conocida
@@ -29,7 +29,8 @@ import { leerArgs, lista, salir } from "./lib/comun.mjs";
 const a = leerArgs();
 if (a.ayuda || a.help) salir(0, fs.readFileSync(new URL(import.meta.url), "utf8").split("*/")[0].replace("#!/usr/bin/env node\n/*", "").trim());
 
-const ORIGEN = "https://yaruki.hjgr.dev";
+// El dominio vive en UN solo lugar: scripts/sitio.json (lo aplica scripts/dominio.py).
+const ORIGEN = JSON.parse(fs.readFileSync(path.join(RAIZ_SITIO, "scripts/sitio.json"), "utf8")).origen;
 const IDIOMA = "es-MX";
 const solo = a.solo ? new Set(lista(a.solo)) : null;
 const activa = (id) => !solo || solo.has(id);
@@ -200,6 +201,8 @@ const REQUERIDOS = {
   Person: ["name"],
   BreadcrumbList: ["itemListElement"],
   Organization: ["name"],
+  WebPage: ["url", "name"],
+  Article: ["headline", "datePublished", "dateModified", "author", "inLanguage"],
 };
 function validarNodo(nodo, donde) {
   if (Array.isArray(nodo)) return nodo.forEach((x) => validarNodo(x, donde));
@@ -211,6 +214,7 @@ function validarNodo(nodo, donde) {
     if (t === "SoftwareApplication" && nodo.offers) {
       const o = [].concat(nodo.offers)[0];
       if (o["@type"] !== "Offer" || o.price === undefined || !o.priceCurrency) falla("json-ld", donde, "SoftwareApplication.offers debe ser Offer con price y priceCurrency");
+      else if (!/^\d+(\.\d+)?$/.test(String(o.price)) || !/^[A-Z]{3}$/.test(o.priceCurrency)) falla("json-ld", donde, `Offer: price debe ser numérico y priceCurrency ISO 4217 (hay ${o.price} ${o.priceCurrency})`);
     }
     if (t === "FAQPage") {
       const q = [].concat(nodo.mainEntity ?? []);
@@ -221,14 +225,90 @@ function validarNodo(nodo, donde) {
       const it = [].concat(nodo.itemListElement ?? []);
       it.forEach((x, i) => {
         if (x["@type"] !== "ListItem" || x.position !== i + 1 || !x.name) falla("json-ld", donde, `BreadcrumbList: ListItem ${i + 1} sin @type/position consecutivo/name`);
+        const item = typeof x.item === "string" ? x.item : x.item?.["@id"];
+        if (x.item !== undefined && !(typeof item === "string" && item.startsWith(ORIGEN + "/"))) falla("json-ld", donde, `BreadcrumbList: ListItem ${i + 1} "item" debe ser una URL absoluta de ${ORIGEN}`);
       });
     }
     for (const campo of ["url", "@id", "image"]) if (typeof nodo[campo] === "string" && /^https?:\/\//.test(nodo[campo]) && !nodo[campo].startsWith(ORIGEN)) falla("json-ld", donde, `${t}.${campo} apunta a otro origen: ${nodo[campo]}`, "aviso");
   }
   for (const v of Object.values(nodo)) if (v && typeof v === "object") validarNodo(v, donde);
 }
+
+/* Estructura del grafo: referencias @id resueltas, autor publico, WebPage/BreadcrumbList en cada pagina. */
+const NOMBRES_PUBLICOS = () => {
+  // Texto visible de todo el sitio: un nombre de persona solo se publica en JSON-LD si YA es publico en la pagina.
+  const textos = paginas.map((q) => textoVisible(q.arbol));
+  return (nombre) => textos.some((tx) => tx.includes(nombre));
+};
+/* Nodos con @id que define la portada (#sitio, #autor, #app...): las páginas internas los referencian por @id sin repetirlos. */
+const nodosDeLd = (p) =>
+  etiquetas(p.arbol, "script")
+    .filter((s) => attr(s, "type") === "application/ld+json")
+    .flatMap((n) => {
+      try {
+        const d = JSON.parse(hijos(n).map((h) => h.value ?? "").join(""));
+        return d["@graph"] ?? [d];
+      } catch {
+        return [];
+      }
+    });
+const DEFINIDOS_PORTADA = new Set(
+  nodosDeLd(paginas.find((x) => x.url === "/") ?? { arbol: { childNodes: [] } })
+    .filter((n) => typeof n?.["@id"] === "string" && Object.keys(n).length > 1)
+    .map((n) => n["@id"]),
+);
+function validarGrafo(nodos, donde, p) {
+  const definidos = new Map(); // @id -> nodo con mas propiedades que solo @id
+  const refs = [];
+  const visitar = (n) => {
+    if (Array.isArray(n)) return n.forEach(visitar);
+    if (!n || typeof n !== "object") return;
+    const claves = Object.keys(n);
+    if (typeof n["@id"] === "string") {
+      if (claves.length === 1) refs.push(n["@id"]);
+      else definidos.set(n["@id"], n);
+    }
+    Object.values(n).forEach(visitar);
+  };
+  visitar(nodos);
+  for (const r of refs) if (!definidos.has(r) && !(p.url !== "/" && DEFINIDOS_PORTADA.has(r))) falla("json-ld", donde, `referencia @id sin definir en el mismo bloque ni en la portada: ${r}`);
+  const tipo = (t) => [...definidos.values()].filter((n) => [].concat(n["@type"] ?? []).includes(t));
+  const publico = NOMBRES_PUBLICOS();
+  for (const per of tipo("Person")) {
+    if (per.name && !publico(per.name)) falla("json-ld", donde, `Person "${per.name}" no es un nombre publicado en el texto visible del sitio`);
+    // Ningún dato personal que el sitio no publique ya (correo, ciudad, redes, URL...): solo @id, @type y name, o valores visibles.
+    for (const [k, v] of Object.entries(per)) if (!["@id", "@type", "name"].includes(k) && !(typeof v === "string" && publico(v))) falla("json-ld", donde, `Person.${k}: dato personal que el texto visible del sitio no publica`);
+  }
+  const esInicio = p.url === "/";
+  if (esInicio) {
+    const app = tipo("SoftwareApplication")[0];
+    const sitio = tipo("WebSite")[0];
+    const autor = tipo("Person")[0] ?? tipo("Organization")[0];
+    if (!autor?.["@id"]) falla("json-ld", donde, "falta Person/Organization con @id (autor y publicador)");
+    else {
+      for (const [nom, n, campo] of [["SoftwareApplication", app, "author"], ["SoftwareApplication", app, "publisher"], ["WebSite", sitio, "publisher"]]) {
+        if (n?.[campo]?.["@id"] !== autor["@id"]) falla("json-ld", donde, `${nom}.${campo} debe referenciar ${autor["@id"]} por @id`);
+      }
+    }
+    if (app && app.isAccessibleForFree !== true) falla("json-ld", donde, "SoftwareApplication.isAccessibleForFree debe ser true (hay plan gratuito)", "aviso");
+  }
+  const wp = tipo("WebPage")[0];
+  if (!wp) falla("json-ld", donde, "falta un WebPage de esta página");
+  else if (wp.url !== ORIGEN + p.url) falla("json-ld", donde, `WebPage.url (${wp.url}) debe ser ${ORIGEN + p.url}`);
+  if (!esInicio) {
+    const bc = tipo("BreadcrumbList")[0];
+    if (!bc) falla("json-ld", donde, "las páginas internas llevan BreadcrumbList (Inicio > página)");
+    else {
+      const it = [].concat(bc.itemListElement ?? []);
+      if (it.length < 2) falla("json-ld", donde, "BreadcrumbList necesita al menos dos ListItem");
+      it.forEach((x, i) => { if (i < it.length - 1 && !x.item) falla("json-ld", donde, `BreadcrumbList: ListItem ${i + 1} sin "item" (solo el último puede omitirlo)`); });
+      if (wp && wp.breadcrumb?.["@id"] !== bc["@id"]) falla("json-ld", donde, "WebPage.breadcrumb debe referenciar el BreadcrumbList por @id");
+    }
+  }
+}
 if (activa("json-ld")) {
   for (const p of paginas) {
+    if (p.indexable && !etiquetas(p.arbol, "script").some((s) => attr(s, "type") === "application/ld+json")) falla("json-ld", p.r, "la página indexable no tiene JSON-LD");
     for (const n of etiquetas(p.arbol, "script").filter((s) => attr(s, "type") === "application/ld+json")) {
       const d = `${p.r}:${linea(n)}`;
       const cuerpo = hijos(n).map((h) => h.value ?? "").join("");
@@ -241,8 +321,97 @@ if (activa("json-ld")) {
       }
       if (datos["@context"] !== "https://schema.org") falla("json-ld", d, '@context debe ser "https://schema.org"');
       validarNodo(datos["@graph"] ?? datos, d);
+      validarGrafo(datos["@graph"] ?? [datos], d, p);
     }
   }
+}
+
+/* ---------- 3a. páginas-guía (Article) y FAQPage ---------- */
+/*
+  Una guía es una página con un Article en su JSON-LD. Reglas (todas con mensaje propio):
+  title <= 60 y description <= 155 (lo que Google muestra sin cortar), headline <= 110, un <h1>,
+  autor y fecha de publicación VISIBLES (<time datetime> igual a datePublished; si dateModified difiere,
+  otra <time>), dateModified >= datePublished y no futura, y que la portada la enlace (sin páginas huérfanas).
+  `faq-visible`: cada FAQPage (en cualquier página) solo puede tener preguntas y respuestas cuyo texto
+  aparezca IDÉNTICO en el texto visible de esa página.
+*/
+const normaliza = (s) => String(s).replace(/\s+/g, " ").trim();
+const hrefsDe = (p) => etiquetas(p.arbol, "a").map((x) => attr(x, "href")).filter(Boolean);
+const enlazaA = (origen, destino) =>
+  hrefsDe(origen).some((h) => {
+    try {
+      return new URL(h, ORIGEN + origen.url).pathname === destino.url;
+    } catch {
+      return false;
+    }
+  });
+if (activa("guias") || activa("faq-visible")) {
+  for (const p of paginas) {
+    const nodos = nodosDeLd(p);
+    const visible = normaliza(textoVisible(p.arbol));
+    if (activa("faq-visible")) {
+      for (const f of nodos.filter((n) => [].concat(n?.["@type"] ?? []).includes("FAQPage"))) {
+        for (const q of [].concat(f.mainEntity ?? [])) {
+          for (const [que, texto] of [["pregunta", q?.name], ["respuesta", q?.acceptedAnswer?.text]]) {
+            if (texto && !visible.includes(normaliza(texto))) falla("faq-visible", p.r, `FAQPage: la ${que} «${normaliza(texto).slice(0, 60)}…» no aparece idéntica en el texto visible de la página`);
+          }
+        }
+      }
+    }
+    const art = nodos.find((n) => [].concat(n?.["@type"] ?? []).includes("Article"));
+    if (!activa("guias") || !art) continue;
+    const titulo = etiquetas(p.arbol, "title")[0];
+    const t = titulo ? hijos(titulo).map((h) => h.value).join("").trim() : "";
+    if (t.length > 60) falla("guias", p.r, `<title> de ${t.length} caracteres en una guía (máximo 60)`);
+    const desc = attr(etiquetas(p.arbol, "meta").find((m) => attr(m, "name") === "description") ?? { attrs: [] }, "content")?.trim() ?? "";
+    if (desc.length > 155) falla("guias", p.r, `meta description de ${desc.length} caracteres en una guía (máximo 155)`);
+    if (String(art.headline ?? "").length > 110) falla("guias", p.r, `Article.headline de ${art.headline.length} caracteres (máximo 110)`);
+    const autorId = art.author?.["@id"];
+    const autor = nodos.find((n) => n?.["@id"] === autorId && n.name) ?? nodosDeLd(paginas.find((x) => x.url === "/") ?? { arbol: { childNodes: [] } }).find((n) => n?.["@id"] === autorId && n.name);
+    if (!autor) falla("guias", p.r, "no se pudo resolver el nombre del autor del Article");
+    else if (!visible.includes(autor.name)) falla("guias", p.r, `el autor «${autor.name}» no aparece en el texto visible de la guía`);
+    const tiempos = etiquetas(p.arbol, "time").map((x) => attr(x, "datetime"));
+    for (const [campo, valor] of [["datePublished", art.datePublished], ["dateModified", art.dateModified]]) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(valor ?? ""))) falla("guias", p.r, `Article.${campo} debe ser YYYY-MM-DD`);
+      else if (!tiempos.includes(valor)) falla("guias", p.r, `Article.${campo} (${valor}) no tiene su <time datetime="${valor}"> visible en la página`);
+    }
+    if (art.datePublished && art.dateModified && art.dateModified < art.datePublished) falla("guias", p.r, `dateModified (${art.dateModified}) es anterior a datePublished (${art.datePublished})`);
+    if (art.dateModified > new Date(Date.now() + 864e5).toLocaleDateString("sv-SE", { timeZone: "America/Mexico_City" })) falla("guias", p.r, `dateModified (${art.dateModified}) está en el futuro`);
+    const portada = paginas.find((x) => x.url === "/");
+    if (portada && !enlazaA(portada, p)) falla("guias", p.r, "la portada no enlaza esta guía (página huérfana)");
+  }
+}
+
+/* ---------- 3b. dominio: ninguna URL absoluta propia fuera de scripts/sitio.json ---------- */
+// Hosts externos que pueden aparecer a proposito en claves "propias" del JSON-LD (mismo criterio que scripts/dominio.py).
+const EXTERNOS_LD = new Set(["schema.org", "github.com", "play.google.com", "groups.google.com", "www.linkedin.com", "linkedin.com"]);
+const CLAVES_PROPIAS_LD = new Set(["@id", "url", "image", "logo", "item", "mainEntityOfPage"]);
+const hostDe = (u) => u.match(/^https?:\/\/([^/?#:]+)/)?.[1];
+if (activa("dominio")) {
+  if (!/^https:\/\/[a-z0-9.-]+\.[a-z]{2,}(:\d+)?$/.test(ORIGEN)) falla("dominio", "scripts/sitio.json", `origen inválido "${ORIGEN}" (https://dominio, minúsculas, sin barra final)`);
+  const propia = (donde, u) => {
+    if (u && /^https?:\/\//i.test(u) && u !== ORIGEN && !u.startsWith(ORIGEN + "/")) falla("dominio", donde, `URL absoluta fuera del origen configurado (${ORIGEN}): ${u}. Corre: python3 scripts/dominio.py`);
+  };
+  for (const p of paginas) {
+    for (const l of etiquetas(p.arbol, "link")) if (["canonical", "alternate"].includes(attr(l, "rel"))) propia(`${p.r}:${linea(l)}`, attr(l, "href"));
+    for (const m of etiquetas(p.arbol, "meta")) {
+      const k = attr(m, "property") ?? attr(m, "name");
+      if (["og:url", "og:image", "og:image:url", "og:image:secure_url", "twitter:url", "twitter:image"].includes(k)) propia(`${p.r}:${linea(m)}`, attr(m, "content"));
+    }
+    for (const n of etiquetas(p.arbol, "script").filter((s) => attr(s, "type") === "application/ld+json")) {
+      let datos;
+      try { datos = JSON.parse(hijos(n).map((h) => h.value ?? "").join("")); } catch { continue; } // lo reporta json-ld
+      const recorrerLd = (v, clave) => {
+        if (Array.isArray(v)) v.forEach((x) => recorrerLd(x, clave));
+        else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) recorrerLd(x, k);
+        else if (typeof v === "string" && /^https?:\/\//.test(v) && CLAVES_PROPIAS_LD.has(clave) && !EXTERNOS_LD.has(hostDe(v))) propia(`${p.r}:${linea(n)} (JSON-LD ${clave})`, v);
+      };
+      recorrerLd(datos, "");
+    }
+  }
+  const xmlDominio = fs.readFileSync(path.join(RAIZ_SITIO, "sitemap.xml"), "utf8");
+  for (const m of xmlDominio.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>|<xhtml:link\b[^>]*\bhref="([^"]+)"/g)) propia("sitemap.xml", m[1] ?? m[2]);
+  for (const m of fs.readFileSync(path.join(RAIZ_SITIO, "robots.txt"), "utf8").matchAll(/^(?:sitemap|host):\s*(\S+)/gim)) propia("robots.txt", m[1]);
 }
 
 /* ---------- 4. sitemap y lastmod ---------- */
@@ -327,8 +496,9 @@ if (activa("meta")) {
     if (!canon || attr(canon, "href") !== ORIGEN + p.url) falla("meta", p.r, `canonical debe ser ${ORIGEN + p.url} (hay ${canon ? attr(canon, "href") : "ninguno"})`);
     for (const k of ["og:title", "og:description", "og:type", "og:url", "og:image", "og:site_name", "og:locale"]) if (!contenido("property", k)) falla("meta", p.r, `falta ${k}`);
     for (const k of ["twitter:card", "twitter:title", "twitter:description", "twitter:image"]) if (!contenido("name", k)) falla("meta", p.r, `falta ${k}`);
-    for (const k of ["og:image:alt"]) if (!contenido("property", k)) falla("meta", p.r, `falta ${k}`, "aviso");
-    if (!contenido("name", "twitter:image:alt")) falla("meta", p.r, "falta twitter:image:alt", "aviso");
+    for (const k of ["og:image:alt"]) if (!contenido("property", k)) falla("meta", p.r, `falta ${k}`);
+    if (!contenido("name", "twitter:image:alt")) falla("meta", p.r, "falta twitter:image:alt");
+    for (const esquema of ["light", "dark"]) if (!metas.some((m) => attr(m, "name") === "theme-color" && attr(m, "media") === `(prefers-color-scheme: ${esquema})`)) falla("meta", p.r, `falta <meta name="theme-color"> para ${esquema}`);
     if (contenido("property", "og:url") && contenido("property", "og:url") !== ORIGEN + p.url) falla("meta", p.r, `og:url (${contenido("property", "og:url")}) no coincide con la URL canónica`);
     if (contenido("property", "og:locale") && contenido("property", "og:locale") !== IDIOMA.replace("-", "_")) falla("meta", p.r, `og:locale ${contenido("property", "og:locale")} no corresponde a ${IDIOMA}`);
     const h1 = etiquetas(p.arbol, "h1");
@@ -390,7 +560,8 @@ if (activa("enlaces")) {
     for (const url of externos) {
       try {
         let r = await fetch(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(15000) });
-        if (r.status === 405 || r.status === 403) r = await fetch(url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(15000) });
+        // support.google.com responde 404 a HEAD y 200 a GET: ante 403/404/405 se confirma con GET.
+        if ([403, 404, 405].includes(r.status)) r = await fetch(url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(15000) });
         if (r.status >= 400) falla("enlaces", "(externo)", `${url} responde ${r.status}`);
       } catch (e) {
         falla("enlaces", "(externo)", `${url} no responde: ${e.message}`);
@@ -499,7 +670,7 @@ else {
         ? `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ahora hay ${c.encontrados} de ${c.cuantos}: baja "cuantos" en scripts/pruebas/conocidos.json (issue #${c.issue})`
         : `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ya no falla: borra su entrada de scripts/pruebas/conocidos.json (issue #${c.issue})`,
     );
-  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "cta-sin-href", "voseo"].filter(activa))];
+  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "guias", "faq-visible", "cta-sin-href", "voseo", "dominio"].filter(activa))];
   console.log("\nResumen por regla:");
   for (const r of reglas) {
     const e = errores.filter((h) => h.regla === r).length;
