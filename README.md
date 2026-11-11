@@ -113,7 +113,7 @@ ScrollTrigger y `gsap.matchMedia()` con 3 ramas:
 **Tablet (opción A, #61):** de 768 a 1023 px de ancho (y más de 520 px de alto) se usa el layout de dos columnas de
 escritorio (`mqEscritorio` en `stage.js`, y las mismas medias de `base.css`/`phone.css`/`sin-js.css`/`revelar.js`:
 `(min-width: 1024px), (min-width: 768px) and (min-height: 521px)`; su complemento es el móvil). Ajustes propios de tablet:
-teléfono de `clamp(216px, 30vw, 296px)`, titular de 2.25rem sin `ch` (#53), y el cierre aterriza en la columna **derecha**
+teléfono de `clamp(216px, 30vw, 296px)` con tope por alto (`(100vh − 8rem) × 0.4615`, para que quepa entero en ventanas bajas), titular de 2.25rem sin `ch` (#53), y el cierre aterriza en la columna **derecha**
 (`mqTablet` en `stage.js` cambia `lado: 0` por `1` y `#cta` mide una columna) porque con columnas de ~330 px el texto del
 cierre y un teléfono centrado se encimarían. La navegación con puntos sigue siendo solo de ≥1024 px. Los teléfonos en
 horizontal (≤520 px de alto) conservan su layout propio.
