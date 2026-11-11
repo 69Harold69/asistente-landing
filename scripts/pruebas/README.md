@@ -23,7 +23,7 @@ npx playwright install ffmpeg   # una vez por máquina (Playwright lo necesita p
 | `python3 -I licencias.py` | Licencias de fuentes y librerías vendorizadas (issue #15). | alguna licencia no coincide |
 
 **Prueba nueva:** súmala a `pasos` en `todo.mjs`; si es una librería o algo que no es prueba, a `EXCEPCIONES` con el porqué (si no, la guardia `registro` falla).
-Al integrar una rama que trae pruebas nuevas, la guardia lo exige en el mismo merge: hoy `malla.mjs` y `mirada.mjs` (#39, #43) ya vienen en sus `pasos`, pero `test_portada.py` (#54, #56) no; regístralo con `["portada-pruebas", "python3", ["-I", "test_portada.py"]]` junto a las otras pruebas de Python y comprueba con `node todo.mjs --solo-registro` (rápido, sin navegador) antes de subir.
+Al integrar una rama que trae pruebas nuevas, la guardia lo exige en el mismo merge: regístralas en `pasos` (como `malla.mjs` y `mirada.mjs` en #39 y #43, o `test_portada.py`, ya en `main`) y comprueba con `node todo.mjs --solo-registro` (rápido, sin navegador) antes de subir.
 
 Todos aceptan `--ayuda`. `--url http://...` (capturas, tactil, lighthouse) apunta a un servidor ya levantado en vez del propio.
 Salida por defecto: `~/Pictures/yaruki-landing-2026-11/<herramienta>/`.
