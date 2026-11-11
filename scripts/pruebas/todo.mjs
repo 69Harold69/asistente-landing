@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  todo: corre validar + sin-js + cls + licencias + dominio (--check y sus pruebas) + malla + mirada + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese orden,
+  todo: corre validar + sin-js + cls + licencias + dominio (--check y sus pruebas) + malla + mirada + progreso + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese orden,
   sin detenerse en la primera falla, y sale con 1 si CUALQUIERA falla.
 
   Uso: node todo.mjs [--salida DIR] [--comparar CARPETA_BASE_LIGHTHOUSE] [--con-tactil] [--sin-video]
@@ -40,6 +40,8 @@ const pasos = [
   ["malla", process.execPath, ["malla.mjs", "--salida", path.join(salida, "malla")]],
   // Mirada de la mascota (#27): dirección y tope, giros, transform intacto, reduced-motion y táctil.
   ["mirada", process.execPath, ["mirada.mjs", "--salida", path.join(salida, "mirada")]],
+  // Avance de la portada (#60, opción B): sin barra superior; riel entre los puntos, 0-100 %, desvanecido, reduced-motion y sin JS.
+  ["progreso", process.execPath, ["progreso.mjs"]],
   ["capturas", process.execPath, ["capturas.mjs", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
   ["lighthouse", process.execPath, ["lighthouse.mjs", "--salida", path.join(salida, "lighthouse"), ...paginas, ...(a.corridas ? ["--corridas", String(a.corridas)] : []), ...(a.comparar ? ["--comparar", path.resolve(String(a.comparar).replace(/^~(?=$|\/)/, os.homedir()))] : [])]],
 ];
