@@ -39,6 +39,8 @@ const pasos = [
   ["rendimiento", process.execPath, ["rendimiento.mjs"]],
   // Escritorio: el teléfono nace en su columna, sin encimarse al titular ni saltar al llegar la coreografía.
   ["arranque-telefono", process.execPath, ["arranque-telefono.mjs"]],
+  // Accesibilidad: con Tab, nada de la portada recibe el foco invisible (textos del recorrido aún en opacidad 0).
+  ["foco-visible", process.execPath, ["foco-visible.mjs"]],
   // Licencias de fuentes y librerías vendorizadas (issue #15): solo biblioteca estándar de Python.
   ["licencias", "python3", ["-I", "licencias.py"]],
   // El dominio vive en scripts/sitio.json; --check sale ≠ 0 si alguna URL absoluta no coincide (issue #28).
