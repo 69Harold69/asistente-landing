@@ -213,6 +213,7 @@ function validarNodo(nodo, donde) {
     if (t === "SoftwareApplication" && nodo.offers) {
       const o = [].concat(nodo.offers)[0];
       if (o["@type"] !== "Offer" || o.price === undefined || !o.priceCurrency) falla("json-ld", donde, "SoftwareApplication.offers debe ser Offer con price y priceCurrency");
+      else if (!/^\d+(\.\d+)?$/.test(String(o.price)) || !/^[A-Z]{3}$/.test(o.priceCurrency)) falla("json-ld", donde, `Offer: price debe ser numérico y priceCurrency ISO 4217 (hay ${o.price} ${o.priceCurrency})`);
     }
     if (t === "FAQPage") {
       const q = [].concat(nodo.mainEntity ?? []);
@@ -223,6 +224,8 @@ function validarNodo(nodo, donde) {
       const it = [].concat(nodo.itemListElement ?? []);
       it.forEach((x, i) => {
         if (x["@type"] !== "ListItem" || x.position !== i + 1 || !x.name) falla("json-ld", donde, `BreadcrumbList: ListItem ${i + 1} sin @type/position consecutivo/name`);
+        const item = typeof x.item === "string" ? x.item : x.item?.["@id"];
+        if (x.item !== undefined && !(typeof item === "string" && item.startsWith(ORIGEN + "/"))) falla("json-ld", donde, `BreadcrumbList: ListItem ${i + 1} "item" debe ser una URL absoluta de ${ORIGEN}`);
       });
     }
     for (const campo of ["url", "@id", "image"]) if (typeof nodo[campo] === "string" && /^https?:\/\//.test(nodo[campo]) && !nodo[campo].startsWith(ORIGEN)) falla("json-ld", donde, `${t}.${campo} apunta a otro origen: ${nodo[campo]}`, "aviso");
@@ -253,7 +256,11 @@ function validarGrafo(nodos, donde, p) {
   for (const r of refs) if (!definidos.has(r)) falla("json-ld", donde, `referencia @id sin definir en el mismo bloque: ${r}`);
   const tipo = (t) => [...definidos.values()].filter((n) => [].concat(n["@type"] ?? []).includes(t));
   const publico = NOMBRES_PUBLICOS();
-  for (const per of tipo("Person")) if (per.name && !publico(per.name)) falla("json-ld", donde, `Person "${per.name}" no es un nombre publicado en el texto visible del sitio`);
+  for (const per of tipo("Person")) {
+    if (per.name && !publico(per.name)) falla("json-ld", donde, `Person "${per.name}" no es un nombre publicado en el texto visible del sitio`);
+    // Ningún dato personal que el sitio no publique ya (correo, ciudad, redes, URL...): solo @id, @type y name, o valores visibles.
+    for (const [k, v] of Object.entries(per)) if (!["@id", "@type", "name"].includes(k) && !(typeof v === "string" && publico(v))) falla("json-ld", donde, `Person.${k}: dato personal que el texto visible del sitio no publica`);
+  }
   const esInicio = p.url === "/";
   if (esInicio) {
     const app = tipo("SoftwareApplication")[0];
