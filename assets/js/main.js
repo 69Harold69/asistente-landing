@@ -6,15 +6,15 @@ import {
   fijarTema,
   guardarTema,
   transicionarTema,
-} from "./theme.js?v=7e55092f39";
-import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js?v=7e55092f39";
-import { inicializarEscenario } from "./stage.js?v=7e55092f39";
-import { inicializarTilt } from "./tilt.js?v=7e55092f39";
-import { inicializarReveals } from "./revelar.js?v=7e55092f39";
-import { inicializarProgreso } from "./progreso.js?v=7e55092f39";
-import { inicializarMagneticos } from "./magnetico.js?v=7e55092f39";
-import { inicializarNavRecorrido } from "./nav-recorrido.js?v=7e55092f39";
-import { inicializarMalla } from "./malla.js?v=7e55092f39";
+} from "./theme.js?v=d7ff6de592";
+import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js?v=d7ff6de592";
+import { inicializarEscenario } from "./stage.js?v=d7ff6de592";
+import { inicializarTilt } from "./tilt.js?v=d7ff6de592";
+import { inicializarReveals } from "./revelar.js?v=d7ff6de592";
+import { inicializarProgreso } from "./progreso.js?v=d7ff6de592";
+import { inicializarMagneticos } from "./magnetico.js?v=d7ff6de592";
+import { inicializarNavRecorrido } from "./nav-recorrido.js?v=d7ff6de592";
+import { inicializarMalla } from "./malla.js?v=d7ff6de592";
 
 /**
  * GSAP y ScrollTrigger se inyectan desde aquí, en orden (`async = false`), y no van como `<script defer>`
