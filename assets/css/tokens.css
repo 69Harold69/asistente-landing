@@ -84,6 +84,17 @@
   --malla-linea-activa: 0.05;
   --malla-punto-reposo: 0.25;
   --malla-punto-activo: 0.09;
+
+  /* Tarjetas de vidrio (prototipo, #59): solo #fase-chat. */
+  --vidrio-fondo: rgb(255 255 255 / 0.72);
+  --vidrio-fondo-solido: #ffffff;
+  --vidrio-borde: rgb(205 195 180 / 0.6);
+  --vidrio-luz: rgb(255 255 255 / 0.95);
+  --vidrio-sombra: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 22px 44px -22px hsl(var(--shadow-color) / 0.32);
+  --vidrio-brillo: rgb(108 92 224 / 0.3);
+  --vidrio-trama: rgb(221 212 199 / 0.85);
+  --vidrio-desenfoque: 16px;
+  --vidrio-saturacion: 1.6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -110,6 +121,13 @@
     --malla-linea-activa: 0.2;
     --malla-punto-reposo: 1;
     --malla-punto-activo: 0.36;
+    --vidrio-fondo: rgb(30 27 48 / 0.62);
+    --vidrio-fondo-solido: #1e1b30;
+    --vidrio-borde: rgb(255 255 255 / 0.13);
+    --vidrio-luz: rgb(255 255 255 / 0.16);
+    --vidrio-sombra: 0 1px 2px rgb(0 0 0 / 0.3), 0 22px 44px -22px rgb(0 0 0 / 0.7);
+    --vidrio-brillo: rgb(139 124 240 / 0.34);
+    --vidrio-trama: rgb(80 72 118 / 0.9);
   }
 }
 
@@ -143,6 +161,13 @@
   --malla-linea-activa: 0.2;
   --malla-punto-reposo: 1;
   --malla-punto-activo: 0.36;
+  --vidrio-fondo: rgb(30 27 48 / 0.62);
+  --vidrio-fondo-solido: #1e1b30;
+  --vidrio-borde: rgb(255 255 255 / 0.13);
+  --vidrio-luz: rgb(255 255 255 / 0.16);
+  --vidrio-sombra: 0 1px 2px rgb(0 0 0 / 0.3), 0 22px 44px -22px rgb(0 0 0 / 0.7);
+  --vidrio-brillo: rgb(139 124 240 / 0.34);
+  --vidrio-trama: rgb(80 72 118 / 0.9);
 }
 
 :root[data-theme="light"] {
@@ -168,4 +193,13 @@
   --malla-linea-activa: 0.05;
   --malla-punto-reposo: 0.25;
   --malla-punto-activo: 0.09;
+  --vidrio-fondo: rgb(255 255 255 / 0.72);
+  --vidrio-fondo-solido: #ffffff;
+  --vidrio-borde: rgb(205 195 180 / 0.6);
+  --vidrio-luz: rgb(255 255 255 / 0.95);
+  --vidrio-sombra: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 22px 44px -22px hsl(var(--shadow-color) / 0.32);
+  --vidrio-brillo: rgb(108 92 224 / 0.3);
+  --vidrio-trama: rgb(221 212 199 / 0.85);
+  --vidrio-desenfoque: 16px;
+  --vidrio-saturacion: 1.6;
 }
