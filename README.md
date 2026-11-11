@@ -25,7 +25,7 @@ asistente-landing/
 ├── assets/
 │   ├── css/
 │   │   ├── tokens.css   Colores/tipografía/espaciado/tema (claro, oscuro, y el `data-theme` del toggle)
-│   │   ├── fonts.css    @font-face de las páginas legales y 404 (assets/fonts/)
+│   │   ├── fonts.css    @font-face de las legales, las guías y la 404 (los mismos recortes de assets/fuentes/)
 │   │   ├── fuentes-portada.css  @font-face de la portada (recortes latinos de assets/fuentes/)
 │   │   ├── base.css     Layout, grid con escenario sticky, componentes compartidos
 │   │   ├── guias.css    Páginas-guía: resumen, pasos, ejemplos de chat en CSS, tabla comparativa, cierre con la beta
@@ -47,8 +47,8 @@ asistente-landing/
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
 │   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, avisos, llamada, dashboard (+ contar.js)
 │   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
-│   ├── fonts/     .woff2 completos + un `OFL-<Familia>.txt` por familia (páginas legales)
-│   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (portada)
+│   ├── fonts/     .woff2 completos + un `OFL-<Familia>.txt` por familia (ninguna página los usa: son la fuente de los recortes)
+│   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (todas las páginas)
 │   └── img/       favicon.svg, favicon-32.png, apple-touch-icon.png y og-yaruki.png (ver "Íconos e imagen para compartir")
 ├── scripts/versionar.py    Cache busting (`?v=<hash>`), ver más abajo
 ├── scripts/pruebas/        Pruebas y revisión visual (Playwright, Lighthouse, validar); ver «Pruebas y revisión visual»
@@ -170,6 +170,13 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
   Si una página tiene un commit de contenido posterior a su `lastmod`, se
   actualiza en la misma PR (el `/` se quedó en 2026-10-29 con dos cambios de
   texto encima; se corrigió en #11).
+- **`TERMINOS_VERSION` (backend) y las páginas legales:** en `asistente-backend`, `TERMINOS_VERSION`
+  (`config/legal.php`) es un solo valor que versiona **juntos** los Términos y la Política de
+  privacidad: si difiere de la que aceptó una cuenta, `/auth/me` responde `terminos_pendientes: true`
+  y el backend contesta 403 a `/conversacion/*` hasta que la persona acepte otra vez. Por eso
+  **cambiar el texto o la fecha «Vigente desde» de `/privacidad/` o `/terminos/` en esta landing no la sube**
+  (cambios aclaratorios, como el de los registros de visitas del sitio, no lo justifican). Subirla
+  es una decisión de Harold al publicar, no un efecto automático de este repo.
 - **`robots.txt`:** permite todo y declara el sitemap.
 - **Open Graph y Twitter/X** en las 4 páginas públicas (`index.html`, privacidad,
   términos y eliminar cuenta), con la misma imagen `og-yaruki.png` 1200×630. La
@@ -265,7 +272,10 @@ al primer clic en el toggle).
   columna) y la anterior se va en el primer 35% (antes de que llegue). Por
   eso nunca se enciman, tampoco con saltos. En móvil, entrada al 84% del
   viewport.
-- **Titular del hero:** palabra por palabra en CSS (`base.css`), sin JS ni CLS.
+- **Titular del hero:** palabra por palabra en CSS (`base.css`), sin JS ni CLS. Su `max-width` va en `em`
+  (7.877em = 13ch de Baloo 2 ExtraBold), no en `ch`: el `ch` es el avance del «0» de la fuente que esté
+  pintando y con el respaldo el titular cambiaba de renglones al llegar Baloo 2 (#53). `cls.mjs` lo vigila
+  también en 820, 1024 y 1440 px con las fuentes 1.5 s tarde.
 - **Sin barra de progreso superior (#60):** se quitó la línea de 3 px (en móvil
   era un trazo suelto sobre el teléfono y medía la página entera, no el
   recorrido). Bajo 1024 px no hay indicador: el teléfono y el scroll orientan.
@@ -407,9 +417,9 @@ falta — no quedó ningún `node_modules/`/`package.json` en el repo.
 
 - **GSAP 3.15.0 + ScrollTrigger 3.15.0** (`gsap.min.js`, `ScrollTrigger.min.js`)
   — **en uso desde la etapa 4** (`assets/js/stage.js`, toda la coreografía de
-  scroll), cargados como `<script src>` clásico ANTES del `<script
-  type="module">` (así `window.gsap`/`window.ScrollTrigger` ya existen
-  cuando corre `main.js`). Licencia: **Standard "No Charge" GSAP License**
+  scroll), inyectados por `main.js` (`cargarVendor`, en orden) y no como
+  `<script defer>` del `<head>`: ver «Presupuesto de rendimiento» (el `defer` hacía que
+  Lighthouse contara los ~115 KB de GSAP como bloqueantes del primer pintado). Licencia: **Standard "No Charge" GSAP License**
   de Webflow (dueño de GSAP desde la adquisición a GreenSock) — gratuita
   para uso comercial o no comercial en sitios/apps siempre que la persona
   que usa el sitio no pague una cuota por acceder a él o a una parte de él
@@ -434,8 +444,14 @@ pesos hechos con `fonttools subset` (rango: U+0000-00FF, U+0131, U+0152-0153,
 U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122,
 U+2190-2193, U+2212, U+2713, U+2022; `--layout-features='*'`). De 431 KB a
 109 KB. Si se agrega texto con caracteres fuera de ese rango, regenerarlos
-desde `assets/fonts/` con el mismo comando. Las páginas legales siguen con
-los originales de `assets/fonts/` vía `fonts.css`, cuyas fuentes de respaldo
+desde `assets/fonts/` con el mismo comando (por eso se conservan, aunque ya ninguna página los
+carga). Las legales, las guías y la 404
+usan los mismos recortes vía `fonts.css` (desde la auditoría integral, pasada 1:
+con los originales de 291 KB la simulación de Lighthouse móvil ponía las
+fuentes en la ruta del LCP en ~1 de cada 3–5 corridas, LCP ~2.85 s; con los
+recortes, ~1.65 s). Las guías además precargan Baloo 2 ExtraBold y Manrope
+Regular (sin eso el titular largo de `/organizar-tareas-con-ia/` ganaba un
+renglón al llegar la fuente: CLS 0.026 a 412 px). Las fuentes de respaldo de `fonts.css`
 ("Baloo 2 Fallback", "Manrope Fallback": Arial con `size-adjust` y
 `ascent/descent-override` medidos con fonttools contra la fuente real, una cara
 por grupo de pesos) evitan el CLS del cambio de fuente (#24, antes 0.134 en
@@ -509,10 +525,15 @@ referencia de `ofl/baloo2/upstream_info.md`). Manrope: `aaronbell/manrope` en
 6. ~~`gsap.matchMedia()` no reacomoda el teléfono al cruzar de rama~~ →
    **resuelto (M1):** al cruzar 1024 px o cambiar "reducir movimiento" se
    re-mide y se vuelve a la misma sección.
-7. **Vuelo probado por scroll programático (Puppeteer) y revisión visual
-   cuadro a cuadro, no por un dedo/mouse real** — el comportamiento con
-   gestos táctiles reales (momentum scroll de iOS/Android) no se validó en
-   este pase.
+7. **Gestos táctiles (parcialmente resuelto, 2026-11-11):** `scripts/pruebas/tactil.mjs` ya
+   recorre el sitio con eventos táctiles reales de Pixel 7 e iPhone 15 emulados sobre Chromium
+   (sin fallos de coreografía). **Sigue pendiente en teléfono real**, porque WebKit no corre en la
+   máquina de desarrollo: el *momentum* de Safari/iPhone (scroll con inercia y barra de URL
+   que se encoge) **no se probó**; Harold lo prueba al publicar. Igual con
+   (a) el respaldo de fuentes sobre Roboto en Android real (que el titular y el subtítulo del hero
+   no salten al cargar; Chrome de Android 12+ resuelve `local("Roboto Bold")` con la Roboto variable) y
+   (b) el silabeo (`hyphens`) de la tabla de `/privacidad/` en Android y Safari. El checklist está en el
+   runbook de publicación de `asistente-ia-ops`.
 
 ## Fuentes citadas (verificación, no en la página pública)
 
@@ -549,7 +570,7 @@ referencia de `ofl/baloo2/upstream_info.md`). Manrope: `aaronbell/manrope` en
 IndexNow avisa a Bing, Yandex, Seznam, Naver y otros de las URLs que cambiaron (Google no participa: para Google
 siguen valiendo Search Console y el sitemap). La clave vive en `72d573f4443baf5a20fc8627fb495555.txt`, en la raíz:
 el protocolo exige publicarla (no es un secreto) y su contenido es exactamente la clave. Caddy no la oculta
-(`hide` solo cubre `.git`, `README.md`, `scripts`, `package*.json`). Tras el primer `git pull` en el droplet:
+(el `hide` del bloque de Caddy solo cubre `.git*`, `README.md`, `scripts`, `package.json`, `package-lock.json` y `node_modules`). Tras publicar el tag en el droplet:
 
 ```bash
 curl -s https://yaruki.hjgr.dev/72d573f4443baf5a20fc8627fb495555.txt   # debe imprimir exactamente la clave
@@ -609,7 +630,7 @@ URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus
    `sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
 3. **En el repo** (PR normal): `python3 scripts/dominio.py --origen https://yaruki.app`, luego
    `cd scripts/pruebas && node validar.mjs` (debe dar 0), revisar `git diff` y, en `main`, `python3 scripts/versionar.py`.
-   Actualiza en el README el `yaruki.hjgr.dev` de los comandos de verificación. Despliega con `git pull`.
+   Actualiza en el README el `yaruki.hjgr.dev` de los comandos de verificación. Despliega con un tag (ver «Despliegue §5»).
 4. **Redirecciones 301 del dominio viejo, ruta por ruta.** Cambia el bloque de `yaruki.hjgr.dev` por:
 
    ```caddyfile
@@ -691,8 +712,9 @@ chmod -R a+rX /var/www/asistente-landing
 
 (El repo ya existe en GitHub, es **público a propósito** como estrategia de SEO
 (`69Harold69/asistente-landing`, rama `main`) y el droplet lo tiene clonado en
-`/var/www/asistente-landing`. Para actualizar: `git pull` ahí; no hace falta
-recargar Caddy. La última publicación es `cc51b60` del 2026-11-02.)
+`/var/www/asistente-landing`. Se actualiza **por tag** (ver «5. Publicar una versión»); no hace falta
+recargar Caddy salvo que cambie el Caddyfile. La última publicación es `cc51b60` del 2026-11-02, anterior
+a los tags.)
 
 ### 3. Bloque de Caddy
 
@@ -709,7 +731,7 @@ yaruki.hjgr.dev {
 	# El sitio se sirve desde el clon del repo: nunca exponer `.git` (todo el
 	# historial) ni los archivos que no son del sitio.
 	file_server {
-		hide .git README.md
+		hide .git* README.md scripts package.json package-lock.json node_modules
 	}
 
 	# Recursos estáticos: caché larga. Sin hash en los nombres, así que
@@ -741,19 +763,34 @@ Notas:
   desde el mismo origen, así que `script-src 'self'` y `font-src 'self'`
   alcanzan. No hay nada inline: los estilos que calcula JS van por CSSOM
   (`el.style.setProperty`), que la CSP permite.
-- **`hide .git README.md`:** el repo se clona tal cual en `/var/www`; sin esto,
+- **`hide`:** el repo se clona tal cual en `/var/www`; sin esto,
   `https://yaruki.hjgr.dev/.git/config` (y con él todo el historial) quedaba
   público.
-- **PENDIENTE de Harold (no ejecutado): ocultar también lo de pruebas.** El droplet
-  sirve el clon tal cual, así que `scripts/` (herramientas de prueba, no
-  sensibles pero sin razón para estar públicas), `package.json` y
-  `package-lock.json` serían descargables. Cambiar el `hide` del bloque a
-  `hide .git README.md scripts package.json package-lock.json` y recargar
-  Caddy (`sudo caddy validate ... && sudo systemctl reload caddy`); verificar
-  con `curl -sI https://yaruki.hjgr.dev/scripts/pruebas/package.json` (debe dar
-  404). `node_modules/` está en `.gitignore`, así que no llega al droplet con
-  `git pull`. El servidor local de las pruebas (`scripts/pruebas/lib/servidor.mjs`)
-  ya los oculta como lo haría Caddy con ese `hide`.
+- **`hide`: todo lo que está en el clon y no es del sitio.** El droplet sirve el clon
+  tal cual, así que cualquier archivo del repo que no sea del sitio sería descargable. Lista
+  (2026-11-11), con lo que cubre cada patrón:
+  - `.git*`: `.git` (todo el historial), `.gitignore` y, si algún día existen, `.github`/`.gitattributes`.
+  - `README.md`: este documento.
+  - `scripts`: la carpeta de herramientas completa. **Los únicos `package.json` y `package-lock.json`
+    del repo viven dentro de `scripts/pruebas/`**, así que `scripts` ya los cubre; se listan aparte
+    por si alguna vez aparecen en la raíz. `node_modules` igual (está en `.gitignore`).
+  - **Sí se sirve** (no se oculta): `google9633e8d6c904333e.html`, `72d573f4443baf5a20fc8627fb495555.txt`
+    (clave de IndexNow), `robots.txt`, `sitemap.xml`, `404.html`, `favicon.ico`, `assets/` completo
+    (incluidas las licencias `assets/**/OFL-*.txt` y `LICENSE-*.txt`), las páginas y `/.well-known/` si existiera.
+  - **Cómo lo interpreta Caddy** (documentación de `file_server`,
+    https://caddyserver.com/docs/caddyfile/directives/file_server): los patrones son rutas del
+    *sistema de archivos*, no de la URL; un patrón **sin separador de ruta es un nombre que se oculta
+    en cualquier profundidad** (archivo o carpeta, y con ella todo su contenido), admite comodines, la
+    comparación distingue mayúsculas, y la propia documentación advierte que no es una frontera de seguridad. Por lo mismo
+    **no debe existir bajo `assets/` ni en otro lugar del sitio un archivo o carpeta llamado `scripts`,
+    `README.md`, `package.json`, `package-lock.json`, `node_modules` ni que empiece con `.git`**: quedaría oculto. Hoy no hay ninguno
+    (lo comprueba la regla `hide-readme` de `validar`).
+  - Comprobado el 2026-11-11 con Caddy 2.11.9 oficial sirviendo una copia del repo: 404 en `/scripts/pruebas/package.json`,
+    `/scripts/dominio.py`, `/README.md`, `/.git/config`, `/.gitignore`, `/.github/…`; 200 en las páginas, la clave de IndexNow,
+    `sitemap.xml`, `robots.txt`, `404.html`, `favicon.ico`, `google9633e8d6c904333e.html`, `/.well-known/…` y las licencias bajo `assets/`.
+  - Para aplicarlo en el droplet y verificarlo, sigue el runbook de publicación de `asistente-ia-ops`
+    (`docs/runbook-publicacion-landing-2026-11.md`). El servidor de pruebas (`scripts/pruebas/lib/servidor.mjs`, `HIDE_CADDY`)
+    emula este mismo `hide` y `validar` falla si dejan de coincidir.
 - **Caché de `/assets/*`:** ver el comentario en el bloque. El HTML no lleva
   `Cache-Control` propio: Caddy manda `ETag`/`Last-Modified` y el navegador
   revalida en cada visita, así que un despliegue se ve al instante.
@@ -773,26 +810,61 @@ Notas:
 ### 4. Validar, recargar y verificar
 
 ```bash
-sudo caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl reload caddy
+# recarga SOLO si valida (el `&&` lo impide si falla); nunca `restart`, que cortaría también la API
+sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
 
 # Verificación: debe responder 200 con las cabeceras de seguridad de arriba.
 curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
 ```
 
 Validar primero es obligatorio: un error en el bloque nuevo no debe tumbar
-`asistente.hjgr.dev`. Si `curl` no devuelve `200` o faltan las cabeceras,
+`asistente.hjgr.dev`. **Siempre como el usuario del servicio** (`sudo -u caddy -H`): `caddy validate`
+abre (y crea si no existe) los archivos que el Caddyfile pide, p. ej. un archivo de `log`; si lo corres
+como root queda con dueño `root`, Caddy (usuario `caddy`) ya no puede abrirlo y la recarga o el próximo
+arranque fallan. Si `curl` no devuelve `200` o faltan las cabeceras,
 revisar el bloque antes de dar el despliegue por terminado.
 
-### 5. Actualizar
+### 5. Publicar una versión (por tag)
 
-```bash
-cd /var/www/asistente-landing && git pull
-# sólo si cambió el Caddyfile:
-sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
-# y volver a verificar, igual que en el paso 4:
-curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
-```
+El droplet **no** hace `git pull` a ciegas: publica un **tag** `publicable-AAAA-MM-DD<letra>` (por ejemplo
+`publicable-2026-11-11a`).
+
+- **Qué es un tag `publicable-*`:** una versión de `main` que el PM etiqueta (tag anotado, empujado a
+  GitHub) solo después de: (1) correr `python3 scripts/versionar.py` en `main` (reescribe los `?v=` de
+  cache busting; ver «Cache busting»), (2) comprobar que `python3 scripts/versionar.py --check` sale con
+  `0`, (3) `node scripts/pruebas/todo.mjs` en verde y (4) una auditoría de cierre. Un commit de `main`
+  sin tag **no** se considera publicable (puede tener `?v=` desactualizados).
+- **Publicar:**
+
+  ```bash
+  cd /var/www/asistente-landing
+  git fetch --tags
+  git checkout <tag>                      # p. ej. publicable-2026-11-11a
+  git describe --tags --exact-match       # debe imprimir ese mismo tag
+  git rev-parse --short HEAD              # debe ser el commit que el PM entregó junto con el tag
+  curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
+  ```
+
+- **Qué tag está publicado:** `cd /var/www/asistente-landing && git describe --tags --exact-match`
+  (si imprime `fatal: no tag exactly matches`, el clon está en un commit sin tag, como `cc51b60`).
+- **Rollback:** `git checkout <tag-anterior>` (o el commit anterior si no tenía tag) y volver a verificar.
+  Es instantáneo; no hay compilación.
+- **Un tag publicado nunca se mueve ni se reutiliza.** Si hace falta corregir algo, el PM crea otro con la
+  letra siguiente (`publicable-2026-11-11b`). Por eso `git fetch --tags` no lleva `--force`: si alguien
+  moviera un tag que el droplet ya tiene, git lo rechaza (`would clobber existing tag`) y el clon se
+  quedaría con el viejo; la comprobación de `git rev-parse --short HEAD` contra el commit entregado lo detecta.
+  Detente y avisa en vez de forzarlo.
+- **«detached HEAD» es lo esperado:** `git checkout <tag>` deja el clon sin rama. Git lo avisa y no es un
+  error; por eso `git pull` ya no aplica ahí.
+- **No se edita nada a mano en el droplet.** El clon debe quedar idéntico al tag (`git status` limpio). Todo
+  cambio pasa por una PR, `main`, `versionar.py` y un tag nuevo. Si hay cambios locales, `git checkout`
+  se negará o los arrastrará: no los guardes ni los descartes sin revisarlos.
+- **Solo si cambió el Caddyfile** (no las páginas):
+
+  ```bash
+  sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
+  curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5   # volver a verificar, igual que en el paso 4
+  ```
 
 No toca Sail ni el worker de colas del backend. Impacto en RAM: despreciable.
 
@@ -805,7 +877,9 @@ Herramientas en `scripts/pruebas/` (detalle de cada comando y de las decisiones 
 node validar.mjs                         # rápido, sin navegador: HTML, CSP, JSON-LD, sitemap, metadatos, enlaces, CTA, voseo
 node capturas.mjs --salida DIR           # claro/oscuro × 1440×900, 820×1180, 390×844 + reduced-motion; capturas y video
 node tactil.mjs  --salida DIR            # gestos táctiles reales (Pixel 7, iPhone 15), video
-node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-base del monorepo
+node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-final/vigente del monorepo
+node rendimiento.mjs                     # presupuesto de la portada: LCP texto del hero, CLS, TBT, sin scripts en el <head>, interacciones ≤ 200 ms con CPU ×4
+node compresion.mjs                      # el servidor de pruebas comprime como Caddy (`encode gzip zstd`: Chrome recibe gzip)
 node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + pruebas python + capturas + lighthouse (+ tactil)
 python3 -I test_portada.py               # defectos sembrados de la portada (pasos, preguntas, FAQPage, promesas absolutas)
 ```
@@ -816,7 +890,12 @@ a la escena de cada sección. El servidor local emula el
 bloque de Caddy (mismas cabeceras y CSP, `try_files`, 404). Una skill para agentes
 (`.claude/skills/landing-revision-visual/` y `landing-seo/` en el monorepo) dice qué correr y qué mirar.
 
-**Línea base** (`origin/main` = `bda9146`, contenido idéntico a lo publicado en `cc51b60`; guardada en
+**Línea base vigente:** `.pm/landing-2026-11/lighthouse-final/vigente/` (ver «Presupuesto de rendimiento»).
+`lighthouse-base/` queda como histórico: se midió con un servidor de pruebas SIN compresión (producción sí comprime), así que
+sus números de rendimiento y LCP no son comparables con los actuales. `lighthouse-final/publicado-cc51b60/` y `main/` son
+las mismas versiones medidas con el servidor que comprime.
+
+**Línea base histórica, sin compresión** (`origin/main` = `bda9146`, contenido idéntico a lo publicado en `cc51b60`; guardada en
 `.pm/landing-2026-11/lighthouse-base/` del monorepo). Mediana de 3 corridas, Lighthouse 13.6, Chromium 155:
 
 | Página | Forma | Rend. | Accesib. | B. prácticas | SEO | LCP | CLS | TBT |
@@ -837,6 +916,52 @@ prácticas y SEO no admiten retroceso. INP no se mide en laboratorio: se usa TBT
 #21 CTA «Únete a la beta» sin `href` en el HTML; #22 `chat.js` genera `style=""` inline que la CSP
 bloquea (consola y barras de audio sin altura, de forma intermitente); #23 `<h3>`/`<p>` dentro de
 `<span>` en «Exportar tus datos»; #24 CLS de `/eliminar-cuenta/`.
+
+## Presupuesto de rendimiento
+
+Qué vigila cada prueba (todas corren en `todo.mjs`):
+
+| Prueba | Vigila |
+|---|---|
+| `lighthouse.mjs --comparar .pm/landing-2026-11/lighthouse-final/vigente` | Nota por categoría (≥ 90 y sin retroceso; el rendimiento admite 2 puntos de ruido). Meta de la portada: móvil ≥ 97 (mediana), escritorio ≥ 98, el resto 100, CLS 0. El LCP móvil simulado todavía sale ~2.3 s en ~1 de cada 5 corridas (ver abajo): juzga la mediana, no una corrida. |
+| `rendimiento.mjs` | Arranque de la portada en móvil con CPU ×4 y 4G lenta: el LCP es texto del hero (no una imagen ni la malla) y llega en ≤ 2 s; CLS 0.000; TBT ≤ 250 ms (medido con CPU ×4: el de Lighthouse es otra escala); **ningún `<script src>` clásico en el `<head>`** y GSAP no se pide antes del primer pintado. Interacción (Event Timing, el INP de laboratorio): toggle de tema, abrir/cerrar un `<details>`, punto de la navegación, mouse sobre el hero con la malla; cada una ≤ 200 ms con CPU ×4 (hoy la peor, el toggle de tema, ronda 150–180 ms). |
+| `cls.mjs` | CLS ≤ 0.02 en la portada a 360, 390, 412, 820, 1024 y 1440 px con las fuentes 1.5 s tarde, y el reacomodo del hero en el barrido de 320 a 480 px. |
+| `compresion.mjs` | Que el servidor de pruebas comprima como Caddy; sin esto los números del laboratorio no representan a producción. |
+| `malla.mjs` | Costo por cuadro de la malla (< 4 ms) y sin tareas largas con el cursor moviéndose. |
+
+**Por qué el LCP móvil era «bimodal» (1.65 s o 2.3 s, y 1.05 s o 1.5 s con compresión).** Lighthouse no mide el LCP:
+lo *simula* (Lantern) desde el trazo de una corrida rápida en local. Su gráfica del primer pintado incluye la tarea de
+CPU que hizo el primer diseño/pintado/`ParseHTML` y todo lo que esa tarea necesitó. Los dos `<script defer>` de GSAP y
+ScrollTrigger (~115 KB crudos, ~40 KB comprimidos) se ejecutan al terminar el análisis del HTML, y en un servidor local
+rápido la ejecución a veces cae en la MISMA tarea que el primer pintado: entonces Lantern los cuenta como bloqueantes y
+suma sus descargas (+0.5–0.75 s). En el navegador real el primer pintado es igual de rápido en las dos modalidades
+(`rendimiento.mjs`: 0.9–1.0 s con CPU ×4 y 4G lenta, ambos casos); es un artefacto de la simulación, pero distorsiona la
+nota y el TBT. Se corrigió inyectando GSAP desde `main.js` (que solo corre cuando termina su cascada de imports, ya
+pintado el hero): el FCP simulado ya no se infla (0 de 14 corridas, contra 3 de 10 en `main`) y el TBT de Lighthouse baja
+(mediana ~15 ms, contra colas de 75–123 ms en `main`). **No elimina toda la bimodalidad:** la auditoría (servidor que negocia
+como Caddy, 10 + 10 corridas intercaladas) vio LCP simulado de 2.25–2.56 s con FCP de 1.05 s en la rama (3 de 14 corridas)
+y también en `main` (1 de 10). No es GSAP ni la cascada de módulos: el mismo modo sale en `/privacidad/`, que no carga JS
+(LCP simulado 2.85 s con FCP 1.05 s en ~1 de 5 corridas, igual con gzip que con zstd); el candidato son las fuentes del
+elemento LCP, sin confirmar. En el
+navegador real tampoco cambia el LCP. Es, sobre todo, una mejora de la medición (nota y TBT de Lighthouse), no de lo que ve
+el visitante. Costo: el teléfono monta su primera
+escena ~0.2 s más tarde en el caso extremo (CPU ×4, 4G lenta), porque GSAP ya no se ejecuta mientras esperan los módulos.
+En escritorio eso alarga lo mismo un salto que ya existía en `main`: antes de que `stage.js` arranque, el teléfono se pinta
+más a la izquierda (encima del final del titular) y luego salta a su columna (~1.3 s en `main` y ~1.5 s aquí con CPU ×4).
+
+**Segundo factor: bytes de CSS bloqueante.** Sin compresión, 6 KB más de CSS empujaban el LCP un paso de red (+0.15 s) y, junto
+con la carrera anterior, la nota de 97 a 93. Con compresión la ventana desaparece: el CSS bloqueante de la portada
+(`tokens` + `fuentes-portada` + `base` + `phone` + `scenes`) pesa 99 KB crudos y ~25 KB comprimidos con gzip; quitar a propósito
+`phone.css` + `scenes.css` (21 KB comprimidos) no movió el FCP simulado (1.05 s en ambos casos), así que no se separa CSS crítico
+de diferible (complicaría el CSP y el caso sin JS sin ganar nada). Los comentarios son ~29 KB crudos del CSS pero casi no pesan
+comprimidos; no vale la pena un paso de minificación.
+
+**Descartado por los números:** separar CSS crítico (sin ganancia, arriba); `modulepreload`/`preload` de la cascada de
+`main.js` y de GSAP (el montaje de la primera escena no se adelanta: lo limita el CPU, no la red; y agrega entradas al
+primer pintado); montar la malla solo con hover (ya arranca después de `load` + idle y en táctil no aparece entre las tareas
+largas de la traza); `content-visibility: auto` en las secciones bajo el pliegue (no se probó: `stage.js`/ScrollTrigger y los puntos
+de la navegación miden alturas de sección y el cambio de altura intrínseca movería los disparadores sin una ganancia medible en LCP,
+CLS ni INP); imágenes: la portada no tiene `<img>`.
 
 ## Skills usadas
 

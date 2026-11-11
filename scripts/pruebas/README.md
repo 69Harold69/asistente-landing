@@ -46,8 +46,8 @@ arregle el issue.
 ## Decisiones
 
 - **Servidor y Caddy:** `lib/servidor.mjs` copia las cabeceras del bloque de Caddy del README; la regla `csp-readme` de `validar`
-  falla si dejan de coincidir. También oculta (404) lo que el README pide ocultar y lo que **conviene ocultar** (`scripts`,
-  `package.json`, `package-lock.json`).
+  falla si dejan de coincidir. También oculta (404) exactamente lo mismo que el `hide` del bloque de Caddy del README
+  (`HIDE_CADDY`; la regla `hide-readme` de `validar` compara las dos listas y comprueba que no se oculte nada que deba servirse).
 - **Tema determinista:** `theme.js` lee `localStorage["yaruki-theme"]` y, si no hay, `prefers-color-scheme`. Las herramientas fijan
   las dos cosas (`colorScheme` del contexto + `localStorage`) y marcan `sessionStorage["yaruki-theme-demo-visto"]` para que la demo de
   tema al cargar (`theme-demo.js`, que cambia el tema a los ~1.3 s) no ensucie las capturas. `--demo-tema` la deja correr.
@@ -58,7 +58,12 @@ arregle el issue.
   emula con los descriptores `iPhone 15` (UA, viewport, táctil, DPR) sobre Chromium; el *momentum* de Safari no se reproduce.
 - **Rueda y toque reales:** `capturas` recorre con `mouse.wheel` en pasos (nunca `scrollTo`) y `tactil` con
   `Input.dispatchTouchEvent`; la coreografía ya reacciona a `wheel`/`touchstart`.
-- **INP:** no hay forma de laboratorio útil (Lighthouse solo lo calcula en modo timespan con interacciones); se usa TBT.
+- **INP:** Lighthouse solo lo calcula en modo timespan; `rendimiento.mjs` lo sustituye con Event Timing por CDP (duración del evento hasta el
+  siguiente pintado, CPU ×4) en el toggle de tema, un `<details>`, la navegación del recorrido y el mouse sobre el hero (≤ 200 ms), más TBT.
+- **Compresión:** `lib/servidor.mjs` negocia `Accept-Encoding` como Caddy con `encode gzip zstd` (por q y, a igual q,
+  gzip antes que zstd, así que Chrome recibe gzip; solo texto, JSON, XML, SVG e ícono, de más de 512 bytes; `Vary: Accept-Encoding`),
+  cotejado contra Caddy 2.11.9 real; `compresion.mjs` lo prueba. `YARUKI_SIN_COMPRESION=1` la apaga (para reproducir `lighthouse-base/`).
+  Sin compresión el laboratorio pesaba ~4× más bytes bloqueantes que un visitante real.
 - **Escenas en modo de inspección:** `?escena=` monta la escena sin coreografía ni `play()`, así que se ve su estado inicial (el chat
   sale vacío, la llamada sin avance). Para revisar los estados animados usa `portada-seccion-*` y el video.
 - **Video:** `recordVideo` escalado a ≤ 1000 px del lado mayor (a tamaño real el codificador software tarda 4×).
