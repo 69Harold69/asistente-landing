@@ -45,6 +45,10 @@ class Mutaciones(unittest.TestCase):
             "sin BreadcrumbList en página legal": ("terminos/index.html", '"@type": "BreadcrumbList"', '"@type": "ItemList"'),
             "falta og:image:alt": ("privacidad/index.html", 'property="og:image:alt"', 'property="og:image:altx"'),
             "falta theme-color oscuro": ("terminos/index.html", '(prefers-color-scheme: dark)', '(prefers-color-scheme: x)'),
+            "item relativo en BreadcrumbList": ("terminos/index.html", '"item": "https://yaruki.hjgr.dev/"', '"item": "/"'),
+            "moneda no ISO 4217": ("index.html", '"priceCurrency": "MXN"', '"priceCurrency": "pesos"'),
+            "precio no numérico": ("index.html", '"price": "0"', '"price": "gratis"'),
+            "dato personal nuevo en Person": ("index.html", '"name": "Harold de Jesús García Ramírez"', '"name": "Harold de Jesús García Ramírez", "email": "otro@example.com"'),
         }
         for nombre, (ruta, viejo, nuevo) in casos.items():
             with self.subTest(nombre):
