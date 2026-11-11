@@ -110,7 +110,12 @@ export function inicializarReveals(escenario) {
     }
 
     const alEstado = (ev) => sincronizar(ev.detail.y);
-    const alFoco = () => sincronizar(escenario.y);
+    // Solo si el foco entra o sale de un bloque del recorrido: el clic en el toggle de tema (en el header) no
+    // debe pagar un `sincronizar` completo dentro de su interacción (~25 ms más con CPU ×4, rendimiento.mjs).
+    const enBloque = (el) => el instanceof Element && !!el.closest("#hero, .secciones > .seccion");
+    const alFoco = (ev) => {
+      if (enBloque(ev.target) || enBloque(ev.relatedTarget)) sincronizar(escenario.y);
+    };
     telefono.addEventListener("yaruki:estado", alEstado);
     document.addEventListener("focusin", alFoco);
     document.addEventListener("focusout", alFoco);
