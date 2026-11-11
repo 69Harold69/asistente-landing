@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  todo: corre validar + sin-js + licencias + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese orden,
+  todo: corre validar + sin-js + cls + licencias + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese orden,
   sin detenerse en la primera falla, y sale con 1 si CUALQUIERA falla.
 
   Uso: node todo.mjs [--salida DIR] [--comparar CARPETA_BASE_LIGHTHOUSE] [--con-tactil] [--sin-video]
@@ -26,6 +26,8 @@ const pasos = [
   ["validar", process.execPath, ["validar.mjs", ...estricto]],
   // Mejora progresiva: la portada y las legales con JavaScript desactivado.
   ["sin-js", process.execPath, ["sin-js.mjs"]],
+  // CLS de las páginas legales y la 404 con red limitada (fuente de respaldo con las métricas de la real).
+  ["cls", process.execPath, ["cls.mjs"]],
   // Licencias de fuentes y librerías vendorizadas (issue #15): solo biblioteca estándar de Python.
   ["licencias", "python3", ["-I", "licencias.py"]],
   ["capturas", process.execPath, ["capturas.mjs", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
