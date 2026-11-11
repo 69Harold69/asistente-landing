@@ -9,11 +9,14 @@
     - pasado el recorrido (Cómo funciona, preguntas...) se desvanece y no se ve (igual que los puntos); al volver, reaparece;
     - con prefers-reduced-motion no hay transición (el desvanecido es instantáneo);
     - sin JavaScript no se muestra (una pista vacía sería una línea suelta);
+    - barata en el scroll: con la CPU x4 en móvil, progreso.js gasta < 40 ms en un scroll con rueda por el recorrido
+      (sin lecturas de layout en el rAF, que forzaban un recálculo de estilo en cada cuadro: ~500 ms);
     - consola limpia (sin console.error, pageerror ni violaciones de CSP).
   Uso: node progreso.mjs [--url http://...] [--salida DIR]   (sale con 1 si algo falla)
 */
 import { iniciarServidor } from "./lib/servidor.mjs";
 import { leerArgs, lanzarChromium, crearGuardia, scriptInicial, esperarCarga, dormir, salir } from "./lib/comun.mjs";
+import { ruedaHasta } from "./lib/scroll.mjs";
 
 const a = leerArgs();
 const srv = a.url ? { url: String(a.url).replace(/\/$/, ""), cerrar: async () => {} } : await iniciarServidor();
@@ -166,6 +169,25 @@ try {
       }
       await ctx.close();
     }
+  }
+
+  console.log("\n== costo en el scroll (móvil, CPU x4)");
+  {
+    const { ctx, page } = await abrir({ tam: "movil" });
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+    const g = await geo(page);
+    await cdp.send("Profiler.enable");
+    await cdp.send("Profiler.setSamplingInterval", { interval: 100 });
+    await cdp.send("Profiler.start");
+    await ruedaHasta(page, g.fin, { paso: 100, pausaMs: 16 });
+    const { profile } = await cdp.send("Profiler.stop");
+    const dt = {};
+    profile.samples.forEach((s, i) => (dt[s] = (dt[s] || 0) + profile.timeDeltas[i]));
+    const ms = profile.nodes.filter((n) => /\/progreso\.js/.test(n.callFrame.url)).reduce((t, n) => t + (dt[n.id] || 0), 0) / 1000;
+    ok(ms < 40, `progreso.js gasta ${ms.toFixed(1)} ms de CPU en el scroll por el recorrido (< 40)`);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+    await ctx.close();
   }
 
   console.log("\n== prefers-reduced-motion");
