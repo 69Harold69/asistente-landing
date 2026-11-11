@@ -26,7 +26,7 @@ const srv = a.url ? { url: String(a.url).replace(/\/$/, ""), cerrar: async () =>
 const navegador = await lanzarChromium();
 const fallas = [];
 
-for (const [nombre, viewport, movil] of [["escritorio", { width: 1440, height: 900 }, false], ["movil", { width: 390, height: 844 }, true]]) {
+for (const [nombre, viewport, movil] of [["escritorio", { width: 1440, height: 900 }, false], ["tablet820", { width: 820, height: 1180 }, true], ["movil", { width: 390, height: 844 }, true]]) {
   const ctx = await navegador.newContext({ viewport, isMobile: movil, hasTouch: movil, deviceScaleFactor: movil ? 2 : 1 });
   const page = await ctx.newPage();
   await page.addInitScript(scriptInicial({ tema: "light" }));

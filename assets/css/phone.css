@@ -69,7 +69,7 @@
      el enlace en el borde de arriba, detrás de la franja. Con este margen lo
      deja debajo de la franja y de su difuminado (prueba `foco-visible.mjs`). */
   .secciones :is(a, button) {
-    scroll-margin-top: calc(44vh + 2.5rem);
+    scroll-margin-top: calc(var(--franja-alto, 44vh) + 2.5rem);
   }
 }
 
