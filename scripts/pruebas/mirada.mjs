@@ -102,7 +102,7 @@ async function probarCara(nombre, ruta, selector, tope) {
 try {
   // Tope: 7 dp del splash (1 dp = ancho del teléfono / 360) ≈ 7 % del diámetro del punto de 96 dp...
   await probarCara("splash", "/?escena=splash", ".ps-splash .ps-dot", (d) => d * 0.1);
-  await probarCara("espalda", "/?escena=splash&cara=espalda", ".phone-mascota-halo", (d) => d * 0.2);
+  await probarCara("espalda", "/?escena=splash&cara=espalda", ".phone-mascota-halo", (d) => d * 0.1);
 
   /* ---- coreografía: sin saltos, sin pisar el transform, termina de frente ---- */
   console.log("\n== coreografía (giro de 360°)");
@@ -123,6 +123,11 @@ try {
       window.__mira = r;
       return true;
     });
+    const mirando = await page.evaluate(() => {
+      const t = getComputedStyle(document.querySelector(".ps-splash .ps-dot")).translate;
+      return t === "none" ? 0 : Math.hypot(...t.split(" ").map(parseFloat));
+    });
+    ok(mirando > 2, `en reposo, con el cursor lejos, la mascota ya está mirando (${mirando.toFixed(1)} px)`);
     const antes = await page.evaluate(() => document.querySelector(".ps-dot-escala")?.style.transform ?? "");
     await ruedaHasta(page, 2200);
     for (let i = 0; i < 6; i++) {
