@@ -25,13 +25,19 @@ export const CABECERAS_CADDY = {
 };
 
 /*
-  `hide` de Caddy: el README documenta `.git README.md`. Aquí también se ocultan
-  lo que este repo agrega para pruebas y que el README marca como PENDIENTE de
-  Harold (scripts, package.json, package-lock.json): así las pruebas ven lo
-  mismo que verá el público cuando se aplique. Ocultar de más aquí no rompe
-  nada: ninguna página del sitio los usa.
+  `hide` de Caddy: MISMA lista que el bloque de Caddy del README (la regla `hide-readme` de
+  `validar` las compara). Caddy interpreta un patron sin separador de ruta como un NOMBRE que se
+  oculta en cualquier profundidad (archivo o carpeta, con todo su contenido), y admite comodines
+  (https://caddyserver.com/docs/caddyfile/directives/file_server#hide); la comparacion es
+  sensible a mayusculas. Aqui cada segmento de la ruta se compara con cada patron.
 */
-export const OCULTOS = [".git", "README.md", "scripts", "package.json", "package-lock.json", "node_modules"];
+export const HIDE_CADDY = [".git*", "README.md", "scripts", "package.json", "package-lock.json", "node_modules"];
+export const OCULTOS = HIDE_CADDY; // nombre anterior, por compatibilidad
+
+const aRegex = (patron) => new RegExp(`^${patron.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`);
+const REGEX_HIDE = HIDE_CADDY.map(aRegex);
+/** ¿Algun segmento de la ruta cae en el `hide` de Caddy? */
+export const estaOculto = (ruta) => ruta.split("/").filter(Boolean).some((seg) => REGEX_HIDE.some((r) => r.test(seg)));
 
 const TIPOS = {
   ".html": "text/html; charset=utf-8",
@@ -58,7 +64,7 @@ export function archivoDe(raiz, rutaUrl) {
   }
   if (decodificada.includes("\0")) return null;
   const partes = decodificada.split("/").filter(Boolean);
-  if (partes.some((p) => p === ".." || OCULTOS.includes(p))) return null;
+  if (partes.some((p) => p === ".." || estaOculto(p))) return null;
   const base = path.join(raiz, ...partes);
   if (!base.startsWith(raiz)) return null;
   // try_files {path} {path}/index.html {path}.html

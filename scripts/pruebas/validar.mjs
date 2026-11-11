@@ -2,7 +2,7 @@
 /*
   validar: comprobaciones rapidas y SIN navegador. Sale con 1 si alguna regla falla.
 
-  Reglas (id): html-validate, csp-estatica, csp-js, csp-readme, json-ld, sitemap, lastmod,
+  Reglas (id): html-validate, csp-estatica, csp-js, csp-readme, hide-readme, json-ld, sitemap, lastmod,
   meta, guias, faq-visible, portada, enlaces, cta-sin-href, voseo, dominio. Cada falla se imprime como `FALLA [regla] archivo:linea mensaje`.
 
   Fallos conocidos: `conocidos.json` lista reglas (opcionalmente acotadas con "contiene") que HOY
@@ -23,7 +23,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { parse } from "parse5";
 import { HtmlValidate } from "html-validate/node";
-import { RAIZ_SITIO, CABECERAS_CADDY, archivoDe, OCULTOS } from "./lib/servidor.mjs";
+import { RAIZ_SITIO, CABECERAS_CADDY, HIDE_CADDY, estaOculto, archivoDe } from "./lib/servidor.mjs";
 import { leerArgs, lista, salir } from "./lib/comun.mjs";
 
 const a = leerArgs();
@@ -66,7 +66,7 @@ const textosAtributos = (arbol) =>
 /* ---------- carga de paginas ---------- */
 function* htmls(dir) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (OCULTOS.includes(e.name)) continue;
+    if (estaOculto(e.name)) continue;
     const p = path.join(dir, e.name);
     if (e.isDirectory()) yield* htmls(p);
     else if (e.name.endsWith(".html")) yield p;
@@ -190,6 +190,28 @@ if (activa("csp-readme")) {
   const readme = fs.readFileSync(path.join(RAIZ_SITIO, "README.md"), "utf8");
   for (const [k, v] of Object.entries(CABECERAS_CADDY))
     if (!readme.includes(`${k} "${v}"`)) falla("csp-readme", "README.md", `la cabecera ${k} del servidor de pruebas (lib/servidor.mjs) ya no coincide con el bloque de Caddy del README`);
+}
+
+/* ---------- 2d. el `hide` del servidor de pruebas = el del README, y no oculta nada del sitio ---------- */
+if (activa("hide-readme")) {
+  const readme = fs.readFileSync(path.join(RAIZ_SITIO, "README.md"), "utf8");
+  const m = readme.match(/file_server \{\s*\n\s*hide ([^\n]+)/);
+  const enReadme = m ? m[1].trim().split(/\s+/) : null;
+  if (!enReadme) falla("hide-readme", "README.md", "no encuentro `file_server { hide ... }` en el bloque de Caddy del README");
+  else if (enReadme.join(" ") !== HIDE_CADDY.join(" "))
+    falla("hide-readme", "README.md", `el \`hide\` del README (${enReadme.join(" ")}) no coincide con HIDE_CADDY de lib/servidor.mjs (${HIDE_CADDY.join(" ")})`);
+  // Lo que SI debe servirse (y nunca ocultarse, ni por un patron de nombre en cualquier profundidad).
+  const servidos = ["google9633e8d6c904333e.html", "72d573f4443baf5a20fc8627fb495555.txt", "robots.txt", "sitemap.xml", "404.html", "favicon.ico", ".well-known/security.txt"];
+  const recorrerSitio = (dir) =>
+    fs.readdirSync(path.join(RAIZ_SITIO, dir), { withFileTypes: true }).flatMap((e) => {
+      const r = path.posix.join(dir, e.name);
+      return e.isDirectory() ? recorrerSitio(r) : [r];
+    });
+  for (const f of [...servidos, ...recorrerSitio("assets")])
+    if (estaOculto(f)) falla("hide-readme", f, "el \`hide\` de Caddy ocultaria un archivo que debe servirse");
+  // Lo que NO debe servirse.
+  for (const f of ["README.md", ".gitignore", ".git/config", ".github/workflows/x.yml", "scripts/pruebas/package.json", "scripts/pruebas/package-lock.json", "scripts/dominio.py", "node_modules/x.js"])
+    if (!estaOculto(f)) falla("hide-readme", f, "el \`hide\` de Caddy deberia ocultar esta ruta y no lo hace");
 }
 
 /* ---------- 3. JSON-LD ---------- */
@@ -776,7 +798,7 @@ else {
         ? `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ahora hay ${c.encontrados} de ${c.cuantos}: baja "cuantos" en scripts/pruebas/conocidos.json (issue #${c.issue})`
         : `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ya no falla: borra su entrada de scripts/pruebas/conocidos.json (issue #${c.issue})`,
     );
-  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "guias", "faq-visible", "portada", "cta-sin-href", "voseo", "dominio"].filter(activa))];
+  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "hide-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "guias", "faq-visible", "portada", "cta-sin-href", "voseo", "dominio"].filter(activa))];
   console.log("\nResumen por regla:");
   for (const r of reglas) {
     const e = errores.filter((h) => h.regla === r).length;
