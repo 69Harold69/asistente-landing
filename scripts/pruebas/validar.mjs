@@ -3,7 +3,7 @@
   validar: comprobaciones rapidas y SIN navegador. Sale con 1 si alguna regla falla.
 
   Reglas (id): html-validate, csp-estatica, csp-js, csp-readme, json-ld, sitemap, lastmod,
-  meta, enlaces, cta-sin-href, voseo. Cada falla se imprime como `FALLA [regla] archivo:linea mensaje`.
+  meta, enlaces, cta-sin-href, voseo, dominio. Cada falla se imprime como `FALLA [regla] archivo:linea mensaje`.
 
   Fallos conocidos: `conocidos.json` lista reglas (opcionalmente acotadas con "contiene") que HOY
   fallan y tienen issue. Se imprimen como XFAIL y no rompen la salida. Si una regla conocida
@@ -29,7 +29,8 @@ import { leerArgs, lista, salir } from "./lib/comun.mjs";
 const a = leerArgs();
 if (a.ayuda || a.help) salir(0, fs.readFileSync(new URL(import.meta.url), "utf8").split("*/")[0].replace("#!/usr/bin/env node\n/*", "").trim());
 
-const ORIGEN = "https://yaruki.hjgr.dev";
+// El dominio vive en UN solo lugar: scripts/sitio.json (lo aplica scripts/dominio.py).
+const ORIGEN = JSON.parse(fs.readFileSync(path.join(RAIZ_SITIO, "scripts/sitio.json"), "utf8")).origen;
 const IDIOMA = "es-MX";
 const solo = a.solo ? new Set(lista(a.solo)) : null;
 const activa = (id) => !solo || solo.has(id);
@@ -243,6 +244,38 @@ if (activa("json-ld")) {
       validarNodo(datos["@graph"] ?? datos, d);
     }
   }
+}
+
+/* ---------- 3b. dominio: ninguna URL absoluta propia fuera de scripts/sitio.json ---------- */
+// Hosts externos que pueden aparecer a proposito en claves "propias" del JSON-LD (mismo criterio que scripts/dominio.py).
+const EXTERNOS_LD = new Set(["schema.org", "github.com", "play.google.com", "groups.google.com", "www.linkedin.com", "linkedin.com"]);
+const CLAVES_PROPIAS_LD = new Set(["@id", "url", "image", "logo", "item", "mainEntityOfPage"]);
+const hostDe = (u) => u.match(/^https?:\/\/([^/?#:]+)/)?.[1];
+if (activa("dominio")) {
+  if (!/^https:\/\/[a-z0-9.-]+\.[a-z]{2,}(:\d+)?$/.test(ORIGEN)) falla("dominio", "scripts/sitio.json", `origen inválido "${ORIGEN}" (https://dominio, minúsculas, sin barra final)`);
+  const propia = (donde, u) => {
+    if (u && /^https?:\/\//i.test(u) && u !== ORIGEN && !u.startsWith(ORIGEN + "/")) falla("dominio", donde, `URL absoluta fuera del origen configurado (${ORIGEN}): ${u}. Corre: python3 scripts/dominio.py`);
+  };
+  for (const p of paginas) {
+    for (const l of etiquetas(p.arbol, "link")) if (["canonical", "alternate"].includes(attr(l, "rel"))) propia(`${p.r}:${linea(l)}`, attr(l, "href"));
+    for (const m of etiquetas(p.arbol, "meta")) {
+      const k = attr(m, "property") ?? attr(m, "name");
+      if (["og:url", "og:image", "og:image:url", "og:image:secure_url", "twitter:url", "twitter:image"].includes(k)) propia(`${p.r}:${linea(m)}`, attr(m, "content"));
+    }
+    for (const n of etiquetas(p.arbol, "script").filter((s) => attr(s, "type") === "application/ld+json")) {
+      let datos;
+      try { datos = JSON.parse(hijos(n).map((h) => h.value ?? "").join("")); } catch { continue; } // lo reporta json-ld
+      const recorrerLd = (v, clave) => {
+        if (Array.isArray(v)) v.forEach((x) => recorrerLd(x, clave));
+        else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) recorrerLd(x, k);
+        else if (typeof v === "string" && /^https?:\/\//.test(v) && CLAVES_PROPIAS_LD.has(clave) && !EXTERNOS_LD.has(hostDe(v))) propia(`${p.r}:${linea(n)} (JSON-LD ${clave})`, v);
+      };
+      recorrerLd(datos, "");
+    }
+  }
+  const xmlDominio = fs.readFileSync(path.join(RAIZ_SITIO, "sitemap.xml"), "utf8");
+  for (const m of xmlDominio.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>|<xhtml:link\b[^>]*\bhref="([^"]+)"/g)) propia("sitemap.xml", m[1] ?? m[2]);
+  for (const m of fs.readFileSync(path.join(RAIZ_SITIO, "robots.txt"), "utf8").matchAll(/^(?:sitemap|host):\s*(\S+)/gim)) propia("robots.txt", m[1]);
 }
 
 /* ---------- 4. sitemap y lastmod ---------- */
@@ -499,7 +532,7 @@ else {
         ? `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ahora hay ${c.encontrados} de ${c.cuantos}: baja "cuantos" en scripts/pruebas/conocidos.json (issue #${c.issue})`
         : `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ya no falla: borra su entrada de scripts/pruebas/conocidos.json (issue #${c.issue})`,
     );
-  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "cta-sin-href", "voseo"].filter(activa))];
+  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "cta-sin-href", "voseo", "dominio"].filter(activa))];
   console.log("\nResumen por regla:");
   for (const r of reglas) {
     const e = errores.filter((h) => h.regla === r).length;
