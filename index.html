@@ -81,17 +81,17 @@
           {
             "@type": "Question",
             "name": "¿Es gratis?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Hoy sí: durante la beta no se cobra nada y Yaruki no tiene anuncios. En el futuro algunas funciones, como las llamadas o un mayor uso de los mensajes de voz, podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes. Los mensajes de voz son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Hoy sí: durante la beta no se cobra nada y Yaruki no tiene anuncios. Los mensajes de voz son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope. Como dicen los Términos, en el futuro algunas funciones (por ejemplo, las llamadas o un mayor uso de los mensajes de voz) podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes." }
           },
           {
             "@type": "Question",
             "name": "¿Cómo cuidan mis datos?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Todo viaja cifrado (HTTPS) y, en la base de datos, ciframos en reposo lo más sensible: tus notas, la descripción de tus tareas y los mensajes del chat. No vendemos tus datos, no hay anuncios ni analítica de terceros, y tus conversaciones se borran a los 30 días. El detalle está en la política de privacidad." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Todo viaja cifrado (HTTPS) y en la base de datos guardamos cifrado lo más sensible, como tus notas, la descripción de tus tareas y los mensajes del chat. No vendemos tus datos, no hay anuncios ni analítica de terceros, y el historial de tus chats se borra a los 30 días. El detalle está en la política de privacidad." }
           },
           {
             "@type": "Question",
             "name": "¿Funciona por voz?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Sí, con mensajes de voz: son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope. La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud. Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. Cómo usarla." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí, con mensajes de voz: son parte del plan gratuito, hasta 5 al día, y en la prueba cerrada no hay tope. La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud; Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. Más en la guía de recordatorios por voz." }
           },
           {
             "@type": "Question",
@@ -101,7 +101,7 @@
           {
             "@type": "Question",
             "name": "¿Qué hace la IA con lo que le digo?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Tu mensaje pasa por el servidor de Yaruki, que lo envía a Gemini, el modelo de IA de Google, en Google Cloud Vertex AI, solo para interpretarlo y responderte; nunca se envían tu nombre ni tu correo. Según la documentación pública de Google Cloud, Vertex AI no usa lo que le envían sus clientes para entrenar sus modelos, y nosotros no damos esa autorización. Como la IA puede equivocarse, antes de editar, cambiar de fecha, posponer, agregar un ítem a una lista, convertir o archivar algo que ya tenías, te pide confirmación; crear algo nuevo o marcar una tarea como hecha suele aplicarse de una vez, y la respuesta te dice qué hizo." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Tu mensaje pasa por el servidor de Yaruki, que lo envía a Gemini (la IA de Google, en Google Cloud Vertex AI) solo para interpretarlo y responderte; nunca se envían tu nombre ni tu correo. Según la documentación pública de Google Cloud, Vertex AI no usa lo que le envían sus clientes para entrenar sus modelos salvo autorización expresa, y nosotros no la damos. Como la IA puede equivocarse, antes de editar, cambiar de fecha, posponer, agregar un ítem a una lista, convertir o archivar algo que ya tenías te pide confirmación; crear algo nuevo o marcar una tarea como hecha suele aplicarse de una vez." }
           },
           {
             "@type": "Question",
@@ -111,7 +111,7 @@
           {
             "@type": "Question",
             "name": "¿Puedo borrar mi cuenta?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Sí, cuando quieras: desde la app (Perfil → Eliminar cuenta) o escribiendo a privacidad@hjgr.dev, aunque no tengas la app instalada. Tu cuenta se desactiva de inmediato y tienes 30 días para recuperarla iniciando sesión de nuevo; pasado ese plazo se elimina de forma definitiva y automática, junto con todo tu contenido. Si lo pides por correo, te respondemos en un máximo de 20 días y la hacemos efectiva dentro de los 15 siguientes. Las copias de seguridad del servidor caducan en un máximo de 30 días. Todos los pasos." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí, cuando quieras: desde la app (Perfil → Eliminar cuenta) o escribiendo a privacidad@hjgr.dev, aunque no tengas la app instalada. Tu cuenta se desactiva de inmediato y tienes 30 días para recuperarla iniciando sesión; después se elimina de forma definitiva y automática con todo tu contenido, y las copias de seguridad del servidor caducan en un máximo de 30 días más. Los plazos si lo pides por correo y todos los pasos están en Eliminar tu cuenta." }
           }
         ]
       }
@@ -377,19 +377,19 @@
           <details class="pregunta">
             <summary>¿Es gratis?</summary>
             <div class="pregunta-respuesta">
-              <p>Hoy sí: durante la beta no se cobra nada y Yaruki no tiene anuncios. En el futuro algunas funciones, como las llamadas o un mayor uso de los mensajes de voz, podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes. Los mensajes de voz son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope.</p>
+              <p>Hoy sí: durante la beta no se cobra nada y Yaruki no tiene anuncios. Los mensajes de voz son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope. Como dicen los <a href="/terminos/">Términos</a>, en el futuro algunas funciones (por ejemplo, las llamadas o un mayor uso de los mensajes de voz) podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes.</p>
             </div>
           </details>
           <details class="pregunta">
             <summary>¿Cómo cuidan mis datos?</summary>
             <div class="pregunta-respuesta">
-              <p>Todo viaja cifrado (HTTPS) y, en la base de datos, ciframos en reposo lo más sensible: tus notas, la descripción de tus tareas y los mensajes del chat. No vendemos tus datos, no hay anuncios ni analítica de terceros, y tus conversaciones se borran a los 30 días. El detalle está en la <a href="/privacidad/">política de privacidad</a>.</p>
+              <p>Todo viaja cifrado (HTTPS) y en la base de datos guardamos cifrado lo más sensible, como tus notas, la descripción de tus tareas y los mensajes del chat. No vendemos tus datos, no hay anuncios ni analítica de terceros, y el historial de tus chats se borra a los 30 días. El detalle está en la <a href="/privacidad/">política de privacidad</a>.</p>
             </div>
           </details>
           <details class="pregunta">
             <summary>¿Funciona por voz?</summary>
             <div class="pregunta-respuesta">
-              <p>Sí, con mensajes de voz: son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope. La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud. Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. <a href="/recordatorios-por-voz/">Cómo usarla</a>.</p>
+              <p>Sí, con mensajes de voz: son parte del plan gratuito, hasta 5 al día, y en la prueba cerrada no hay tope. La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud; Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. Más en la guía de <a href="/recordatorios-por-voz/">recordatorios por voz</a>.</p>
             </div>
           </details>
           <details class="pregunta">
@@ -401,7 +401,7 @@
           <details class="pregunta">
             <summary>¿Qué hace la IA con lo que le digo?</summary>
             <div class="pregunta-respuesta">
-              <p>Tu mensaje pasa por el servidor de Yaruki, que lo envía a Gemini, el modelo de IA de Google, en Google Cloud Vertex AI, solo para interpretarlo y responderte; nunca se envían tu nombre ni tu correo. Según la documentación pública de Google Cloud, Vertex AI no usa lo que le envían sus clientes para entrenar sus modelos, y nosotros no damos esa autorización. Como la IA puede equivocarse, antes de editar, cambiar de fecha, posponer, agregar un ítem a una lista, convertir o archivar algo que ya tenías, te pide confirmación; crear algo nuevo o marcar una tarea como hecha suele aplicarse de una vez, y la respuesta te dice qué hizo.</p>
+              <p>Tu mensaje pasa por el servidor de Yaruki, que lo envía a Gemini (la IA de Google, en Google Cloud Vertex AI) solo para interpretarlo y responderte; nunca se envían tu nombre ni tu correo. Según la documentación pública de Google Cloud, Vertex AI no usa lo que le envían sus clientes para entrenar sus modelos salvo autorización expresa, y nosotros no la damos. Como la IA puede equivocarse, antes de editar, cambiar de fecha, posponer, agregar un ítem a una lista, convertir o archivar algo que ya tenías te pide confirmación; crear algo nuevo o marcar una tarea como hecha suele aplicarse de una vez.</p>
             </div>
           </details>
           <details class="pregunta">
@@ -413,7 +413,7 @@
           <details class="pregunta">
             <summary>¿Puedo borrar mi cuenta?</summary>
             <div class="pregunta-respuesta">
-              <p>Sí, cuando quieras: desde la app (Perfil → Eliminar cuenta) o escribiendo a privacidad@hjgr.dev, aunque no tengas la app instalada. Tu cuenta se desactiva de inmediato y tienes 30 días para recuperarla iniciando sesión de nuevo; pasado ese plazo se elimina de forma definitiva y automática, junto con todo tu contenido. Si lo pides por correo, te respondemos en un máximo de 20 días y la hacemos efectiva dentro de los 15 siguientes. Las copias de seguridad del servidor caducan en un máximo de 30 días. <a href="/eliminar-cuenta/">Todos los pasos</a>.</p>
+              <p>Sí, cuando quieras: desde la app (Perfil → Eliminar cuenta) o escribiendo a privacidad@hjgr.dev, aunque no tengas la app instalada. Tu cuenta se desactiva de inmediato y tienes 30 días para recuperarla iniciando sesión; después se elimina de forma definitiva y automática con todo tu contenido, y las copias de seguridad del servidor caducan en un máximo de 30 días más. Los plazos si lo pides por correo y todos los pasos están en <a href="/eliminar-cuenta/">Eliminar tu cuenta</a>.</p>
             </div>
           </details>
         </div>
