@@ -19,7 +19,7 @@ RAIZ = pathlib.Path(__file__).resolve().parent.parent.parent
 IGNORAR = shutil.ignore_patterns(".git", "node_modules")
 ORIGEN = json.loads((RAIZ / "scripts/sitio.json").read_text(encoding="utf-8"))["origen"]
 REGLAS = "json-ld,meta,guias,faq-visible,sitemap,enlaces"
-GUIAS_ESPERADAS = {"organizar-tareas-con-ia"}  # la segunda guía la agrega su propia PR
+GUIAS_ESPERADAS = {"organizar-tareas-con-ia", "recordatorios-por-voz"}
 
 GUIA = """<!doctype html>
 <html lang="es-MX">
