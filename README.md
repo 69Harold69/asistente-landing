@@ -805,7 +805,7 @@ node capturas.mjs --salida DIR           # claro/oscuro × 1440×900, 820×1180,
 node tactil.mjs  --salida DIR            # gestos táctiles reales (Pixel 7, iPhone 15), video
 node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-final/vigente del monorepo
 node rendimiento.mjs                     # presupuesto de la portada: LCP texto del hero, CLS, TBT, sin scripts en el <head>, interacciones ≤ 200 ms con CPU ×4
-node compresion.mjs                      # el servidor de pruebas comprime como Caddy (`encode gzip zstd`)
+node compresion.mjs                      # el servidor de pruebas comprime como Caddy (`encode gzip zstd`: Chrome recibe gzip)
 node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + pruebas python + capturas + lighthouse (+ tactil)
 python3 -I test_portada.py               # defectos sembrados de la portada (pasos, preguntas, FAQPage, promesas absolutas)
 ```
@@ -849,7 +849,7 @@ Qué vigila cada prueba (todas corren en `todo.mjs`):
 
 | Prueba | Vigila |
 |---|---|
-| `lighthouse.mjs --comparar .pm/landing-2026-11/lighthouse-final/vigente` | Nota por categoría (≥ 90 y sin retroceso; el rendimiento admite 2 puntos de ruido). Meta de la portada: móvil ≥ 97 con LCP ≤ 1.7 s en todas las corridas, escritorio ≥ 98, el resto 100, CLS 0. |
+| `lighthouse.mjs --comparar .pm/landing-2026-11/lighthouse-final/vigente` | Nota por categoría (≥ 90 y sin retroceso; el rendimiento admite 2 puntos de ruido). Meta de la portada: móvil ≥ 97 (mediana), escritorio ≥ 98, el resto 100, CLS 0. El LCP móvil simulado todavía sale ~2.3 s en ~1 de cada 5 corridas (ver abajo): juzga la mediana, no una corrida. |
 | `rendimiento.mjs` | Arranque de la portada en móvil con CPU ×4 y 4G lenta: el LCP es texto del hero (no una imagen ni la malla) y llega en ≤ 2 s; CLS 0.000; TBT ≤ 250 ms (medido con CPU ×4: el de Lighthouse es otra escala); **ningún `<script src>` clásico en el `<head>`** y GSAP no se pide antes del primer pintado. Interacción (Event Timing, el INP de laboratorio): toggle de tema, abrir/cerrar un `<details>`, punto de la navegación, mouse sobre el hero con la malla; cada una ≤ 200 ms con CPU ×4 (hoy la peor, el toggle de tema, ronda 150–180 ms). |
 | `cls.mjs` | CLS ≤ 0.02 en la portada a 360, 390, 412, 820, 1024 y 1440 px con las fuentes 1.5 s tarde, y el reacomodo del hero en el barrido de 320 a 480 px. |
 | `compresion.mjs` | Que el servidor de pruebas comprima como Caddy; sin esto los números del laboratorio no representan a producción. |
@@ -863,8 +863,15 @@ rápido la ejecución a veces cae en la MISMA tarea que el primer pintado: enton
 suma sus descargas (+0.5–0.75 s). En el navegador real el primer pintado es igual de rápido en las dos modalidades
 (`rendimiento.mjs`: 0.9–1.0 s con CPU ×4 y 4G lenta, ambos casos); es un artefacto de la simulación, pero distorsiona la
 nota y el TBT. Se corrigió inyectando GSAP desde `main.js` (que solo corre cuando termina su cascada de imports, ya
-pintado el hero): 10 de 10 corridas simuladas estables en lugar de ~50 % bimodales. Costo: el teléfono monta su primera
+pintado el hero): el FCP simulado ya no se infla (0 de 14 corridas, contra 3 de 10 en `main`) y el TBT de Lighthouse baja
+(mediana ~15 ms, contra colas de 75–123 ms en `main`). **No elimina toda la bimodalidad:** la auditoría (servidor que negocia
+como Caddy, 10 + 10 corridas intercaladas) vio LCP simulado de 2.25–2.56 s con FCP de 1.05 s en la rama (3 de 14 corridas)
+y también en `main` (1 de 10); el candidato es el mismo mecanismo con la cascada de módulos de `main.js` (prioridad High), no GSAP. En el
+navegador real tampoco cambia el LCP. Es, sobre todo, una mejora de la medición (nota y TBT de Lighthouse), no de lo que ve
+el visitante. Costo: el teléfono monta su primera
 escena ~0.2 s más tarde en el caso extremo (CPU ×4, 4G lenta), porque GSAP ya no se ejecuta mientras esperan los módulos.
+En escritorio eso alarga lo mismo un salto que ya existía en `main`: antes de que `stage.js` arranque, el teléfono se pinta
+más a la izquierda (encima del final del titular) y luego salta a su columna (~1.3 s en `main` y ~1.5 s aquí con CPU ×4).
 
 **Segundo factor: bytes de CSS bloqueante.** Sin compresión, 6 KB más de CSS empujaban el LCP un paso de red (+0.15 s) y, junto
 con la carrera anterior, la nota de 97 a 93. Con compresión la ventana desaparece: el CSS bloqueante de la portada
