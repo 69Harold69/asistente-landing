@@ -376,6 +376,93 @@ referencia de `ofl/baloo2/upstream_info.md`). Manrope: `aaronbell/manrope` en
     <https://www.piranirisk.com/es/hub-regulatorio/lfpdppp-ley-proteccion-datos-mexico>
   - Plazo ARCO (sección 9 de la política y `/eliminar-cuenta`): **artículo 31 de la LFPDPPP 2025**, indicado por el dueño el 2026-10-04: máximo 20 días para comunicar la respuesta desde que se recibe la solicitud y 15 días para hacerla efectiva, ampliables una sola vez por un periodo igual. Se escribe como "días", sin "hábiles".
 
+## Mudanza a dominio propio
+
+El dominio vive en **un solo lugar**: `scripts/sitio.json` (`{"origen": "https://yaruki.hjgr.dev"}`).
+`scripts/dominio.py` (solo biblioteca estándar) reescribe a partir de ahí todas las URLs
+absolutas, de forma idempotente, sin build:
+
+```bash
+python3 scripts/dominio.py --check                    # no escribe; sale ≠ 0 si algo no coincide
+python3 scripts/dominio.py --origen https://yaruki.app  # fija sitio.json y reescribe
+python3 scripts/dominio.py                            # reescribe al origen de sitio.json
+```
+
+Reescribe: `canonical` y `alternate`, `og:url`, `og:image`, `twitter:image`/`twitter:url`, las
+cadenas URL propias del JSON-LD (`@id`, `url`, `image`, `logo`, `item`, `mainEntityOfPage`; los
+hosts externos conocidos, como GitHub o Play, se respetan), `sitemap.xml` y `robots.txt`.
+`validar` lee `sitio.json` (no tiene el dominio escrito) y su regla `dominio` falla si queda una
+URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus pruebas
+(`scripts/pruebas/test_dominio.py`, que prueban el viaje de ida y vuelta byte a byte).
+
+**Excepciones deliberadas** (el dominio viejo puede seguir apareciendo ahí):
+- Este README (documenta la mudanza y el despliegue).
+- `scripts/pruebas/test_dominio.py` (lo usa como dato de prueba).
+- `privacidad@hjgr.dev`: es el **correo** de contacto, no la URL del sitio. Sigue igual mientras
+  el buzón siga en `hjgr.dev`; si algún día se muda, es un buscar-y-reemplazar aparte en las 4 páginas
+  (los textos legales no nombran el dominio del sitio, solo ese correo).
+- `dev.hjgr.yaruki` (identificador del paquete en Play) y `asistente.hjgr.dev` (la API): no son el sitio.
+
+### Pasos para Harold
+
+1. **Comprar el dominio** (`yaruki.app` o `.mx`) y ponerlo en Cloudflare. DNS: registro `A` de la raíz
+   (y de `www`) a `159.223.135.90`, **DNS only** (nube gris), igual que en «Despliegue».
+2. **Caddy: bloque nuevo.** Copia el bloque de `yaruki.hjgr.dev` de «Despliegue §3» (con el mismo `hide`,
+   que debe incluir `scripts package.json package-lock.json`) cambiando solo el encabezado por
+   `yaruki.app { ... }`, y agrega `www.yaruki.app { redir https://yaruki.app{uri} permanent }`.
+   El mismo clon `/var/www/asistente-landing` sirve a los dos.
+3. **En el repo** (PR normal): `python3 scripts/dominio.py --origen https://yaruki.app`, luego
+   `cd scripts/pruebas && node validar.mjs` (debe dar 0), revisar `git diff` y, en `main`, `python3 scripts/versionar.py`.
+   Actualiza en el README el `yaruki.hjgr.dev` de los comandos de verificación. Despliega con `git pull`.
+4. **Redirecciones 301 del dominio viejo, ruta por ruta.** Cambia el bloque de `yaruki.hjgr.dev` por:
+
+   ```caddyfile
+   yaruki.hjgr.dev {
+   	root * /var/www/asistente-landing
+
+   	# El archivo de verificación de Search Console sigue respondiendo 200 en el dominio viejo
+   	# (Google no sigue redirecciones al verificar), para poder usar «Cambio de dirección».
+   	@verificacion path /google9633e8d6c904333e.html
+   	handle @verificacion {
+   		file_server
+   	}
+
+   	handle {
+   		redir https://yaruki.app{uri} permanent
+   	}
+   }
+   ```
+
+   `{uri}` conserva ruta y query (`/privacidad/` → `https://yaruki.app/privacidad/`); `permanent` es un 301.
+   Comprueba: `curl -sI https://yaruki.hjgr.dev/privacidad/ | head -3` (301 y `location: https://yaruki.app/privacidad/`),
+   y lo mismo con `/`, `/terminos/`, `/eliminar-cuenta/`, `/sitemap.xml` y una URL inexistente.
+5. **Search Console.**
+   - Da de alta el dominio nuevo y verifícalo. `google9633e8d6c904333e.html` **no se toca**: se queda en el repo
+     (y en el sitio viejo, ver paso 4). Ese archivo verifica una propiedad por prefijo de URL del dominio donde
+     responde; como el repo ahora también lo sirve en `yaruki.app`, puede verificar la propiedad nueva, pero lo más sólido es
+     una propiedad de **dominio** con registro TXT en DNS, que cubre `www` y subdominios. La propiedad vieja debe seguir verificada.
+   - Con ambas verificadas, en la propiedad **vieja**: Configuración → **Cambio de dirección** → elige la nueva.
+     (Solo aplica al pasar de un dominio o subdominio a otro, que es este caso.)
+   - Envía el sitemap nuevo (`https://yaruki.app/sitemap.xml`) y pide indexar la portada.
+   - Bing Webmaster Tools: da de alta el dominio nuevo (puedes importarlo de Search Console).
+   - Orden que recomienda Google: redirecciones, revisar canonical/robots, probarlas, Cambio de dirección, mantener
+     las redirecciones y enviar el sitemap nuevo.
+6. **Cuánto mantener el 301:** Google dice «Keep the redirects for as long as possible» y, en general, **al menos
+   un año**, pudiendo ser indefinido. Plan: mantenerlo indefinidamente (cuesta nada). Fuente:
+   <https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes> (consultada el 2026-11-10).
+7. **App Links / `ANDROID_APP_SHA256`: no intervienen.** Verificado en `asistente-android` `origin/main`
+   (`app/src/prod/AndroidManifest.xml`, `MainActivity.kt`) y en `.well-known`: los App Links usan el dominio de la **API**
+   (`asistente.hjgr.dev`, que sirve `/.well-known/assetlinks.json`), no el de la landing. `/.well-known/` de la landing no se toca.
+8. **App Android:** `app/src/main/res/values/enlaces_legales.xml` tiene escritas las URLs legales de
+   `yaruki.hjgr.dev`. Siguen funcionando mientras el 301 exista, pero conviene cambiarlas en la siguiente versión
+   (y su prueba `AbrirEnlaceExternoTest`). Backend: solo un comentario en `config/legal.php` y los runbooks.
+9. **`BETA_URL`:** es el Google Group de testers; no depende del dominio. No cambia.
+10. **Política de privacidad y Términos:** no nombran el dominio del sitio (solo el correo): no requieren texto nuevo.
+11. **Ficha de Play Console:** actualiza la **URL de la política de privacidad** (Contenido de la app), el sitio web
+    del desarrollador, el enlace de eliminación de cuenta del formulario de Seguridad de los datos y el correo/URL de
+    contacto si los muestra. El enlace viejo seguirá redirigiendo.
+12. **Backlinks:** actualiza el perfil de GitHub, la descripción del repo y lo que enlace al dominio viejo.
+
 ## Despliegue (NO ejecutado — sólo instrucciones para cuando el dueño lo apruebe)
 
 ### 1. DNS en Cloudflare
