@@ -40,6 +40,8 @@ const pasos = [
   ["dominio-pruebas", "python3", ["-I", "test_dominio.py"]],
   ["jsonld-pruebas", "python3", ["-I", "test_jsonld.py"]],
   ["indexnow-pruebas", "python3", ["-I", "test_indexnow.py"]],
+  // Reglas de las páginas-guía (Article, FAQ visible, sitemap): defectos sembrados que validar debe atrapar (#50).
+  ["guias-pruebas", "python3", ["-I", "test_guias.py"]],
   ["capturas", process.execPath, ["capturas.mjs", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
   ["lighthouse", process.execPath, ["lighthouse.mjs", "--salida", path.join(salida, "lighthouse"), ...paginas, ...(a.corridas ? ["--corridas", String(a.corridas)] : []), ...(a.comparar ? ["--comparar", path.resolve(String(a.comparar).replace(/^~(?=$|\/)/, os.homedir()))] : [])]],
 ];
