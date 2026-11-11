@@ -9,7 +9,8 @@
     - con prefers-reduced-motion: se dibuja una vez, no anima ni reacciona, y reacciona al cambio en vivo;
     - sin JavaScript no hay canvas ni hueco (el hero se ve igual);
     - costo por cuadro (< 4 ms en 1440×900) y sin tareas largas con el cursor moviéndose;
-    - contraste AA del texto del hero contra el peor fondo posible de la malla (análisis con los tokens);
+    - contraste AA (4.5, o 3 en texto grande) de cada bloque de texto del hero sobre la malla, medido en píxeles
+      renderizados con el cursor real barriendo alrededor de cada bloque (peor píxel, claro y oscuro);
     - consola limpia (sin console.error, pageerror ni violaciones de CSP).
   Uso: node malla.mjs [--url http://...] [--salida DIR]   (sale con 1 si algo falla)
 */
@@ -258,47 +259,112 @@ try {
     await ctx.close();
   }
 
-  /* ---- 9. contraste AA del texto del hero contra el peor fondo de la malla ---- */
-  console.log("\n== contraste del hero (peor caso de la malla, con los tokens)");
+  /* ---- 9. contraste AA del texto del hero sobre la malla, medido en PÍXELES RENDERIZADOS ----
+     Se oculta el texto del hero (CSSOM, la CSP lo permite) para ver el fondo real bajo cada bloque, se barre el
+     cursor real alrededor de cada bloque (la malla queda encendida a distintas intensidades, también intermedias:
+     ahí el color va a medio camino y la opacidad es alta, el peor caso) y se toma el PEOR píxel de fondo dentro de
+     las cajas de línea del bloque. Mínimo WCAG AA: 4.5 en texto normal y 3 en texto grande (>= 24 px, o >= 18.66 px
+     en negrita). Sin excepciones: ni el pico encendido ni el tema oscuro. */
+  console.log("\n== contraste del hero sobre la malla (píxeles reales, peor caso con el cursor barriendo)");
   {
-    const { ctx, page } = await abrir({ tema: "light" });
+    const BLOQUES = [
+      ["lema", ".hero-significado"], ["titular", "#titular"], ["subtítulo", ".subtitulo-hero"],
+      ["botón beta", ".cta-item:nth-child(1) .button"], ["chip beta", ".cta-item:nth-child(1) .chip"],
+      ["botón App Store", ".cta-item:nth-child(2) .button"], ["chip App Store", ".cta-item:nth-child(2) .chip"],
+      ["nota del CTA", ".cta-nota"], ["«Desliza para descubrir»", ".pista-scroll"],
+    ];
+    const analizador = await navegador.newPage();
     for (const tema of ["light", "dark"]) {
-      await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), tema);
-      await dormir(200);
-      const t = await page.evaluate(() => {
-        const cs = getComputedStyle(document.documentElement);
-        const g = (n) => cs.getPropertyValue(n).trim();
-        return {
-          bg: g("--color-bg"), texto: g("--color-text"), sec: g("--color-text-secondary"),
-          reposo: g("--color-border-card"), activo: g("--color-accent"),
-          aReposo: Number(g("--malla-linea-reposo")), aActiva: Number(g("--malla-linea-activa")),
-          pReposo: Number(g("--malla-punto-reposo")), pActivo: Number(g("--malla-punto-activo")),
-        };
+      const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: tema, deviceScaleFactor: 2 });
+      const page = await ctx.newPage();
+      guardia.instalar(page, `malla contraste ${tema}`);
+      await page.addInitScript(scriptInicial({ tema }));
+      await page.goto(srv.url + "/", { waitUntil: "load" });
+      await esperarCarga(page, { portada: true });
+      await dormir(1200);
+      const bloques = await page.evaluate((B) => {
+        const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
+        return B.map(([n, s]) => {
+          const el = document.querySelector(s);
+          if (!el) return { n, falta: true };
+          const cs = getComputedStyle(el);
+          const rg = document.createRange();
+          rg.selectNodeContents(el);
+          const rects = [...rg.getClientRects()].filter((r) => r.width > 2 && r.height > 2).map((r) => [r.left, r.top, r.width, r.height]);
+          const px = parseFloat(cs.fontSize), w = Number(cs.fontWeight);
+          return { n, color: rgb(cs.color), rects, grande: px >= 24 || (px >= 18.66 && w >= 700) };
+        });
+      }, BLOQUES);
+      await page.evaluate(() => {
+        const h = document.styleSheets[document.styleSheets.length - 1];
+        h.insertRule("#hero, #hero * { color: transparent !important; text-shadow: none !important; }", h.cssRules.length);
+        h.insertRule("#hero svg { stroke: transparent !important; }", h.cssRules.length);
       });
-      const hex = (h) => (h.startsWith("#") ? [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)) : h.match(/\d+/g).slice(0, 3).map(Number));
-      const lum = ([r, g, b]) => {
-        const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
-        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
-      };
-      const mezcla = (f, b, al) => f.map((v, i) => v * al + b[i] * (1 - al));
-      const cr = (x, y) => (Math.max(lum(x), lum(y)) + 0.05) / (Math.min(lum(x), lum(y)) + 0.05);
-      const bg = hex(t.bg);
-      // Peor caso: línea activa (acento) a su máxima opacidad y punto activo, apilados (cruce de líneas + punto).
-      const peor = mezcla(hex(t.activo), mezcla(hex(t.activo), bg, Math.max(t.aActiva, 0)), Math.max(t.pActivo, 0));
-      const reposo = mezcla(hex(t.reposo), mezcla(hex(t.reposo), bg, t.aReposo), t.pReposo); // punto sobre línea
-      for (const [nombre, col] of [["texto", t.texto], ["secundario", t.sec]]) {
-        const base = cr(hex(col), bg);
-        const cPeor = cr(hex(col), peor);
-        const cRep = cr(hex(col), reposo);
-        console.log(`   ${tema} ${nombre}: base ${base.toFixed(2)}, peor activo ${cPeor.toFixed(2)}, reposo ${cRep.toFixed(2)}`);
-        // Reposo: AA (4.5) siempre. Pico encendido bajo el cursor: AA para el texto principal y, en el secundario,
-        // AA en claro y >= 3 en oscuro (un punto de <= 4 px encendido solo bajo el cursor; ver la PR).
-        const minPico = nombre === "texto" || tema === "light" ? 4.5 : 3;
-        ok(cRep >= 4.5, `${tema} ${nombre}: contraste en reposo >= 4.5 (${cRep.toFixed(2)})`);
-        ok(cPeor >= minPico, `${tema} ${nombre}: contraste en el pico encendido >= ${minPico} (${cPeor.toFixed(2)})`);
+      const peor = {};
+      // Cursor alrededor de cada bloque: encima y a 90/180 px, para cubrir intensidades de 1 a ~0.4 (y las intermedias).
+      const posiciones = [];
+      for (const bl of bloques) {
+        if (bl.falta) continue;
+        for (const [l, t, w, h] of bl.rects) {
+          const cx = l + w / 2, cy = t + h / 2;
+          for (const d of [0, 90, 180]) for (const [sx, sy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            if (d === 0 && (sx || sy)) continue;
+            for (const fx of [0.2, 0.8]) posiciones.push([Math.round(l + w * fx + sx * d), Math.round(cy + sy * d)]);
+          }
+        }
       }
+      const vistas = new Set();
+      for (const [x, y] of posiciones) {
+        const clave = `${Math.round(x / 32)},${Math.round(y / 32)}`;
+        if (vistas.has(clave) || x < 0 || y < 0 || x > 1440 || y > 900) continue;
+        vistas.add(clave);
+        await page.mouse.move(x, y, { steps: 2 });
+        await dormir(140);
+        const png = (await page.screenshot({ type: "png" })).toString("base64");
+        const r = await analizador.evaluate(async ({ png, bloques }) => {
+          const img = new Image();
+          img.src = "data:image/png;base64," + png;
+          await img.decode();
+          const cv = document.createElement("canvas");
+          cv.width = img.width;
+          cv.height = img.height;
+          const g = cv.getContext("2d");
+          g.drawImage(img, 0, 0);
+          const lum = ([r, gg, b]) => {
+            const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+            return 0.2126 * f(r) + 0.7152 * f(gg) + 0.0722 * f(b);
+          };
+          const out = {};
+          for (const bl of bloques) {
+            if (bl.falta) continue;
+            const lt = lum(bl.color);
+            let min = 99;
+            for (const [l, t, w, h] of bl.rects) {
+              const d = g.getImageData(Math.floor(l * 2), Math.floor(t * 2), Math.ceil(w * 2), Math.ceil(h * 2)).data;
+              for (let i = 0; i < d.length; i += 4) {
+                const lb = lum([d[i], d[i + 1], d[i + 2]]);
+                min = Math.min(min, (Math.max(lt, lb) + 0.05) / (Math.min(lt, lb) + 0.05));
+              }
+            }
+            out[bl.n] = min;
+          }
+          return out;
+        }, { png, bloques });
+        for (const [k, v] of Object.entries(r)) if (!(k in peor) || v < peor[k].cr) peor[k] = { cr: v, en: [x, y] };
+      }
+      console.log(`   ${tema}: ${vistas.size} posiciones del cursor`);
+      for (const bl of bloques) {
+        if (bl.falta || !bl.rects.length) {
+          console.log(`   ${tema} ${bl.n}: no está o no se ve en esta configuración (p. ej. el chip de la beta con BETA_URL)`);
+          continue;
+        }
+        const minimo = bl.grande ? 3 : 4.5;
+        const p = peor[bl.n];
+        ok(p.cr >= minimo, `${tema} ${bl.n}: peor píxel ${p.cr.toFixed(2)}:1 >= ${minimo}${bl.grande ? " (texto grande)" : ""} (cursor en ${p.en})`);
+      }
+      await ctx.close();
     }
-    await ctx.close();
+    await analizador.close();
   }
 
   /* ---- 10. consola ---- */
