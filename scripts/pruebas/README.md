@@ -13,19 +13,26 @@ npx playwright install ffmpeg   # una vez por máquina (Playwright lo necesita p
 |---|---|---|
 | `node lib/servidor.mjs [--puerto 8765]` (`npm run servir`) | Sirve el repo como Caddy: `try_files`, 404 → `404.html`, `hide`, caché de `/assets/*` y **las mismas cabeceras, CSP incluida**. | — |
 | `node validar.mjs [--externos] [--estricto] [--solo a,b] [--verbose]` | Rápido, sin navegador: html-validate, CSP estática (HTML, JS y CSS propios), JSON-LD, sitemap y `lastmod`, metadatos, enlaces y anclas, CTA con `href`, voseo. | alguna regla falla o una entrada de `conocidos.json` ya no falla (XPASS) |
-| `node capturas.mjs [--salida DIR] [--paginas /,/privacidad/] [--temas claro,oscuro] [--tamanos escritorio,tablet,movil] [--sin-reducido] [--sin-video] [--sin-inspeccion] [--caras] [--demo-tema]` | Capturas y video en claro/oscuro × 1440×900, 820×1180 y 390×844 (táctil) + pasada `prefers-reduced-motion` (escritorio y móvil). Portada: hero, mouse real sobre teléfono y CTA, cada sección (con rueda real), página completa, escenas del teléfono (`?escena=`), video bajando y subiendo. | `console.error`, `pageerror`, violación de CSP, `requestfailed`, respuesta ≥ 400, scroll horizontal |
+| `node capturas.mjs [--salida DIR] [--paginas /,/privacidad/] [--temas claro,oscuro] [--tamanos escritorio,tablet,movil] [--sin-reducido] [--sin-video] [--sin-inspeccion] [--caras] [--demo-tema]` | Capturas y video en claro/oscuro × 1440×900, 820×1180 y 390×844 (táctil) + pasada `prefers-reduced-motion` (escritorio y móvil). Portada: hero, mouse real sobre teléfono y CTA, cada sección (con rueda real), página completa, escenas del teléfono (`?escena=`), video bajando y subiendo. | `console.error`, `pageerror`, violación de CSP, `requestfailed`, respuesta ≥ 400, scroll horizontal, o que en reposo con el borde de una sección arriba el teléfono no muestre su escena de frente (y splash al regresar arriba) |
 | `node tactil.mjs [--salida DIR] [--dispositivos "Pixel 7,iPhone 15"] [--tema claro\|oscuro] [--sin-video]` | Gestos táctiles reales por CDP (flings con momentum y arrastres lentos), video; verifica orden de escenas, saltos del giro, scroll horizontal, atascos, escena correcta en cada sección y regreso arriba. | cualquier verificación o error de consola/CSP |
 | `node lighthouse.mjs [--salida DIR] [--corridas 3] [--paginas /] [--todas] [--comparar BASE] [--tolerancia-rendimiento 2]` | Móvil y escritorio, 4 categorías, **mediana** de N corridas, JSON de la corrida mediana, `resumen.json` y `resumen.md` (con LCP, CLS, TBT, FCP, SI y rango). | con `--comparar`: alguna categoría < 90 o peor que la base |
-| `node todo.mjs [--salida DIR] [--comparar BASE] [--con-tactil] [--sin-video]` | `validar` + `capturas` + `lighthouse` (+ `tactil`), sin parar en la primera falla. | cualquier paso falla |
+| `node todo.mjs [--salida DIR] [--comparar BASE] [--con-tactil] [--sin-video] [--paginas ...] [--estricto]` | `validar` + `licencias.py` + `capturas` + `lighthouse` (+ `tactil`), sin parar en la primera falla. | cualquier paso falla |
+| `python3 -I licencias.py` | Licencias de fuentes y librerías vendorizadas (issue #15). | alguna licencia no coincide |
 
 Todos aceptan `--ayuda`. `--url http://...` (capturas, tactil, lighthouse) apunta a un servidor ya levantado en vez del propio.
 Salida por defecto: `~/Pictures/yaruki-landing-2026-11/<herramienta>/`.
 
 ## Fallos conocidos (`conocidos.json`)
 
-Lista de reglas de `validar` que **hoy fallan en `main`** y tienen issue. Salen como `XFAIL` y no rompen el comando. Cuando la PR que
-las arregla las deja en verde, **borra la entrada**: si queda, `validar` reporta `XPASS` y falla (así la lista no se pudre). Una
-regla nueva que falle con un caso nuevo NO queda cubierta: la entrada se acota con `contiene`. `--estricto` ignora la lista.
+Lista de reglas de `validar` que **hoy fallan en `main`** y tienen issue. Salen como `XFAIL` y no rompen el comando. Cada entrada
+se acota con `archivo` (ruta exacta), `contiene` (texto opcional) y `cuantos` (número **exacto** de hallazgos que cubre): un caso
+nuevo de la misma regla en otro archivo, o uno más en el mismo, sale como `FALLA` (sin `cuantos` la entrada tapaba todo y daba
+falsos verdes). Cuando la PR que lo arregla deja la regla en verde, **borra la entrada** (o baja `cuantos` si arregla solo una
+parte): si no, `validar` reporta `XPASS` y falla (así la lista no se pudre). `--estricto` ignora la lista.
+
+La sección `navegador` cubre lo mismo para la consola que ven `capturas` y `tactil` (`tipo` + todos los textos de `contiene`).
+Ahí no hay XPASS, porque esos fallos pueden ser intermitentes (dependen del momento de la animación): bórrala a mano en la PR que
+arregle el issue.
 
 ## Decisiones
 

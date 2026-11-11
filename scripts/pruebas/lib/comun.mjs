@@ -52,17 +52,37 @@ export const slug = (ruta) => (ruta === "/" ? "inicio" : ruta.replace(/^\/|\/$/g
   Guardia de fallos de una página: console.error, pageerror, violaciones de CSP,
   requestfailed y respuestas >= 400. Devuelve { fallas, instalar(page) }.
 */
+/*
+  Fallos conocidos del navegador (sección `navegador` de conocidos.json): { tipo, contiene: [textos], issue }.
+  Un hallazgo cuyo tipo coincide y cuyo detalle contiene TODOS los textos sale como XFAIL y no rompe.
+  No hay XPASS aquí: estos fallos pueden ser intermitentes (dependen del momento de la animación).
+  Bórralos en la PR que arregle el issue; `--estricto` los ignora.
+*/
+export function conocidosNavegador() {
+  if (process.argv.includes("--estricto")) return [];
+  try {
+    return JSON.parse(fs.readFileSync(new URL("../conocidos.json", import.meta.url), "utf8")).navegador ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export function crearGuardia(origen) {
   const fallas = [];
+  const xfails = [];
+  const conocidos = conocidosNavegador();
   const vistos = new Set();
   const anotar = (tipo, detalle, contexto) => {
     const clave = `${tipo}|${detalle}`;
     if (vistos.has(clave)) return;
     vistos.add(clave);
-    fallas.push({ tipo, detalle, contexto });
+    const c = conocidos.find((k) => k.tipo === tipo && [].concat(k.contiene ?? []).every((t) => detalle.includes(t)));
+    if (c) xfails.push({ tipo, detalle, contexto, issue: c.issue });
+    else fallas.push({ tipo, detalle, contexto });
   };
   return {
     fallas,
+    xfails,
     /** `contexto` es una etiqueta (combo/página) para saber dónde ocurrió. */
     instalar(page, contexto) {
       page.on("console", (m) => {

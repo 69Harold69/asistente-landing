@@ -520,12 +520,13 @@ Herramientas en `scripts/pruebas/` (detalle de cada comando y de las decisiones 
 node validar.mjs                         # rápido, sin navegador: HTML, CSP, JSON-LD, sitemap, metadatos, enlaces, CTA, voseo
 node capturas.mjs --salida DIR           # claro/oscuro × 1440×900, 820×1180, 390×844 + reduced-motion; capturas y video
 node tactil.mjs  --salida DIR            # gestos táctiles reales (Pixel 7, iPhone 15), video
-node lighthouse.mjs --comparar .pm/landing-2026-11/lighthouse-base   # móvil y escritorio, mediana de 3
-node todo.mjs --comparar <base> [--con-tactil]
+node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-base del monorepo
+node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + capturas + lighthouse (+ tactil)
 ```
 
 Cada comando sale con código ≠ 0 si algo falla; `capturas` y `tactil` fallan ante `console.error`,
-`pageerror`, violaciones de CSP, `requestfailed` o respuestas ≥ 400. El servidor local emula el
+`pageerror`, violaciones de CSP, `requestfailed` o respuestas ≥ 400, y si el teléfono no llega de frente
+a la escena de cada sección. El servidor local emula el
 bloque de Caddy (mismas cabeceras y CSP, `try_files`, 404). Una skill para agentes
 (`.claude/skills/landing-revision-visual/` y `landing-seo/` en el monorepo) dice qué correr y qué mirar.
 
@@ -571,7 +572,7 @@ su contenido es guía genérica para otros stacks, y las instrucciones que traen
 También aparecieron en la búsqueda (`npx skills find`) otras skills de Lighthouse (`perf-lighthouse`, `lighthouse-audit`,
 `performance-lighthouse-runner`, 250–600 instalaciones) y de pruebas visuales (`playwright-visual-testing`); se
 descartaron por no aportar más que lo anterior y por provenir de autores sin reputación comprobable.
-Skills instaladas/creadas en `/home/harold2003/Projects/Asistentente-IA/.claude/skills/`:
+Skills creadas en `.claude/skills/` del monorepo de trabajo (fuera de este repo):
 `landing-revision-visual` y `landing-seo`.
 
 ## Capturas de verificación visual

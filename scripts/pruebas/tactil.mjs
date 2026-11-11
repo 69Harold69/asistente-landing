@@ -17,7 +17,8 @@
   sobre Chromium; el momentum de iOS no se reproduce exactamente.
 
   Uso: node tactil.mjs [--salida DIR] [--dispositivos "Pixel 7,iPhone 15"] [--tema claro|oscuro]
-         [--sin-video] [--url http://...]
+         [--sin-video] [--estricto] [--url http://...]
+    Los fallos del navegador listados en conocidos.json (`navegador`) salen como XFAIL.
 */
 import fs from "node:fs";
 import path from "node:path";
@@ -318,6 +319,7 @@ try {
   await srv.cerrar();
 }
 for (const f of guardia.fallas) problemas.push(`[${f.tipo}] ${f.detalle} (${f.contexto})`);
+for (const x of guardia.xfails) console.log(`XFAIL  [${x.tipo}] ${x.detalle}  (${x.contexto}; issue #${x.issue})`);
 informe.problemas = problemas;
 fs.writeFileSync(path.join(salida, "informe-tactil.json"), JSON.stringify(informe, null, 2));
 if (problemas.length) {

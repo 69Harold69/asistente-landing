@@ -2,11 +2,14 @@
 /*
   capturas: capturas y video de la landing en todos los combos tema x tamaño,
   con una pasada de prefers-reduced-motion. Sale con 1 si hay console.error,
-  pageerror, violación de CSP, requestfailed o respuesta >= 400.
+  pageerror, violación de CSP, requestfailed, respuesta >= 400, scroll horizontal o si,
+  en reposo con el borde de una sección arriba, el teléfono no muestra la escena de esa
+  sección de frente (y al regresar arriba, splash). Los fallos del navegador listados en
+  conocidos.json (`navegador`) salen como XFAIL; `--estricto` los ignora.
 
   Uso: node capturas.mjs [--salida DIR] [--paginas /,/privacidad/] [--temas claro,oscuro]
          [--tamanos escritorio,tablet,movil] [--sin-reducido] [--sin-video]
-         [--sin-inspeccion] [--caras] [--demo-tema] [--url http://...]
+         [--sin-inspeccion] [--caras] [--demo-tema] [--estricto] [--url http://...]
 */
 import fs from "node:fs";
 import path from "node:path";
@@ -133,11 +136,20 @@ async function recorridoPortada(combo, dir, nombreCombo) {
     return el ? { id, top: Math.round(el.getBoundingClientRect().top + window.scrollY), alto: Math.round(el.offsetHeight) } : null;
   }), SECCIONES_PORTADA.map((s) => s.id));
   const estados = [];
+  const permitidas = Object.fromEntries(SECCIONES_PORTADA.map((s) => [s.id, s.escenas]));
+  // Con el borde de la sección arriba y en reposo, el teléfono muestra SU escena y está de frente
+  // (lo mismo que exige `tactil` en móvil; aquí se cubre la rueda en escritorio y tablet).
+  const exigir = (e, seccion) => {
+    const frente = e.angulo === null ? 0 : Math.min(e.angulo, 360 - e.angulo);
+    if (!permitidas[seccion]?.includes(e.escena) || frente > 8)
+      guardia.fallas.push({ tipo: "coreografia", detalle: `en "${seccion}" (y=${e.y}) el teléfono muestra "${e.escena}" a ${frente.toFixed(0)}°; se esperaba ${permitidas[seccion]?.join("/")} de frente`, contexto: nombreCombo });
+  };
   for (const s of info.filter(Boolean)) {
     const y = s.id === "hero" ? 0 : s.top;
     await ruedaHasta(page, y);
     const e = await reposo(page, leerEstado);
     estados.push({ seccion: s.id, y: e.y, escena: e.escena, angulo: e.angulo });
+    exigir(e, s.id);
     await foto(page, dir, `portada-seccion-${s.id}`);
     if (s.alto > alturaVista * 1.3) {
       await ruedaHasta(page, s.top + s.alto - alturaVista * 0.8);
@@ -153,6 +165,8 @@ async function recorridoPortada(combo, dir, nombreCombo) {
   await ruedaHasta(page, 0);
   const alRegresar = await reposo(page, leerEstado);
   estados.push({ seccion: "regreso-arriba", y: alRegresar.y, escena: alRegresar.escena, angulo: alRegresar.angulo });
+  if (alRegresar.y > 4) guardia.fallas.push({ tipo: "coreografia", detalle: `la rueda no regresó arriba (y=${alRegresar.y})`, contexto: nombreCombo });
+  exigir(alRegresar, "hero");
   await foto(page, dir, "portada-regreso-arriba");
   const ancho = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
   if (ancho[0] > ancho[1]) guardia.fallas.push({ tipo: "scroll-horizontal", detalle: `scrollWidth ${ancho[0]} > ${ancho[1]}`, contexto: nombreCombo });
@@ -230,6 +244,7 @@ try {
 informe.fallas = guardia.fallas;
 fs.writeFileSync(path.join(salida, "informe.json"), JSON.stringify(informe, null, 2));
 console.log(`\n${informe.archivos.length} archivos en ${salida}`);
+for (const x of guardia.xfails) console.log(`XFAIL  [${x.tipo}] ${x.detalle}  (${x.contexto}; issue #${x.issue})`);
 if (guardia.fallas.length) {
   console.error(`\nFALLAS (${guardia.fallas.length}):`);
   for (const f of guardia.fallas) console.error(`  [${f.tipo}] ${f.detalle}  (${f.contexto})`);
