@@ -181,8 +181,13 @@ export async function medirScrollHorizontal(page) {
     const ancho = Math.max(de.scrollWidth, document.body ? document.body.scrollWidth : 0);
     if (ancho <= de.clientWidth) return null;
     const sale = (e) => e.getBoundingClientRect().right > de.clientWidth + 0.5;
+    // Lo que está dentro de un contenedor con su propio scroll (p. ej. `.tabla-desplazable`) no desborda la página.
+    const enContenedor = (e) => {
+      for (let x = e.parentElement; x && x !== document.body; x = x.parentElement) if (getComputedStyle(x).overflowX !== "visible") return true;
+      return false;
+    };
     const culpables = [...document.querySelectorAll("body *")]
-      .filter((e) => sale(e) && !(e.parentElement && e.parentElement !== document.body && sale(e.parentElement)))
+      .filter((e) => sale(e) && !enContenedor(e) && !(e.parentElement && e.parentElement !== document.body && sale(e.parentElement)))
       .slice(0, 3)
       .map((e) => `<${e.localName}${e.id ? "#" + e.id : ""}${e.classList.length ? "." + [...e.classList].join(".") : ""}> ${Math.round(e.getBoundingClientRect().width)}px`);
     return `scrollWidth ${ancho} > ${de.clientWidth}${culpables.length ? ` (${culpables.join(", ")})` : ""}`;
