@@ -17,8 +17,17 @@
 
 .seccion,
 .seccion:not(.seccion-hero),
-#fase-habitos {
+#fase-habitos,
+#cta {
   min-height: 0;
+}
+
+/* El cierre (#cta) reserva 150vh y 22vh arriba en escritorio para el
+   aterrizaje del Dashboard; sin teléfono es un hueco. */
+@media (min-width: 1024px) {
+  #cta {
+    padding-top: var(--space-6);
+  }
 }
 
 @media (max-width: 1023px) {

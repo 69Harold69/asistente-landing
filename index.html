@@ -37,7 +37,22 @@
         "@id": "https://yaruki.hjgr.dev/#sitio",
         "url": "https://yaruki.hjgr.dev/",
         "name": "Yaruki",
-        "inLanguage": "es-MX"
+        "inLanguage": "es-MX",
+        "publisher": { "@id": "https://yaruki.hjgr.dev/#autor" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://yaruki.hjgr.dev/#pagina",
+        "url": "https://yaruki.hjgr.dev/",
+        "name": "Yaruki — Asistente personal para tus tareas y hábitos",
+        "inLanguage": "es-MX",
+        "isPartOf": { "@id": "https://yaruki.hjgr.dev/#sitio" },
+        "about": { "@id": "https://yaruki.hjgr.dev/#app" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://yaruki.hjgr.dev/#autor",
+        "name": "Harold de Jesús García Ramírez"
       },
       {
         "@type": "SoftwareApplication",
@@ -50,15 +65,14 @@
         "operatingSystem": "Android",
         "inLanguage": "es-MX",
         "image": "https://yaruki.hjgr.dev/assets/img/og-yaruki.png",
+        "isAccessibleForFree": true,
         "offers": {
           "@type": "Offer",
           "price": "0",
           "priceCurrency": "MXN"
         },
-        "author": {
-          "@type": "Person",
-          "name": "Harold de Jesús García Ramírez"
-        }
+        "author": { "@id": "https://yaruki.hjgr.dev/#autor" },
+        "publisher": { "@id": "https://yaruki.hjgr.dev/#autor" }
       }
     ]
   }
@@ -133,7 +147,7 @@
       </p>
       <div class="cta-row">
         <div class="cta-item">
-          <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/" rel="noopener" data-cta-beta>Únete a la beta</a>
+          <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/" data-cta-beta>Únete a la beta</a>
         </div>
         <div class="cta-item">
           <span class="button button--disabled" role="link" aria-disabled="true">Descárgala en App Store</span>
@@ -255,7 +269,7 @@
         </p>
         <div class="cta-row">
           <div class="cta-item">
-            <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/" rel="noopener" data-cta-beta>Únete a la beta</a>
+            <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/" data-cta-beta>Únete a la beta</a>
           </div>
         </div>
         <ol class="pasos-beta" aria-label="Cómo unirte a la beta">
