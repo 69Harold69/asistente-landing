@@ -53,18 +53,31 @@ const TIPOS = {
 /*
   Compresión como la de producción (`encode gzip zstd` del bloque de Caddy): sin ella el laboratorio
   (Lighthouse con red simulada) pesa 4× más bytes de CSS/JS bloqueantes de los que recibe un visitante
-  real y la medición representa mal al sitio. Caddy elige según `Accept-Encoding` (zstd antes que gzip),
-  solo para tipos de texto y desde 512 bytes, y marca `Vary: Accept-Encoding`. Se cachea por archivo.
+  real y la medición representa mal al sitio. Cotejado contra Caddy 2.11.9 real (auditoría de #77): se ordena
+  por q de `Accept-Encoding` (q=0 excluye) y, a igual q, por el orden de la directiva, GZIP antes que zstd
+  (Chrome manda «gzip, deflate, br, zstd» sin q y recibe gzip); solo los tipos de la lista por defecto de
+  `encode` (texto, JSON, XML, SVG, ícono; no woff2 ni imágenes) y solo cuerpos de MÁS de 512 bytes; los
+  elegibles llevan `Vary: Accept-Encoding` aunque no se compriman. Se cachea por archivo.
   `YARUKI_SIN_COMPRESION=1` la apaga (para comparar con la línea base vieja).
 */
-const COMPRIMIBLES = new Set([".html", ".css", ".js", ".mjs", ".json", ".xml", ".txt", ".svg"]);
+const COMPRIMIBLES = new Set([".html", ".css", ".js", ".mjs", ".json", ".xml", ".txt", ".svg", ".ico"]);
+const PREFERENCIA = ["gzip", "zstd"]; // el orden de `encode gzip zstd`
+const MINIMO = 512; // `minimum_length` por defecto: se comprime si el cuerpo tiene MÁS de esto
+export const esElegible = (extension, largo) => COMPRIMIBLES.has(extension) && largo > MINIMO;
 const cacheCompresion = new Map();
 function elegirCodificacion(aceptadas) {
   if (process.env.YARUKI_SIN_COMPRESION) return null;
-  const lista = String(aceptadas || "").split(",").map((x) => x.trim().split(";")[0]);
-  if (lista.includes("zstd") && typeof zlib.zstdCompressSync === "function") return "zstd";
-  if (lista.includes("gzip")) return "gzip";
-  return null;
+  const q = new Map();
+  for (const parte of String(aceptadas || "").split(",")) {
+    const [nombre, ...params] = parte.split(";").map((x) => x.trim());
+    if (!nombre) continue;
+    const pq = params.find((x) => /^q=/i.test(x));
+    const valor = pq ? Number(pq.slice(2)) : 1;
+    q.set(nombre.toLowerCase(), Number.isFinite(valor) && valor >= 0 && valor <= 1 ? valor : 1);
+  }
+  const candidatas = PREFERENCIA.filter((c) => (q.get(c) ?? 0) > 0.00001 && (c !== "zstd" || typeof zlib.zstdCompressSync === "function"));
+  candidatas.sort((x, y) => q.get(y) - q.get(x)); // estable: a igual q queda el orden de la directiva
+  return candidatas[0] ?? null;
 }
 function comprimir(cuerpo, codificacion, clave) {
   const k = `${codificacion}:${clave}`;
@@ -126,7 +139,7 @@ export function iniciarServidor({ raiz = RAIZ_SITIO, puerto = 0, host = "127.0.0
     let cuerpo = fs.readFileSync(archivo);
     if (COMPRIMIBLES.has(path.extname(archivo))) {
       cabeceras.Vary = "Accept-Encoding";
-      const codificacion = cuerpo.length >= 512 ? elegirCodificacion(req.headers["accept-encoding"]) : null;
+      const codificacion = esElegible(path.extname(archivo), cuerpo.length) ? elegirCodificacion(req.headers["accept-encoding"]) : null;
       if (codificacion) {
         cuerpo = comprimir(cuerpo, codificacion, `${archivo}:${fs.statSync(archivo).mtimeMs}`);
         cabeceras["Content-Encoding"] = codificacion;
