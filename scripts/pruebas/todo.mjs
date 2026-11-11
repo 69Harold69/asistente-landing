@@ -33,6 +33,10 @@ const pasos = [
   ["sin-js", process.execPath, ["sin-js.mjs"]],
   // CLS de las páginas legales y la 404 con red limitada (fuente de respaldo con las métricas de la real).
   ["cls", process.execPath, ["cls.mjs"]],
+  // El servidor de pruebas comprime como Caddy (`encode gzip zstd`): sin ello el laboratorio no representa a producción.
+  ["compresion", process.execPath, ["compresion.mjs"]],
+  // Presupuesto de rendimiento de la portada: LCP texto del hero, CLS, TBT, sin scripts en el <head> e interacciones ≤ 200 ms (CPU ×4).
+  ["rendimiento", process.execPath, ["rendimiento.mjs"]],
   // Licencias de fuentes y librerías vendorizadas (issue #15): solo biblioteca estándar de Python.
   ["licencias", "python3", ["-I", "licencias.py"]],
   // El dominio vive en scripts/sitio.json; --check sale ≠ 0 si alguna URL absoluta no coincide (issue #28).
