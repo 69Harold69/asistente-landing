@@ -218,7 +218,7 @@ al primer clic en el toggle).
   none`), a todo el ancho de la ventana y detrás del texto (`z-index: -1` dentro del
   contexto de `#hero`), con una máscara que lo desvanece hacia abajo. Tamaño y
   desfase por CSSOM (`--malla-ancho/alto/izq`), nítido en HiDPI (`devicePixelRatio`
-  con tope 2) y redimensionado con `ResizeObserver`. Valores (Notion «Ideas para V2»):
+  con tope 2 y como máximo 8 Mpx de canvas, ~1.5x en 2560×1440) y redimensionado con `ResizeObserver`. Valores (Notion «Ideas para V2»):
   cuadrícula de 128 px, radio 300 px, empuje `38 px × (1 − d/r)²`, líneas de
   1.1 px, puntos de 1.35 px (+3 px). **Colores y opacidades de los tokens**
   (`tokens.css`): reposo `--color-border-card`, encendido `--color-accent`, y las
