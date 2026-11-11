@@ -27,7 +27,7 @@
   <meta name="twitter:image:alt" content="Yaruki (やる気): las ganas de hacer algo. Dile lo que tienes que hacer. Yaruki se encarga de anotarlo." />
   <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#151322" media="(prefers-color-scheme: dark)" />
-    <script type="application/ld+json">
+  <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
@@ -54,6 +54,11 @@
         "inLanguage": "es-MX",
         "isPartOf": { "@id": "https://yaruki.hjgr.dev/#sitio" },
         "breadcrumb": { "@id": "https://yaruki.hjgr.dev/recordatorios-por-voz/#migas" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://yaruki.hjgr.dev/#autor",
+        "name": "Harold de Jesús García Ramírez"
       },
       {
         "@type": "BreadcrumbList",
@@ -193,8 +198,9 @@
               recordatorios depende de tu marca de teléfono y de tu versión de Android. Google ha
               ido cambiando entre el Asistente y Gemini; cuando revisé el 10 de noviembre de 2026,
               la página de ayuda de Gemini sobre
-              <a href="https://support.google.com/gemini/answer/15235441?hl=es-419">controlar tu dispositivo Android con Utilities</a>
-              mencionaba alarmas y temporizadores, pero no recordatorios. Pruébalo en tu equipo y
+              <a href="https://support.google.com/gemini/answer/15235441?hl=es-419">controlar apps y dispositivos Android con Asistencia para el dispositivo</a>
+              (antes llamada Utilidades) mencionaba alarmas, temporizadores y cronómetro, pero no
+              recordatorios. Pruébalo en tu equipo y
               confirma dónde queda guardado lo que le pides.
             </p>
           </section>
@@ -211,9 +217,9 @@
                 <p>
                   Con el campo de texto vacío, el botón de la derecha del chat es un micrófono. La
                   primera vez, Android te pide permiso para usarlo; es opcional y, sin él, puedes
-                  escribir igual. Si no ves el micrófono, tu teléfono no tiene micrófono o tu plan no incluye
-                  mensajes de voz; si ya agotaste los de hoy, aparece apagado y te avisa:
-                  «Mañana tienes más mensajes de voz».
+                  escribir igual. Si tu teléfono no tiene micrófono, el botón no aparece. Si ya
+                  usaste los mensajes de voz de hoy, se ve apagado y te avisa: «Mañana tienes más
+                  mensajes de voz».
                 </p>
               </li>
               <li>
@@ -263,12 +269,13 @@
             </div>
 
             <h3>Qué pasa con tu voz</h3>
-            <p>Esto es lo que dice la <a href="/privacidad/#datos">política de privacidad</a> publicada (sección 2.4):</p>
+            <p>Esto es lo que dice, completa, la sección 2.4 de la <a href="/privacidad/#datos">política de privacidad</a>:</p>
             <blockquote>
               <p>
-                Yaruki te pide permiso para usar el micrófono del teléfono y lo usa sólo mientras
-                estás grabando un mensaje; no escucha en segundo plano ni cuando la app está
-                cerrada. El permiso es opcional: sin él, la app funciona igual por escrito.
+                Puedes hablarle al asistente en vez de escribirle. Para eso, Yaruki te pide permiso
+                para usar el micrófono del teléfono y lo usa sólo mientras estás grabando un mensaje;
+                no escucha en segundo plano ni cuando la app está cerrada. El permiso es opcional:
+                sin él, la app funciona igual por escrito.
               </p>
               <p>
                 Al enviar el mensaje, la grabación (un archivo de audio) se sube a nuestro
@@ -278,12 +285,17 @@
                 se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al
                 terminar la solicitud. Google (Vertex AI) lo procesa según sus propios términos y
                 no podemos garantizar que no lo retenga temporalmente. Lo único que guardamos es el
-                texto de la transcripción, que entra a la conversación como si lo hubieras escrito.
+                texto de la transcripción, que entra a la conversación como si lo hubieras escrito
+                (cifrado, con la misma retención de la sección 7). Si la transcripción falla,
+                tampoco queda el audio.
               </p>
               <p>
-                En tu teléfono, la app guarda tus grabaciones en una carpeta privada de la app, a
-                la que ninguna otra app puede entrar. Se borran al cerrar sesión, al eliminar tu
-                cuenta o cuando cumplen 30 días.
+                En tu teléfono, la app guarda tus grabaciones y el audio generado al leerte en voz
+                alta las respuestas del asistente (con el motor de voz de tu teléfono) en una
+                carpeta privada de la app, a la que ninguna otra app puede entrar. Sirven para que
+                puedas volver a reproducirlos desde el chat. No se envían a ningún servidor
+                adicional, y se borran al cerrar sesión, al eliminar tu cuenta o cuando cumplen 30
+                días.
               </p>
             </blockquote>
           </section>
@@ -380,11 +392,11 @@
           <section id="no-sono" aria-labelledby="no-sono-h">
             <h2 id="no-sono-h">Si el recordatorio no sonó</h2>
             <p>
-              Aplica a cualquier app de recordatorios en Android, y Yaruki te avisa de lo segundo
-              y de lo tercero dentro de la app cuando los detecta. Revisa en este orden:
+              Aplica a cualquier app de recordatorios en Android. Yaruki te avisa de los tres
+              primeros puntos en su pestaña Notificaciones cuando los detecta. Revisa en este orden:
             </p>
             <ol>
-              <li><strong>Notificaciones permitidas.</strong> Android pide el permiso cuando eliges una fecha; si lo negaste, no habrá aviso.</li>
+              <li><strong>Notificaciones permitidas.</strong> Yaruki te pide el permiso cuando programas algo con fecha y hora; si lo negaste, no habrá aviso.</li>
               <li><strong>«Alarmas y recordatorios».</strong> Sin ese permiso, como dice la propia app, Android puede retrasar el aviso varios minutos.</li>
               <li><strong>Batería.</strong> Si la batería de Yaruki está en «Restringida», los avisos no llegan hasta que abras la app. En los ajustes de batería de la app elige «Sin restricciones».</li>
               <li><strong>App detenida.</strong> En algunos teléfonos, cerrar la app desde recientes borra las alarmas pendientes. Yaruki las repone cuando la abres.</li>
