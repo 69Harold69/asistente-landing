@@ -1315,9 +1315,12 @@ strong {
    navegación con puntos. Sólo `index.html` usa estas clases.
    ====================================================================== */
 
-/* Barra de avance del recorrido: una línea fina arriba del todo. Con
-   animaciones ligadas al scroll (CSS) corre fuera del hilo principal;
-   sin soporte, progreso.js la mueve con `scaleX`. */
+/* Barra de avance del recorrido (#60): una pista tenue a todo el ancho con el
+   avance encima, para que se lea como barra aun en 0 % (sin la pista era un
+   trazo corto sin contexto sobre el teléfono). Mide SOLO el recorrido del
+   teléfono, de 0 % al primer scroll a 100 % al terminar #cta (progreso.js
+   escribe --avance con CSSOM), y se desvanece pasado el recorrido, junto con
+   los puntos de navegación (data-fuera). Decorativa: aria-hidden en el HTML. */
 .progreso-recorrido {
   position: fixed;
   top: 0;
@@ -1325,22 +1328,30 @@ strong {
   right: 0;
   z-index: 50;
   height: 3px;
-  background: var(--color-accent);
-  transform: scaleX(0);
-  transform-origin: left center;
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
   pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s;
 }
 
-@supports (animation-timeline: scroll()) {
-  .progreso-recorrido {
-    animation: progreso-recorrido linear both;
-    animation-timeline: scroll(root block);
-  }
+.progreso-recorrido::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-accent);
+  transform: scaleX(var(--avance, 0));
+  transform-origin: left center;
 }
 
-@keyframes progreso-recorrido {
-  to {
-    transform: scaleX(1);
+.progreso-recorrido[data-fuera] {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0s 0.25s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progreso-recorrido,
+  .progreso-recorrido[data-fuera] {
+    transition: none;
   }
 }
 

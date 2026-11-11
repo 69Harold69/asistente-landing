@@ -38,7 +38,7 @@ asistente-landing/
 │   │   ├── theme-demo.js  Demo de tema al cargar, una vez por visita, con la pista junto al toggle
 │   │   ├── stage.js     Coreografía de scroll y modo de inspección `?escena=&cara=&angulo=`
 │   │   ├── revelar.js   Aparición escalonada de los textos (atada al vuelo en escritorio)
-│   │   ├── progreso.js  Barra de avance (respaldo JS) y "Desliza para descubrir"
+│   │   ├── progreso.js  Barra de avance del recorrido y "Desliza para descubrir"
 │   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
 │   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
 │   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto) y mirada de la mascota
@@ -266,8 +266,12 @@ al primer clic en el toggle).
   eso nunca se enciman, tampoco con saltos. En móvil, entrada al 84% del
   viewport.
 - **Titular del hero:** palabra por palabra en CSS (`base.css`), sin JS ni CLS.
-- **Barra de progreso:** `animation-timeline: scroll()` cuando existe;
-  si no, `progreso.js`.
+- **Barra de progreso (`progreso.js`, #60):** pista tenue a todo el ancho
+  con el avance encima (se lee como barra aun en 0 %). Mide solo el
+  recorrido del teléfono (`.layout-con-stage`): 0 % al empezar a bajar,
+  100 % cuando termina `#cta`; pasado el recorrido se desvanece con
+  `data-fuera`, igual que los puntos. Decorativa (`aria-hidden`, sin rol de
+  progreso); `--avance` por CSSOM; sin JS no se muestra (`sin-js.css`).
 - **Navegación con puntos (`nav-recorrido.js`):** `nav` con `aria-label`,
   `aria-current="location"` y salto a la posición en la que cada sección
   queda en lectura.

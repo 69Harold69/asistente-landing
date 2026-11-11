@@ -4,14 +4,15 @@
 
   Sin JS, el teléfono (decorativo, `aria-hidden`) queda como un cascarón
   vacío que, además, `stage.js` ya no coloca: se encimaba al titular. El
-  toggle de tema y la pista «Desliza para descubrir» no hacen nada sin JS
+  toggle de tema, la pista «Desliza para descubrir» y la barra de progreso (una pista vacía sería una línea suelta) no hacen nada sin JS
   (el sitio sigue `prefers-color-scheme`).
   Las secciones dejan de reservar una pantalla entera para sincronizarse con
   el teléfono. El texto, los CTA y los enlaces ya están en el HTML.
 */
 .stage,
 .toggle-envoltura,
-.pista-scroll {
+.pista-scroll,
+.progreso-recorrido {
   display: none;
 }
 
