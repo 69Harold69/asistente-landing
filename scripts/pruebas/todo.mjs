@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  todo: corre validar + licencias + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese orden,
+  todo: corre validar + licencias + malla + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese orden,
   sin detenerse en la primera falla, y sale con 1 si CUALQUIERA falla.
 
   Uso: node todo.mjs [--salida DIR] [--comparar CARPETA_BASE_LIGHTHOUSE] [--con-tactil] [--sin-video]
@@ -26,6 +26,8 @@ const pasos = [
   ["validar", process.execPath, ["validar.mjs", ...estricto]],
   // Licencias de fuentes y librerías vendorizadas (issue #15): solo biblioteca estándar de Python.
   ["licencias", "python3", ["-I", "licencias.py"]],
+  // Malla del hero (#26): pausas, reduced-motion, costo por cuadro y contraste AA en píxeles reales.
+  ["malla", process.execPath, ["malla.mjs", "--salida", path.join(salida, "malla")]],
   ["capturas", process.execPath, ["capturas.mjs", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
   ["lighthouse", process.execPath, ["lighthouse.mjs", "--salida", path.join(salida, "lighthouse"), ...paginas, ...(a.corridas ? ["--corridas", String(a.corridas)] : []), ...(a.comparar ? ["--comparar", path.resolve(String(a.comparar).replace(/^~(?=$|\/)/, os.homedir()))] : [])]],
 ];
