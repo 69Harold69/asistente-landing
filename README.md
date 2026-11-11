@@ -272,7 +272,10 @@ al primer clic en el toggle).
   columna) y la anterior se va en el primer 35% (antes de que llegue). Por
   eso nunca se enciman, tampoco con saltos. En móvil, entrada al 84% del
   viewport.
-- **Titular del hero:** palabra por palabra en CSS (`base.css`), sin JS ni CLS.
+- **Titular del hero:** palabra por palabra en CSS (`base.css`), sin JS ni CLS. Su `max-width` va en `em`
+  (7.877em = 13ch de Baloo 2 ExtraBold), no en `ch`: el `ch` es el avance del «0» de la fuente que esté
+  pintando y con el respaldo el titular cambiaba de renglones al llegar Baloo 2 (#53). `cls.mjs` lo vigila
+  también en 820, 1024 y 1440 px con las fuentes 1.5 s tarde.
 - **Barra de progreso:** `animation-timeline: scroll()` cuando existe;
   si no, `progreso.js`.
 - **Navegación con puntos (`nav-recorrido.js`):** `nav` con `aria-label`,
