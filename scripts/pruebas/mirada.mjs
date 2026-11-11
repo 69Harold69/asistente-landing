@@ -85,17 +85,17 @@ async function probarCara(nombre, ruta, selector, tope) {
     if (esq === "arriba-izquierda") await page.screenshot({ path: path.join(salida, `mirada-${nombre}-arriba-izquierda.png`) });
     if (esq === "abajo-derecha") await page.screenshot({ path: path.join(salida, `mirada-${nombre}-abajo-derecha.png`) });
   }
+  // La inclinación del teléfono sigue en ±4° (con el cursor aún en la esquina).
+  const tilt = await page.evaluate(() => {
+    const e = document.getElementById("tilt-telefono");
+    return [parseFloat(e.style.getPropertyValue("--tilt-x")), parseFloat(e.style.getPropertyValue("--tilt-y"))];
+  });
+  ok(tilt.every((v) => Math.abs(v) <= 4.01) && tilt.some((v) => Math.abs(v) > 3), `${nombre}: la inclinación sigue en ±4° y activa (${tilt.join(", ")})`);
   // El cursor sale: vuelve al centro.
   await page.evaluate(() => document.documentElement.dispatchEvent(new PointerEvent("pointerleave")));
   await dormir(2000);
   const fin = await centro(page, selector);
   ok(Math.hypot(fin.x - base.x, fin.y - base.y) < 0.8, `${nombre}: al salir el cursor vuelve al centro (${Math.hypot(fin.x - base.x, fin.y - base.y).toFixed(2)} px)`);
-  // El tilt sigue en ±4°.
-  const tilt = await page.evaluate(() => {
-    const e = document.getElementById("tilt-telefono");
-    return [parseFloat(e.style.getPropertyValue("--tilt-x")), parseFloat(e.style.getPropertyValue("--tilt-y"))];
-  });
-  ok(tilt.every((v) => Math.abs(v) <= 4.01), `${nombre}: la inclinación sigue en ±4° (${tilt.join(", ")})`);
   await ctx.close();
 }
 
