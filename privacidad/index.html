@@ -19,10 +19,38 @@
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Yaruki (やる気): las ganas de hacer algo. Dile lo que tienes que hacer. Yaruki se encarga de anotarlo." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Política de privacidad — Yaruki" />
   <meta name="twitter:description" content="Política de privacidad de Yaruki: qué datos recopilamos, para qué los usamos, con quién los compartimos y cómo ejercer tus derechos." />
   <meta name="twitter:image" content="https://yaruki.hjgr.dev/assets/img/og-yaruki.png" />
+  <meta name="twitter:image:alt" content="Yaruki (やる気): las ganas de hacer algo. Dile lo que tienes que hacer. Yaruki se encarga de anotarlo." />
+  <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#151322" media="(prefers-color-scheme: dark)" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://yaruki.hjgr.dev/privacidad/#pagina",
+        "url": "https://yaruki.hjgr.dev/privacidad/",
+        "name": "Política de privacidad — Yaruki",
+        "inLanguage": "es-MX",
+        "isPartOf": { "@type": "WebSite", "@id": "https://yaruki.hjgr.dev/#sitio", "url": "https://yaruki.hjgr.dev/", "name": "Yaruki" },
+        "breadcrumb": { "@id": "https://yaruki.hjgr.dev/privacidad/#migas" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://yaruki.hjgr.dev/privacidad/#migas",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Yaruki", "item": "https://yaruki.hjgr.dev/" },
+          { "@type": "ListItem", "position": 2, "name": "Política de privacidad" }
+        ]
+      }
+    ]
+  }
+  </script>
   <link rel="icon" href="../assets/img/favicon-32.png" type="image/png" sizes="32x32" />
   <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
@@ -353,8 +381,9 @@
               que la ley llama "encargados" y Google Play llama "proveedores
               de servicios"):
             </p>
+            <div class="tabla-desplazable" role="region" aria-labelledby="proveedores-titulo" tabindex="0">
             <table>
-              <caption>Proveedores que procesan datos por nuestra cuenta</caption>
+              <caption id="proveedores-titulo">Proveedores que procesan datos por nuestra cuenta</caption>
               <thead>
                 <tr>
                   <th scope="col">Proveedor</th>
@@ -385,6 +414,7 @@
                 </tr>
               </tbody>
             </table>
+            </div>
             <p>
               También podemos divulgar datos si una ley o una autoridad
               competente nos lo exige.
@@ -622,6 +652,8 @@
       <p>Yaruki — Harold de Jesús García Ramírez, Guadalajara, Jalisco, México.</p>
       <ul class="footer-links">
         <li><a href="/">Inicio</a></li>
+        <li><a href="/organizar-tareas-con-ia/">Organizar tareas con IA</a></li>
+        <li><a href="/recordatorios-por-voz/">Recordatorios por voz</a></li>
         <li><a href="/terminos/">Términos</a></li>
         <li><a href="/eliminar-cuenta/">Eliminar cuenta</a></li>
       </ul>

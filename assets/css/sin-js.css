@@ -1,0 +1,37 @@
+/*
+  Yaruki — portada SIN JavaScript (#21). Solo se carga dentro de `<noscript>`
+  en `index.html`, así que con JS no existe: no hay parpadeo ni cambia nada.
+
+  Sin JS, el teléfono (decorativo, `aria-hidden`) queda como un cascarón
+  vacío que, además, `stage.js` ya no coloca: se encimaba al titular. El
+  toggle de tema y la pista «Desliza para descubrir» no hacen nada sin JS
+  (el sitio sigue `prefers-color-scheme`).
+  Las secciones dejan de reservar una pantalla entera para sincronizarse con
+  el teléfono. El texto, los CTA y los enlaces ya están en el HTML.
+*/
+.stage,
+.toggle-envoltura,
+.pista-scroll {
+  display: none;
+}
+
+.seccion,
+.seccion:not(.seccion-hero),
+#fase-habitos,
+#cta {
+  min-height: 0;
+}
+
+/* El cierre (#cta) reserva 150vh y 22vh arriba en escritorio para el
+   aterrizaje del Dashboard; sin teléfono es un hueco. */
+@media (min-width: 1024px) {
+  #cta {
+    padding-top: var(--space-6);
+  }
+}
+
+@media (max-width: 1023px) {
+  .seccion:not(.seccion-hero) {
+    padding-top: var(--space-6);
+  }
+}

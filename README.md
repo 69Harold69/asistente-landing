@@ -16,6 +16,8 @@ asistente-landing/
 ├── privacidad/index.html   Política de privacidad
 ├── terminos/index.html     Términos y condiciones
 ├── eliminar-cuenta/index.html  Cómo eliminar tu cuenta
+├── organizar-tareas-con-ia/index.html  Guía (Article) para «ia para organizar tareas»
+├── recordatorios-por-voz/index.html    Guía (Article) para «recordatorios por voz android»
 ├── 404.html                Página de error, servida por el handle_errors de Caddy
 ├── sitemap.xml             URLs canónicas con su lastmod (sin 404 ni la verificación de Google)
 ├── robots.txt              Permite todo y apunta al sitemap
@@ -26,10 +28,12 @@ asistente-landing/
 │   │   ├── fonts.css    @font-face de las páginas legales y 404 (assets/fonts/)
 │   │   ├── fuentes-portada.css  @font-face de la portada (recortes latinos de assets/fuentes/)
 │   │   ├── base.css     Layout, grid con escenario sticky, componentes compartidos
+│   │   ├── guias.css    Páginas-guía: resumen, pasos, ejemplos de chat en CSS, tabla comparativa, cierre con la beta
 │   │   ├── phone.css    El teléfono 3D (marco, bisel, isla, canto en capas, espalda)
 │   │   └── scenes.css   Contenido de cada escena dentro de la pantalla del teléfono
 │   ├── js/
-│   │   ├── config.js    BRAND_NAME / BETA_URL
+│   │   ├── config.js    BRAND_NAME (el enlace de la beta vive en el `href` de `index.html`)
+│   │   ├── guias.js     Solo el toggle de tema de las páginas-guía (sin GSAP ni teléfono)
 │   │   ├── theme.js     Toggle sol/luna (revelado circular con View Transitions, crossfade de respaldo)
 │   │   ├── theme-demo.js  Demo de tema al cargar, una vez por visita, con la pista junto al toggle
 │   │   ├── stage.js     Coreografía de scroll y modo de inspección `?escena=&cara=&angulo=`
@@ -139,7 +143,11 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 - **`sitemap.xml`:** las 4 páginas públicas con URL absoluta y barra final, igual
   que los enlaces del sitio. `lastmod` es la fecha del último cambio de contenido
   visible de cada página: actualízala a mano cuando cambie el texto, no por
-  ajustes de `<head>`. Antes de abrir una PR que toque el texto de una
+  ajustes de `<head>`. Un enlace nuevo en el texto visible (por ejemplo, en el pie) cuenta como
+  cambio de contenido: Google considera significativo un cambio en «el contenido principal, los
+  datos estructurados o los enlaces de la página», no en la fecha de copyright
+  ([Build a sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)),
+  y `validar` lo exige. Antes de abrir una PR que toque el texto de una
   página, compara con la fecha del último commit de cada una:
 
   ```bash
@@ -156,32 +164,70 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 - **Open Graph y Twitter/X** en las 4 páginas públicas (`index.html`, privacidad,
   términos y eliminar cuenta), con la misma imagen `og-yaruki.png` 1200×630. La
   página 404 lleva `noindex` a propósito.
-- **JSON-LD** en el `<head>` de `index.html` (`WebSite` + `SoftwareApplication`):
-  - `applicationCategory` es `BusinessApplication`, el valor más cercano a
-    productividad en la lista que acepta Google; `applicationSubCategory`
-    dice "Productividad".
-  - No lleva `aggregateRating` ni `review` porque todavía no existen. Sin eso
-    Google no muestra la ficha enriquecida de app, pero el bloque sigue
-    describiendo la app.
-  - Cuando haya ficha en Google Play, agrega `downloadUrl` y las calificaciones reales.
-  - Es un bloque de datos (`type="application/ld+json"`), no se ejecuta: la CSP
-    `script-src 'self'` no lo bloquea.
+- **JSON-LD** (`type="application/ld+json"`, un bloque de datos que la CSP `script-src 'self'` no ejecuta ni bloquea),
+  revisado el 2026-11-10 contra la documentación de Google (software-app, breadcrumb, organization) y schema.org:
+  - **Portada:** un `@graph` con `WebSite`, `WebPage`, `Person` (el autor/publicador, `#autor`) y `SoftwareApplication`,
+    enlazados por `@id` (`publisher`, `author`, `isPartOf`, `about`).
+  - **Nombre en `Person`:** `Harold de Jesús García Ramírez`, exactamente como ya lo publican la política de privacidad,
+    los Términos y el pie del sitio (`validar` exige que cualquier nombre de `Person` aparezca en el texto visible).
+  - **Páginas legales:** `WebPage` + `BreadcrumbList` (Yaruki > página; el último elemento omite `item`, como permite Google).
+  - `offers` con `price: "0"` y `isAccessibleForFree: true`: es veraz (los Términos dicen «Hoy no cobramos nada» y la
+    portada habla del plan gratuito). No se inventa precio de premium.
+  - `applicationCategory` es `BusinessApplication`, el valor más cercano a productividad en la lista que acepta Google;
+    `applicationSubCategory` dice "Productividad".
+  - **Prohibido** `aggregateRating`, `review` y `downloadUrl` (no existen todavía). Google exige `aggregateRating` o `review`
+    para la ficha enriquecida de app, así que esa ficha no saldrá hasta que haya reseñas reales; el bloque sigue
+    describiendo la app. Cuando haya ficha en Google Play, se agregan `downloadUrl` y las calificaciones reales.
+  - **`FAQPage`** lo agrega quien escriba las preguntas visibles (el JSON-LD debe reflejar texto visible).
+  - **Validación:** `validar` (estructura mínima por tipo, referencias `@id` resueltas, prohibidas) y
+    `scripts/pruebas/test_jsonld.py` (defectos sembrados). No existe un validador offline mantenido y de licencia limpia
+    (`structured-data-testing-tool` no se actualiza desde 2022), así que además pega la URL publicada, o el bloque, en el
+    [Rich Results Test](https://search.google.com/test/rich-results) y en el [validador de schema.org](https://validator.schema.org/).
+  - **Páginas-guía (`Article`):** un `@graph` con `Article`, `WebPage`, `BreadcrumbList` y, si hay preguntas visibles,
+    `FAQPage`. Se usa `Article` (y no solo `WebPage`) porque son guías con autor y fechas, que es el caso para el que Google
+    documenta ese marcado (ninguna propiedad es obligatoria; recomienda `author`, `datePublished`, `dateModified`, `headline`
+    e `image`). `author`/`publisher`/`isPartOf`/`about` referencian por `@id` los nodos `#autor`, `#sitio` y `#app` de la
+    portada (`validar` los resuelve contra la portada). No se usa `HowTo`: los pasos van en el texto. Reglas de `validar`
+    para toda página con `Article` (regla `guias`): `title` ≤ 60, description ≤ 155, `headline` ≤ 110, autor y `<time datetime>`
+    visibles e iguales a `datePublished`/`dateModified`, y enlazada desde la portada (sin páginas huérfanas). Regla
+    `faq-visible` (cualquier página): cada pregunta y respuesta del `FAQPage` debe aparecer idéntica en el texto visible.
+    Defectos sembrados: `scripts/pruebas/test_guias.py`. Una guía nueva se agrega a `sitemap.xml` y al bloque «Guías» del pie
+    de la portada; si no, `validar` falla.
+- **`hreflang`: no se usa.** Google lo define para sitios con varias versiones de idioma o región; esta landing tiene una
+  sola (es-MX), y `<html lang="es-MX">`, `og:locale` `es_MX` e `inLanguage` ya lo declaran. Se agrega solo si aparece otra versión.
+- **`theme-color`** claro y oscuro y `og:image:alt`/`twitter:image:alt` en las 4 páginas públicas (`validar` los exige).
 - **Páginas legales:** cada una tiene su `<title>`, meta description y `<link rel="canonical">`.
 
-## BRAND_NAME y BETA_URL
+## BRAND_NAME y el enlace de la beta
 
-`assets/js/config.js` tiene las dos constantes del plan:
+`assets/js/config.js` tiene una sola constante:
 - `BRAND_NAME = "Yaruki"` — el HTML de cada página sigue escribiendo "Yaruki"
   literal en el texto visible (título, wordmark, copy); la constante es para
   lo que genera JS, no reemplaza al texto estático.
-- `BETA_URL` — el Google Group de testers
-  (`https://groups.google.com/g/yaruki-beta/`). La prueba cerrada de Google
-  Play usa ese grupo como lista de testers, así que unirse es el paso 1;
-  `main.js` activa los dos botones "Únete a la beta" (`#hero` y `#cta`) y
-  quita su chip "Próximamente". El paso 2, aceptar la invitación en
-  `https://play.google.com/apps/testing/dev.hjgr.yaruki`, está escrito en la
-  lista `.pasos-beta` de `#cta`. Con `BETA_URL` vacía los botones vuelven a
-  salir deshabilitados con el chip.
+
+El enlace de "Únete a la beta" **ya no es una constante de JS** (#21): es el
+`href` de los dos botones `[data-cta-beta]` de `index.html` (`#hero` y `#cta`),
+escrito a mano, activo y sin chip "Próximamente" desde el HTML. Apunta al
+Google Group de testers (`https://groups.google.com/g/yaruki-beta/`); la
+prueba cerrada de Google Play usa ese grupo como lista, así que unirse es el
+paso 1. El paso 2, aceptar la invitación en
+`https://play.google.com/apps/testing/dev.hjgr.yaruki`, está escrito en la
+lista `.pasos-beta` de `#cta`. Así el enlace existe para rastreadores y para
+quien navega sin JS, y no queda una segunda fuente de verdad que pueda
+contradecir al HTML en silencio. Para cambiarlo, edita el `href` en los dos
+botones (y el de la lista `.pasos-beta`, que apunta al mismo grupo), y los
+de las páginas-guía (`organizar-tareas-con-ia/`, `recordatorios-por-voz/`),
+que repiten el botón y la lista (`git grep yaruki-beta`);
+`node scripts/pruebas/sin-js.mjs` comprueba que sean enlaces navegables.
+`main.js` ya no toca esos botones; solo el efecto magnético los toma.
+
+**Sin JavaScript** (`sin-js.mjs`): el contenido y los enlaces están en el HTML.
+Lo decorativo que solo vive con JS (el teléfono, que `stage.js` llena y
+coloca; el toggle de tema; la pista «Desliza para descubrir») se oculta con
+`assets/css/sin-js.css`, que `index.html` carga dentro de `<noscript>` (con JS
+no se descarga) y que también quita las alturas de pantalla completa de las
+secciones. Los textos nunca los oculta el CSS: `revelar.js` pone la opacidad 0
+solo cuando corre.
 
 Si el nombre cambia, además de `config.js` es un buscar-y-reemplazar de
 "Yaruki" en el HTML de las 4 páginas (y del lema "las ganas de hacerlo").
@@ -212,7 +258,7 @@ al primer clic en el toggle).
 - **Navegación con puntos (`nav-recorrido.js`):** `nav` con `aria-label`,
   `aria-current="location"` y salto a la posición en la que cada sección
   queda en lectura.
-- **Mascota del header:** respira y se infla con el hover de un CTA de la beta (también mientras dice "Próximamente") o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
+- **Mascota del header:** respira y se infla con el hover de un CTA de la beta o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
 - **Malla de fondo (`malla.js`, #26):** `<canvas class="malla-hero">` creado por el
   módulo como primer hijo de `#hero`, decorativo (`aria-hidden`, `pointer-events:
   none`), a todo el ancho de la ventana y detrás del texto (`z-index: -1` dentro del
@@ -239,7 +285,7 @@ al primer clic en el toggle).
   scroll y una animación solo gastaría batería. Arranca tras `load` + `requestIdleCallback`
   (el LCP es el titular). Sin JS no existe el canvas y el hero queda igual.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
-  magnéticos toman únicamente CTAs activos: con `BETA_URL` vacía no se ven.
+  magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
   Dashboard cuentan desde 0; el valor final ya está en el HTML.
 
@@ -301,7 +347,15 @@ U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122,
 U+2190-2193, U+2212, U+2713, U+2022; `--layout-features='*'`). De 431 KB a
 109 KB. Si se agrega texto con caracteres fuera de ese rango, regenerarlos
 desde `assets/fonts/` con el mismo comando. Las páginas legales siguen con
-los originales de `assets/fonts/` vía `fonts.css`.
+los originales de `assets/fonts/` vía `fonts.css`, cuyas fuentes de respaldo
+("Baloo 2 Fallback", "Manrope Fallback": Arial con `size-adjust` y
+`ascent/descent-override` medidos con fonttools contra la fuente real, una cara
+por grupo de pesos) evitan el CLS del cambio de fuente (#24, antes 0.134 en
+`/eliminar-cuenta/`). Como en Android no hay Arial ni Liberation Sans, hay un
+segundo respaldo, "Baloo 2 Fallback Roboto" / "Manrope Fallback Roboto"
+(`local("Roboto")` con sus propias métricas), puesto después en la pila de
+`tokens.css`; sin él, en Android el CLS volvía a 0.098. Si cambias las fuentes o el texto de esas páginas,
+revisa con `node scripts/pruebas/cls.mjs`.
 
 **Originales (`assets/fonts/`):**
 
@@ -401,6 +455,123 @@ referencia de `ofl/baloo2/upstream_info.md`). Manrope: `aaronbell/manrope` en
   - Pirani Risk, *LFPDPPP: Guía de la Ley de Protección de Datos en México*:
     <https://www.piranirisk.com/es/hub-regulatorio/lfpdppp-ley-proteccion-datos-mexico>
   - Plazo ARCO (sección 9 de la política y `/eliminar-cuenta`): **artículo 31 de la LFPDPPP 2025**, indicado por el dueño el 2026-10-04: máximo 20 días para comunicar la respuesta desde que se recibe la solicitud y 15 días para hacerla efectiva, ampliables una sola vez por un periodo igual. Se escribe como "días", sin "hábiles".
+
+## Después de publicar (IndexNow)
+
+IndexNow avisa a Bing, Yandex, Seznam, Naver y otros de las URLs que cambiaron (Google no participa: para Google
+siguen valiendo Search Console y el sitemap). La clave vive en `72d573f4443baf5a20fc8627fb495555.txt`, en la raíz:
+el protocolo exige publicarla (no es un secreto) y su contenido es exactamente la clave. Caddy no la oculta
+(`hide` solo cubre `.git`, `README.md`, `scripts`, `package*.json`). Tras el primer `git pull` en el droplet:
+
+```bash
+curl -s https://yaruki.hjgr.dev/72d573f4443baf5a20fc8627fb495555.txt   # debe imprimir exactamente la clave
+```
+
+Después de cada publicación, desde tu laptop y con el repo ya actualizado (avisa solo de las páginas del
+sitemap cuyo HTML cambió en el rango de commits):
+
+```bash
+python3 scripts/indexnow.py --desde <commit-publicado-antes>          # SIMULACIÓN: imprime lo que mandaría
+python3 scripts/indexnow.py --desde <commit-publicado-antes> --enviar # lo manda (api.indexnow.org)
+```
+
+También: `--urls URL ...` (URLs explícitas del mismo host) y `--todas`. Con `--enviar` comprueba antes que la clave
+ya esté publicada y responde `200`/`202` (ok) o `403`/`422` (clave sin publicar / URLs de otro host). El dominio sale
+de `scripts/sitio.json`, así que tras la mudanza a dominio propio el aviso sigue solo (la clave viaja con el repo).
+
+## Mudanza a dominio propio
+
+El dominio vive en **un solo lugar**: `scripts/sitio.json` (`{"origen": "https://yaruki.hjgr.dev"}`).
+`scripts/dominio.py` (solo biblioteca estándar) reescribe a partir de ahí todas las URLs
+absolutas, de forma idempotente, sin build:
+
+```bash
+python3 scripts/dominio.py --check                    # no escribe; sale ≠ 0 si algo no coincide
+python3 scripts/dominio.py --origen https://yaruki.app  # fija sitio.json y reescribe
+python3 scripts/dominio.py                            # reescribe al origen de sitio.json
+```
+
+Reescribe: `canonical` y `alternate`, `og:url`, `og:image`, `twitter:image`/`twitter:url`, cualquier
+`href`/`src`/`content` absoluto al dominio propio (por ejemplo un `<a href>` absoluto), las cadenas URL
+del JSON-LD cuyo host es el propio, `sitemap.xml` y `robots.txt`. Las páginas nuevas (carpetas con
+`index.html`) se descubren solas. Lo que **no** reescribe, lo reporta y sale con 1: una URL de otro host
+en `@id`/`url`/`image`/`logo`/`item`/`mainEntityOfPage` del JSON-LD (puede ser un sitio externo
+legítimo; si lo es, agrega su host a `EXTERNOS` en `dominio.py` y `validar.mjs`) y cualquier «fuga» del
+dominio viejo en JS, CSS, JSON/manifest, XML, TXT, SVG o texto del HTML (se corrige a mano).
+`validar` lee `sitio.json` (no tiene el dominio escrito) y su regla `dominio` falla si queda una
+URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus pruebas
+(`scripts/pruebas/test_dominio.py`, que prueban el viaje de ida y vuelta byte a byte).
+
+**Excepciones deliberadas** (el dominio viejo puede seguir apareciendo ahí):
+- Este README (documenta la mudanza y el despliegue).
+- `scripts/pruebas/test_dominio.py` (lo usa como dato de prueba).
+- `privacidad@hjgr.dev`: es el **correo** de contacto, no la URL del sitio. Sigue igual mientras
+  el buzón siga en `hjgr.dev`; si algún día se muda, es un buscar-y-reemplazar aparte en las 4 páginas
+  (los textos legales no nombran el dominio del sitio, solo ese correo).
+- `dev.hjgr.yaruki` (identificador del paquete en Play) y `asistente.hjgr.dev` (la API): no son el sitio.
+
+### Pasos para Harold
+
+1. **Comprar el dominio** (`yaruki.app` o `.mx`) y ponerlo en Cloudflare. DNS: registro `A` de la raíz
+   (y de `www`) a `159.223.135.90`, **DNS only** (nube gris), igual que en «Despliegue».
+2. **Caddy: bloque nuevo.** Copia el bloque de `yaruki.hjgr.dev` de «Despliegue §3» (con el mismo `hide`,
+   que debe incluir `scripts package.json package-lock.json`) cambiando solo el encabezado por
+   `yaruki.app { ... }`, y agrega `www.yaruki.app { redir https://yaruki.app{uri} permanent }`.
+   El mismo clon `/var/www/asistente-landing` sirve a los dos. Valida y recarga:
+   `sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
+3. **En el repo** (PR normal): `python3 scripts/dominio.py --origen https://yaruki.app`, luego
+   `cd scripts/pruebas && node validar.mjs` (debe dar 0), revisar `git diff` y, en `main`, `python3 scripts/versionar.py`.
+   Actualiza en el README el `yaruki.hjgr.dev` de los comandos de verificación. Despliega con `git pull`.
+4. **Redirecciones 301 del dominio viejo, ruta por ruta.** Cambia el bloque de `yaruki.hjgr.dev` por:
+
+   ```caddyfile
+   yaruki.hjgr.dev {
+   	root * /var/www/asistente-landing
+
+   	# El archivo de verificación de Search Console sigue respondiendo 200 en el dominio viejo
+   	# (Search Console no sigue redirecciones a otro dominio al verificar y revisa el archivo
+   	# periódicamente), para que la propiedad vieja siga verificada y «Cambio de dirección» funcione.
+   	@verificacion path /google9633e8d6c904333e.html
+   	handle @verificacion {
+   		file_server
+   	}
+
+   	handle {
+   		redir https://yaruki.app{uri} permanent
+   	}
+   }
+   ```
+
+   Valida y recarga igual que en el paso 2 (`sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`).
+   `{uri}` conserva ruta y query (`/privacidad/` → `https://yaruki.app/privacidad/`); `permanent` es un 301.
+   Comprueba: `curl -sI https://yaruki.hjgr.dev/privacidad/ | head -3` (301 y `location: https://yaruki.app/privacidad/`),
+   y lo mismo con `/`, `/terminos/`, `/eliminar-cuenta/`, `/sitemap.xml` y una URL inexistente.
+5. **Search Console.**
+   - Da de alta el dominio nuevo y verifícalo. `google9633e8d6c904333e.html` **no se toca**: se queda en el repo
+     (y en el sitio viejo, ver paso 4). Ese archivo verifica una propiedad por prefijo de URL del dominio donde
+     responde; como el repo ahora también lo sirve en `yaruki.app`, puede verificar la propiedad nueva, pero lo más sólido es
+     una propiedad de **dominio** con registro TXT en DNS, que cubre `www` y subdominios. La propiedad vieja debe seguir verificada.
+   - Con ambas verificadas, en la propiedad **vieja**: Configuración → **Cambio de dirección** → elige la nueva.
+     (Solo aplica al pasar de un dominio o subdominio a otro, que es este caso.)
+   - Envía el sitemap nuevo (`https://yaruki.app/sitemap.xml`) y pide indexar la portada.
+   - Bing Webmaster Tools: da de alta el dominio nuevo (puedes importarlo de Search Console).
+   - Orden que recomienda Google: redirecciones, revisar canonical/robots, probarlas, Cambio de dirección, mantener
+     las redirecciones y enviar el sitemap nuevo.
+6. **Cuánto mantener el 301:** Google dice «Keep the redirects for as long as possible» y, en general, **al menos
+   un año**, pudiendo ser indefinido. Plan: mantenerlo indefinidamente (cuesta nada). Fuente:
+   <https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes> (consultada el 2026-11-10).
+7. **App Links / `ANDROID_APP_SHA256`: no intervienen.** Verificado en `asistente-android` `origin/main`
+   (`app/src/prod/AndroidManifest.xml`, `MainActivity.kt`) y en `.well-known`: los App Links usan el dominio de la **API**
+   (`asistente.hjgr.dev`, que sirve `/.well-known/assetlinks.json`), no el de la landing. `/.well-known/` de la landing no se toca.
+8. **App Android:** `app/src/main/res/values/enlaces_legales.xml` tiene escritas las URLs legales de
+   `yaruki.hjgr.dev`. Siguen funcionando mientras el 301 exista, pero conviene cambiarlas en la siguiente versión
+   (y su prueba `AbrirEnlaceExternoTest`). Backend: solo un comentario en `config/legal.php` y los runbooks.
+9. **Enlace de la beta** (`href` de los botones `[data-cta-beta]` de `index.html`; antes `BETA_URL`): es el Google Group de testers; no depende del dominio. No cambia.
+10. **Política de privacidad y Términos:** no nombran el dominio del sitio (solo el correo): no requieren texto nuevo.
+11. **Ficha de Play Console:** actualiza la **URL de la política de privacidad** (Contenido de la app), el sitio web
+    del desarrollador, el enlace de eliminación de cuenta del formulario de Seguridad de los datos y el correo/URL de
+    contacto si los muestra. El enlace viejo seguirá redirigiendo.
+12. **Backlinks:** actualiza el perfil de GitHub, la descripción del repo y lo que enlace al dominio viejo.
 
 ## Despliegue (NO ejecutado — sólo instrucciones para cuando el dueño lo apruebe)
 

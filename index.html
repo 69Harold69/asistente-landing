@@ -37,7 +37,22 @@
         "@id": "https://yaruki.hjgr.dev/#sitio",
         "url": "https://yaruki.hjgr.dev/",
         "name": "Yaruki",
-        "inLanguage": "es-MX"
+        "inLanguage": "es-MX",
+        "publisher": { "@id": "https://yaruki.hjgr.dev/#autor" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://yaruki.hjgr.dev/#pagina",
+        "url": "https://yaruki.hjgr.dev/",
+        "name": "Yaruki — Asistente personal para tus tareas y hábitos",
+        "inLanguage": "es-MX",
+        "isPartOf": { "@id": "https://yaruki.hjgr.dev/#sitio" },
+        "about": { "@id": "https://yaruki.hjgr.dev/#app" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://yaruki.hjgr.dev/#autor",
+        "name": "Harold de Jesús García Ramírez"
       },
       {
         "@type": "SoftwareApplication",
@@ -50,15 +65,14 @@
         "operatingSystem": "Android",
         "inLanguage": "es-MX",
         "image": "https://yaruki.hjgr.dev/assets/img/og-yaruki.png",
+        "isAccessibleForFree": true,
         "offers": {
           "@type": "Offer",
           "price": "0",
           "priceCurrency": "MXN"
         },
-        "author": {
-          "@type": "Person",
-          "name": "Harold de Jesús García Ramírez"
-        }
+        "author": { "@id": "https://yaruki.hjgr.dev/#autor" },
+        "publisher": { "@id": "https://yaruki.hjgr.dev/#autor" }
       }
     ]
   }
@@ -75,6 +89,7 @@
   <link rel="stylesheet" href="assets/css/base.css?v=7e55092f39" />
   <link rel="stylesheet" href="assets/css/phone.css?v=7e55092f39" />
   <link rel="stylesheet" href="assets/css/scenes.css?v=7e55092f39" />
+  <noscript><link rel="stylesheet" href="assets/css/sin-js.css?v=7e55092f39" /></noscript>
   <script defer src="assets/js/vendor/gsap.min.js?v=7e55092f39"></script>
   <script defer src="assets/js/vendor/ScrollTrigger.min.js?v=7e55092f39"></script>
   <script type="module" src="assets/js/main.js?v=7e55092f39"></script>
@@ -132,8 +147,7 @@
       </p>
       <div class="cta-row">
         <div class="cta-item">
-          <a class="button button--disabled" role="link" aria-disabled="true" data-cta-beta>Únete a la beta</a>
-          <span class="chip" data-chip-proximamente-beta>Próximamente</span>
+          <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/" data-cta-beta>Únete a la beta</a>
         </div>
         <div class="cta-item">
           <span class="button button--disabled" role="link" aria-disabled="true">Descárgala en App Store</span>
@@ -255,8 +269,7 @@
         </p>
         <div class="cta-row">
           <div class="cta-item">
-            <a class="button button--disabled" role="link" aria-disabled="true" data-cta-beta>Únete a la beta</a>
-            <span class="chip" data-chip-proximamente-beta>Próximamente</span>
+            <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/" data-cta-beta>Únete a la beta</a>
           </div>
         </div>
         <ol class="pasos-beta" aria-label="Cómo unirte a la beta">
@@ -312,7 +325,7 @@
             <h3>Eliminar tu cuenta</h3>
             <p>Desde la app o por correo. Tienes 30 días para recuperarla antes del borrado definitivo.</p>
           </a>
-          <span class="link-card link-card--disabled">
+          <div class="link-card link-card--disabled">
             <span class="link-card-head">
               <span class="link-card-icon" aria-hidden="true">
                 <svg width="22" height="22" viewBox="0 0 24 24">
@@ -324,7 +337,7 @@
             </span>
             <h3>Exportar tus datos</h3>
             <p>Una copia de todo lo que guardaste, en un archivo que puedas abrir donde quieras.</p>
-          </span>
+          </div>
         </div>
         <p class="contacto-privacidad">
           ¿Dudas sobre tus datos? Escríbenos a
@@ -341,6 +354,13 @@
             Yaruki es un proyecto de Harold de Jesús García Ramírez, Guadalajara,
             Jalisco, México.
           </p>
+          <nav class="footer-guias" aria-label="Guías">
+            <p class="footer-guias-titulo">Guías</p>
+            <ul class="footer-links">
+              <li><a href="/organizar-tareas-con-ia/">Organizar tareas con IA</a></li>
+              <li><a href="/recordatorios-por-voz/">Recordatorios por voz</a></li>
+            </ul>
+          </nav>
         </div>
         <ul class="footer-links">
           <li><a href="/privacidad/">Privacidad</a></li>
