@@ -14,7 +14,6 @@ import { inicializarReveals } from "./revelar.js?v=7e55092f39";
 import { inicializarProgreso } from "./progreso.js?v=7e55092f39";
 import { inicializarMagneticos } from "./magnetico.js?v=7e55092f39";
 import { inicializarNavRecorrido } from "./nav-recorrido.js?v=7e55092f39";
-import { BETA_URL } from "./config.js?v=7e55092f39";
 
 /*
   Yaruki — punto de entrada de `index.html`. Sin framework, sin bundler:
@@ -51,27 +50,12 @@ sincronizarToggle(botonesTema);
 mostrarDemoDeTemaSiCorresponde(botonesTema[0]);
 
 /*
-  Botón "Únete a la beta" (decisión 3.8 del plan): mientras `BETA_URL` esté
-  vacía, el botón no navega — ya sale deshabilitado del HTML
-  (`role="link"` + `aria-disabled="true"`, sin `href`: tampoco entra en el
-  orden de tabulación) con el chip "Próximamente" al lado,
-  así que no hace falta ningún listener para bloquearlo. Este bloque sólo
-  ACTIVA el botón el día que `BETA_URL` deje de estar vacía, sin tocar
-  ningún otro archivo (ver README).
+  Botón "Únete a la beta": ya es un enlace real en el HTML (`href` al Google
+  Group de testers), así que aquí no hay nada que activar. El `href` vive
+  SOLO en `index.html` (README, sección "BRAND_NAME y el enlace de la beta").
 */
-if (BETA_URL) {
-  document.querySelectorAll("[data-cta-beta]").forEach((boton) => {
-    boton.href = BETA_URL;
-    boton.removeAttribute("aria-disabled");
-    boton.removeAttribute("role");
-    boton.classList.remove("button--disabled");
-    boton.classList.add("button--primary");
-  });
-  document.querySelectorAll("[data-chip-proximamente-beta]").forEach((chip) => chip.remove());
-}
-
 inicializarReveals(escenario);
 inicializarProgreso();
-// Después del bloque de BETA_URL: los magnéticos sólo toman los CTA activos.
+// Los magnéticos sólo toman los CTA activos (`.button--primary`).
 inicializarMagneticos();
 inicializarNavRecorrido(escenario);
