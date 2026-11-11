@@ -26,11 +26,18 @@ export function inicializarNavRecorrido(escenario) {
     });
   });
 
+  /* «Cómo funciona», las preguntas y lo que siga viven DESPUÉS del recorrido (fuera de `.layout-con-stage`):
+     ahí los puntos no aplican (no hay escena que seguir), así que se ocultan en vez de dejar encendido el último
+     («Tu día») y encimarse con el contenido. `data-fuera` los oculta con CSS (base.css). */
+  const recorrido = document.querySelector(".layout-con-stage");
+  const fuera = () => !!recorrido && recorrido.getBoundingClientRect().bottom <= window.innerHeight * 0.5;
   let pendiente = 0;
   let actual = null;
   function marcar() {
     pendiente = 0;
-    const id = escenario.seccionLeida();
+    const sinRecorrido = fuera();
+    nav.toggleAttribute("data-fuera", sinRecorrido);
+    const id = sinRecorrido ? null : escenario.seccionLeida();
     if (id === actual) return;
     actual = id;
     enlaces.forEach((a) => {

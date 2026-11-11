@@ -133,6 +133,17 @@ export const SECCIONES_PORTADA = [
   { id: "fase-llamada", escenas: ["llamada"] },
   { id: "cta", escenas: ["dashboard"] },
 ];
+/**
+ * Secciones DESPUÉS del recorrido (en <main>, fuera de `.layout-con-stage`): no tienen escena propia. El teléfono ya
+ * salió de pantalla y se queda en la última (dashboard), de frente. `capturas` y `tactil` las visitan igual y exigen
+ * que el teléfono no se vea ahí; en `index.html` van en este orden, entre `#cta` y el Centro de privacidad (en `index.html` el orden es este mismo).
+ */
+export const SECCIONES_FUERA_DEL_RECORRIDO = [
+  { id: "como-funciona", escenas: ["dashboard"] },
+  { id: "lo-que-viene", escenas: ["dashboard"] },
+  { id: "preguntas", escenas: ["dashboard"] },
+  { id: "quien-esta-detras", escenas: ["dashboard"] },
+];
 export const ORDEN_ESCENAS = ["splash", "login", "chat", "elementos", "habitos", "logro", "avisos", "llamada", "dashboard"];
 
 /** Lee en la página la escena dominante, el ángulo (0-360) del teléfono y el scroll. */
@@ -168,4 +179,28 @@ export const ID_ESCENA = (id) => ORDEN_ESCENAS.indexOf(id);
 export function salir(codigo, msg) {
   if (msg) (codigo ? console.error : console.log)(msg);
   process.exit(codigo);
+}
+
+/*
+  Scroll horizontal de la página (el documento más ancho que la ventana). Devuelve null si no hay, o un texto
+  con el ancho y los elementos más externos que se salen por la derecha (los que causan el desborde).
+  Lo usan capturas (portada y TODAS las demás páginas, en cada tamaño) y sin-js (#46).
+*/
+export async function medirScrollHorizontal(page) {
+  return page.evaluate(() => {
+    const de = document.documentElement;
+    const ancho = Math.max(de.scrollWidth, document.body ? document.body.scrollWidth : 0);
+    if (ancho <= de.clientWidth) return null;
+    const sale = (e) => e.getBoundingClientRect().right > de.clientWidth + 0.5;
+    // Lo que está dentro de un contenedor con su propio scroll (p. ej. `.tabla-desplazable`) no desborda la página.
+    const enContenedor = (e) => {
+      for (let x = e.parentElement; x && x !== document.body; x = x.parentElement) if (getComputedStyle(x).overflowX !== "visible") return true;
+      return false;
+    };
+    const culpables = [...document.querySelectorAll("body *")]
+      .filter((e) => sale(e) && !enContenedor(e) && !(e.parentElement && e.parentElement !== document.body && sale(e.parentElement)))
+      .slice(0, 3)
+      .map((e) => `<${e.localName}${e.id ? "#" + e.id : ""}${e.classList.length ? "." + [...e.classList].join(".") : ""}> ${Math.round(e.getBoundingClientRect().width)}px`);
+    return `scrollWidth ${ancho} > ${de.clientWidth}${culpables.length ? ` (${culpables.join(", ")})` : ""}`;
+  });
 }

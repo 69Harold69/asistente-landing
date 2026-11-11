@@ -3,11 +3,18 @@
   Archivos .woff2 convertidos de los .ttf que empaqueta asistente-android
   (app/src/main/res/font/), con woff2_compress. Licencia SIL OFL en
   assets/fonts/OFL-Baloo2.txt y OFL-Manrope.txt.
+  Desde la auditoría integral (pasada 1) las legales, las guías y la 404 usan
+  los mismos recortes latinos que la portada (`assets/fuentes/*-latin.woff2`,
+  ver fuentes-portada.css): cubren todos los caracteres de esas páginas
+  (comprobado con fonttools) y pesan 105 KB en vez de 291 KB. Con los
+  completos, la simulación de Lighthouse móvil daba un LCP de ~2.85 s en
+  ~1 de cada 3–5 corridas (las fuentes en la ruta del LCP); con los recortes,
+  ~1.65 s. Los completos de `assets/fonts/` ya no los usa ninguna página.
 */
 
 @font-face {
   font-family: "Baloo 2";
-  src: url("../fonts/baloo2-semibold.woff2") format("woff2");
+  src: url("../fuentes/baloo2-semibold-latin.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -15,7 +22,7 @@
 
 @font-face {
   font-family: "Baloo 2";
-  src: url("../fonts/baloo2-bold.woff2") format("woff2");
+  src: url("../fuentes/baloo2-bold-latin.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -23,7 +30,7 @@
 
 @font-face {
   font-family: "Baloo 2";
-  src: url("../fonts/baloo2-extrabold.woff2") format("woff2");
+  src: url("../fuentes/baloo2-extrabold-latin.woff2") format("woff2");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -31,7 +38,7 @@
 
 @font-face {
   font-family: "Manrope";
-  src: url("../fonts/manrope-regular.woff2") format("woff2");
+  src: url("../fuentes/manrope-regular-latin.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -39,7 +46,7 @@
 
 @font-face {
   font-family: "Manrope";
-  src: url("../fonts/manrope-medium.woff2") format("woff2");
+  src: url("../fuentes/manrope-medium-latin.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -47,7 +54,7 @@
 
 @font-face {
   font-family: "Manrope";
-  src: url("../fonts/manrope-semibold.woff2") format("woff2");
+  src: url("../fuentes/manrope-semibold-latin.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -55,22 +62,93 @@
 
 @font-face {
   font-family: "Manrope";
-  src: url("../fonts/manrope-bold.woff2") format("woff2");
+  src: url("../fuentes/manrope-bold-latin.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
-/* Métrica de sistema de respaldo mientras carga la fuente, para evitar un
-   salto de layout grande (no hay fuentes de terceros, sólo ajuste local). */
+/*
+  Respaldo métrico mientras cargan las fuentes (`font-display: swap`): Arial
+  ajustado para ocupar lo mismo que la fuente real, así el cambio no
+  reacomoda renglones ni mueve el layout (CLS, #24). Sin fuentes de terceros:
+  `local()` usa la Arial del sistema (en Linux, Liberation Sans, métricamente
+  idéntica).
+  Ratios medidos con fonttools sobre el texto de las páginas legales y la 404:
+  ancho de cada fuente real / ancho de Arial (Bold para los pesos 600-800,
+  Regular para 400); ascent/descent = métricas hhea de la fuente real /
+  size-adjust. Cada peso usado (400, 600, 700, 800) cae en una de dos caras:
+    Baloo 2 semibold/bold/extrabold: 91.1% / 92.8% / 94.3%  → 93%
+    Manrope regular: 102.4%;  semibold/bold: 98.8% / 100.4%  → 99.6%
+*/
 @font-face {
   font-family: "Baloo 2 Fallback";
-  src: local("Arial");
-  size-adjust: 112%;
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("Arial");
+  font-weight: 600 800;
+  size-adjust: 93%;
+  ascent-override: 115.8%;
+  descent-override: 56.3%;
+  line-gap-override: 0%;
 }
 
 @font-face {
   font-family: "Manrope Fallback";
-  src: local("Arial");
-  size-adjust: 102%;
+  src: local("Arial"), local("ArialMT"), local("Liberation Sans");
+  font-weight: 400;
+  size-adjust: 102.4%;
+  ascent-override: 104.1%;
+  descent-override: 29.3%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Manrope Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("Arial");
+  font-weight: 500 800;
+  size-adjust: 99.6%;
+  ascent-override: 107%;
+  descent-override: 30.1%;
+  line-gap-override: 0%;
+}
+
+/*
+  Segundo respaldo métrico, para Android (auditoría #24): ahí no hay Arial ni
+  Liberation Sans, así que los `local()` de arriba fallan, el navegador salta
+  esas familias y el texto cae a la `sans-serif` del sistema (Roboto) SIN
+  ajuste: el CLS vuelve a ser el de antes (0.098 / 0.040, medido con
+  `cls.mjs` apuntando los `local()` de Arial a un nombre inexistente).
+  Mismas reglas, medidas con fonttools contra Roboto 3 (wght 400/700):
+    Baloo 2 semibold/bold/extrabold vs Roboto Bold: 97.0% / 98.8% / 100.4% → 99%
+    Manrope regular vs Roboto Regular: 102.9%;
+    Manrope semibold/bold vs Roboto Bold: 105.2% / 106.9% → 106%
+  Si tampoco hay Roboto (otro Linux), se cae a la `sans-serif` como antes.
+*/
+@font-face {
+  font-family: "Baloo 2 Fallback Roboto";
+  src: local("Roboto Bold"), local("Roboto-Bold"), local("Roboto");
+  font-weight: 600 800;
+  size-adjust: 99%;
+  ascent-override: 108.9%;
+  descent-override: 52.9%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Manrope Fallback Roboto";
+  src: local("Roboto"), local("Roboto-Regular"), local("Roboto Regular");
+  font-weight: 400;
+  size-adjust: 102.9%;
+  ascent-override: 103.6%;
+  descent-override: 29.2%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Manrope Fallback Roboto";
+  src: local("Roboto Bold"), local("Roboto-Bold"), local("Roboto");
+  font-weight: 500 800;
+  size-adjust: 106%;
+  ascent-override: 100.6%;
+  descent-override: 28.3%;
+  line-gap-override: 0%;
 }

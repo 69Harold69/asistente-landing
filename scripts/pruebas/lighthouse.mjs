@@ -31,7 +31,7 @@ const ETIQ = { performance: "Rend.", accessibility: "Accesib.", "best-practices"
 const METRICAS = { lcp: "largest-contentful-paint", cls: "cumulative-layout-shift", tbt: "total-blocking-time", fcp: "first-contentful-paint", si: "speed-index" };
 const salida = carpetaSalida(a.salida, "~/Pictures/yaruki-landing-2026-11/lighthouse");
 const corridas = Number(a.corridas ?? 3);
-const paginas = a.todas ? ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/"] : lista(a.paginas, ["/"]);
+const paginas = a.todas ? ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/organizar-tareas-con-ia/", "/recordatorios-por-voz/"] : lista(a.paginas, ["/"]);
 const tolPerf = Number(a["tolerancia-rendimiento"] ?? 2);
 const mediana = (xs) => {
   const s = [...xs].sort((p, q) => p - q);

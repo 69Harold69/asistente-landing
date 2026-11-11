@@ -284,6 +284,21 @@ strong {
   margin-bottom: var(--space-2);
 }
 
+/*
+  Por debajo de 360 px (#48) el chip de vigencia de las legales y la etiqueta
+  de las guías no caben en un renglón y su `nowrap` empujaba la página a lo
+  ancho: ahí se parten en dos renglones, con radio de tarjeta en vez de
+  píldora. De 360 px para arriba no cambia nada.
+*/
+@media (max-width: 359.98px) {
+  .legal-head .chip,
+  .guia-etiqueta {
+    white-space: normal;
+    text-wrap: balance;
+    border-radius: var(--radius-sm);
+  }
+}
+
 .legal-head h1 {
   font-size: var(--text-2xl);
 }
@@ -319,6 +334,21 @@ strong {
   font-size: var(--text-sm);
 }
 
+/*
+  Tablas de las páginas legales (#46): en móvil una tabla de 3 columnas puede
+  ser más ancha que la pantalla. El contenedor se desplaza solo él (nunca la
+  página entera), es enfocable para moverlo con el teclado (`tabindex="0"`) y
+  tiene nombre accesible (`role="region"` + `aria-labelledby` al caption).
+*/
+.tabla-desplazable {
+  overflow-x: auto;
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.tabla-desplazable > table {
+  margin: 0;
+}
+
 .legal-body caption {
   text-align: left;
   font-weight: 600;
@@ -338,6 +368,23 @@ strong {
   font-family: var(--font-body);
   font-weight: 700;
   color: var(--color-text-secondary);
+}
+
+/* Móvil: celdas más compactas y guiones de corte (`lang="es-MX"`) para que la
+   tabla quepa; si aun así no cabe, se desplaza dentro de `.tabla-desplazable`.
+   La primera columna (nombres de proveedores: «DigitalOcean», «Vertex») no se
+   silabea: un nombre propio partido con guion se lee mal. Safari solo entiende
+   la forma con prefijo. */
+@media (max-width: 480px) {
+  .legal-body th,
+  .legal-body td {
+    padding: 0.55em 0.4em;
+  }
+
+  .legal-body td:not(:first-child) {
+    -webkit-hyphens: auto;
+    hyphens: auto;
+  }
 }
 
 .callout {
@@ -907,6 +954,25 @@ strong {
   }
 }
 
+/*
+  Malla de fondo del hero (malla.js): el canvas lo crea el módulo, ocupa todo el
+  ancho de la ventana (el hero sólo mide una columna) y va DETRÁS del texto
+  (`#hero` es un contexto de apilamiento: z-index 1). El tamaño y el desfase
+  llegan por CSSOM en `--malla-*`. Se desvanece hacia abajo para no dejar un
+  corte seco donde termina el hero.
+*/
+.malla-hero {
+  position: absolute;
+  top: 0;
+  left: var(--malla-izq, 0);
+  width: var(--malla-ancho, 100%);
+  height: var(--malla-alto, 100%);
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+}
+
 .hero-significado {
   font-family: var(--font-display);
   font-weight: 600;
@@ -921,7 +987,10 @@ strong {
   font-weight: 800;
   line-height: 1.04;
   letter-spacing: -0.012em;
-  max-width: 13ch;
+  /* `em`, no `ch` (#53): el `ch` es el avance del «0» de la fuente que esté pintando y el de Baloo 2 ExtraBold
+     es ~15 % más ancho que el del respaldo; con `ch` el titular cambiaba de renglones al llegar la fuente.
+     7.877em = 13ch de Baloo 2 ExtraBold (371.0 / 47.1; 504.2 / 64), sin depender de la fuente. */
+  max-width: 7.877em;
   margin-bottom: var(--space-3);
 }
 
@@ -1378,6 +1447,15 @@ strong {
     top: 50%;
     z-index: 40;
     transform: translateY(-50%);
+    transition: opacity 0.25s ease, visibility 0s;
+  }
+
+  /* Pasado el recorrido (nav-recorrido.js): sin puntos, y sin foco ni lectura de pantalla. */
+  .nav-recorrido[data-fuera] {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0s 0.25s;
   }
 
   .nav-recorrido ol {
@@ -1453,4 +1531,274 @@ strong {
    no son controles, no llevan anillo de foco. */
 .seccion:focus {
   outline: none;
+}
+
+/* ======================================================================
+   Contenido indexable bajo el recorrido (#como-funciona, #preguntas).
+   Viven en <main> pero FUERA de `.layout-con-stage`: cuando llegan, el
+   teléfono ya salió de escena y stage.js no los mide (no hay escena ni
+   tramo para ellos). Texto plano en el HTML; sin JS ni animación de entrada.
+   ====================================================================== */
+
+.bloque {
+  padding: var(--space-6) 0 0;
+}
+
+main > .bloque:last-child {
+  padding-bottom: var(--space-6);
+}
+
+.bloque .fase-titulo {
+  max-width: 22ch;
+  margin-bottom: var(--space-1);
+}
+
+.bloque-intro {
+  max-width: 36rem;
+  margin: 0;
+  color: var(--color-text-secondary);
+  text-wrap: pretty;
+}
+
+/* Cómo funciona: una secuencia de verdad, así que lleva número. */
+.pasos-lista {
+  list-style: none;
+  counter-reset: paso;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.pasos-lista > li {
+  counter-increment: paso;
+  border-top: 1px solid var(--color-border-card);
+  padding-top: var(--space-3);
+}
+
+.pasos-lista > li::before {
+  content: counter(paso);
+  content: counter(paso) / "";
+  display: block;
+  margin-bottom: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-2xl);
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.pasos-lista h3 {
+  font-size: var(--text-md);
+  text-wrap: balance;
+}
+
+.pasos-lista p {
+  max-width: 28rem;
+  margin: 0;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+  text-wrap: pretty;
+}
+
+@media (max-width: 860px) {
+  .pasos-lista {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+}
+
+/* Preguntas frecuentes: <details> nativo (teclado, lectores y buscadores sin JS). */
+.bloque-preguntas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .bloque-preguntas {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 8fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  /* El título acompaña la lectura de las respuestas, en vez de dejar la columna izquierda vacía. */
+  .bloque-cabecera {
+    position: sticky;
+    top: var(--space-4);
+  }
+}
+
+.preguntas-lista {
+  border-top: 1px solid var(--color-border-card);
+}
+
+.pregunta {
+  border-bottom: 1px solid var(--color-border-card);
+}
+
+.pregunta summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  min-height: 3.25rem;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-md);
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+.pregunta summary::-webkit-details-marker {
+  display: none;
+}
+
+.pregunta summary::after {
+  content: "";
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.2rem;
+  border-right: 2px solid var(--color-accent);
+  border-bottom: 2px solid var(--color-accent);
+  transform: translateY(-0.12rem) rotate(45deg);
+}
+
+.pregunta[open] summary::after {
+  transform: translateY(0.12rem) rotate(225deg);
+}
+
+.pregunta summary:hover {
+  color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pregunta summary::after {
+    transition: transform 180ms ease;
+  }
+}
+
+.pregunta-respuesta {
+  max-width: 40rem;
+  padding: 0 0 var(--space-3);
+}
+
+.pregunta-respuesta p {
+  margin: 0;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  text-wrap: pretty;
+}
+
+/* Lo que viene: tarjetas sobrias, cada una con su chip «Próximamente». Rejilla de 6 columnas:
+   3 + 2 en escritorio, 2 por fila en tablet, 1 en móvil. */
+.viene-lista {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.tarjeta-viene {
+  grid-column: span 2;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.tarjeta-viene:nth-child(n + 4) {
+  grid-column: span 3;
+}
+
+@media (max-width: 900px) {
+  .viene-lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tarjeta-viene,
+  .tarjeta-viene:nth-child(n + 4) {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .viene-lista {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tarjeta-viene-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.tarjeta-viene h3 {
+  margin: 0;
+  font-size: var(--text-md);
+  text-wrap: balance;
+}
+
+.tarjeta-viene .chip {
+  flex: none;
+}
+
+.tarjeta-viene p {
+  margin: 0;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+  text-wrap: pretty;
+}
+
+.tarjeta-viene p + p {
+  margin-top: var(--space-1);
+}
+
+/* Aviso de iPhone: solo existe en el HTML cuando IPHONE_AVISO_URL tiene valor (README, «Aviso de iPhone»). */
+.aviso-iphone a {
+  font-weight: 600;
+}
+
+/* Quién está detrás: una línea, sin tarjeta. */
+.bloque--breve .bloque-intro {
+  max-width: 42rem;
+}
+
+/* Testimonios: PREPARADO Y SIN USAR. No hay ningún `.testimonios` en el HTML hasta tener permiso por escrito de cada
+   persona (README, «Testimonios»); `validar` falla si aparece marcado de testimonios. */
+.testimonios {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.testimonio {
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-lg);
+}
+
+.testimonio blockquote {
+  margin: 0 0 var(--space-2);
+  line-height: 1.65;
+}
+
+.testimonio figcaption {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
 }

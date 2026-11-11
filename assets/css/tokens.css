@@ -36,8 +36,8 @@
   --color-on-accent-ui: #ffffff;
 
   /* Tipografía */
-  --font-display: "Baloo 2", "Baloo 2 Fallback", ui-rounded, system-ui, sans-serif;
-  --font-body: "Manrope", "Manrope Fallback", system-ui, -apple-system, sans-serif;
+  --font-display: "Baloo 2", "Baloo 2 Fallback", "Baloo 2 Fallback Roboto", ui-rounded, system-ui, sans-serif;
+  --font-body: "Manrope", "Manrope Fallback", "Manrope Fallback Roboto", system-ui, -apple-system, sans-serif;
 
   /* Escala tipográfica (base 17px, proporción ~1.2) */
   --text-sm: 0.875rem;
@@ -77,6 +77,13 @@
   /* Ancho acotado también por el alto del viewport: en una laptop de 720px
      de alto el teléfono (proporción 9:19.5) tiene que entrar completo. */
   --phone-width: min(clamp(216px, 62vw, 296px), (100vh - 8rem) * 0.4615);
+
+  /* Malla del hero (malla.js): opacidades de las líneas y puntos en reposo (color
+     --color-border-card) y encendidos por el cursor (color --color-accent). */
+  --malla-linea-reposo: 0.4;
+  --malla-linea-activa: 0.05;
+  --malla-punto-reposo: 0.25;
+  --malla-punto-activo: 0.09;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -99,6 +106,10 @@
     --color-danger-bg: #3d2323;
     --shadow-color: 0deg 0% 0%;
     --color-on-accent-ui: #151322;
+    --malla-linea-reposo: 0.9;
+    --malla-linea-activa: 0.2;
+    --malla-punto-reposo: 1;
+    --malla-punto-activo: 0.36;
   }
 }
 
@@ -128,6 +139,10 @@
   --color-danger-bg: #3d2323;
   --shadow-color: 0deg 0% 0%;
   --color-on-accent-ui: #151322;
+  --malla-linea-reposo: 0.9;
+  --malla-linea-activa: 0.2;
+  --malla-punto-reposo: 1;
+  --malla-punto-activo: 0.36;
 }
 
 :root[data-theme="light"] {
@@ -149,4 +164,8 @@
   --color-danger-bg: #fbdede;
   --shadow-color: 25deg 30% 20%;
   --color-on-accent-ui: #ffffff;
+  --malla-linea-reposo: 0.4;
+  --malla-linea-activa: 0.05;
+  --malla-punto-reposo: 0.25;
+  --malla-punto-activo: 0.09;
 }

@@ -186,6 +186,9 @@
   width: calc(96 * var(--dp));
   height: calc(96 * var(--dp));
   background: var(--color-bg-elevated);
+  /* Mirada (tilt.js, #27): la mascota se corre hasta 7 dp hacia el cursor. `translate`
+     se compone con el `transform` de la respiración y con la escala del envoltorio. */
+  translate: calc(var(--mira-x, 0) * 7 * var(--dp)) calc(var(--mira-y, 0) * 7 * var(--dp));
 }
 
 @media (prefers-reduced-motion: no-preference) {
