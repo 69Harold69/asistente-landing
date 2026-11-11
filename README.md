@@ -321,7 +321,15 @@ U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122,
 U+2190-2193, U+2212, U+2713, U+2022; `--layout-features='*'`). De 431 KB a
 109 KB. Si se agrega texto con caracteres fuera de ese rango, regenerarlos
 desde `assets/fonts/` con el mismo comando. Las páginas legales siguen con
-los originales de `assets/fonts/` vía `fonts.css`.
+los originales de `assets/fonts/` vía `fonts.css`, cuyas fuentes de respaldo
+("Baloo 2 Fallback", "Manrope Fallback": Arial con `size-adjust` y
+`ascent/descent-override` medidos con fonttools contra la fuente real, una cara
+por grupo de pesos) evitan el CLS del cambio de fuente (#24, antes 0.134 en
+`/eliminar-cuenta/`). Como en Android no hay Arial ni Liberation Sans, hay un
+segundo respaldo, "Baloo 2 Fallback Roboto" / "Manrope Fallback Roboto"
+(`local("Roboto")` con sus propias métricas), puesto después en la pila de
+`tokens.css`; sin él, en Android el CLS volvía a 0.098. Si cambias las fuentes o el texto de esas páginas,
+revisa con `node scripts/pruebas/cls.mjs`.
 
 **Originales (`assets/fonts/`):**
 
