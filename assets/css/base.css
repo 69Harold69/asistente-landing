@@ -987,7 +987,10 @@ strong {
   font-weight: 800;
   line-height: 1.04;
   letter-spacing: -0.012em;
-  max-width: 13ch;
+  /* `em`, no `ch` (#53): el `ch` es el avance del «0» de la fuente que esté pintando y el de Baloo 2 ExtraBold
+     es ~15 % más ancho que el del respaldo; con `ch` el titular cambiaba de renglones al llegar la fuente.
+     7.877em = 13ch de Baloo 2 ExtraBold (371.0 / 47.1; 504.2 / 64), sin depender de la fuente. */
+  max-width: 7.877em;
   margin-bottom: var(--space-3);
 }
 
