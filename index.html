@@ -73,6 +73,47 @@
         },
         "author": { "@id": "https://yaruki.hjgr.dev/#autor" },
         "publisher": { "@id": "https://yaruki.hjgr.dev/#autor" }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://yaruki.hjgr.dev/#preguntas",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Es gratis?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Hoy sí: durante la beta no se cobra nada y Yaruki no tiene anuncios. Los mensajes de voz son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope. Como dicen los Términos, en el futuro algunas funciones (por ejemplo, las llamadas o un mayor uso de los mensajes de voz) podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cómo cuidan mis datos?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Todo viaja cifrado (HTTPS) y en la base de datos guardamos cifrado lo más sensible, como tus notas, la descripción de tus tareas y los mensajes del chat. No vendemos tus datos, no hay anuncios ni analítica de terceros, y el historial de tus chats se borra a los 30 días. El detalle está en la política de privacidad." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Funciona por voz?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí, con mensajes de voz: son parte del plan gratuito, hasta 5 al día, y en la prueba cerrada no hay tope. La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud; Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. Más en la guía de recordatorios por voz." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Hay versión para iPhone?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Todavía no: Yaruki está en beta cerrada y solo para Android. Una versión para iPhone está planeada, pero sin fecha." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Qué hace la IA con lo que le digo?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Tu mensaje pasa por el servidor de Yaruki, que lo envía a Gemini (la IA de Google, en Google Cloud Vertex AI) solo para interpretarlo y responderte; nunca se envían tu nombre ni tu correo. Según la documentación pública de Google Cloud, Vertex AI no usa lo que le envían sus clientes para entrenar sus modelos salvo autorización expresa, y nosotros no la damos. Como la IA puede equivocarse, antes de editar, cambiar de fecha, posponer, agregar un ítem a una lista, convertir o archivar algo que ya tenías te pide confirmación; crear algo nuevo o marcar una tarea como hecha suele aplicarse de una vez." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cómo me uno a la beta?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yaruki está en beta cerrada para Android. Únete al grupo de testers con tu cuenta de Google, espera unos minutos y acepta la invitación en Google Play con la misma cuenta; desde ahí descargas la app." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Puedo borrar mi cuenta?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí, cuando quieras: desde la app (Perfil → Eliminar cuenta) o escribiendo a privacidad@hjgr.dev, aunque no tengas la app instalada. Tu cuenta se desactiva de inmediato y tienes 30 días para recuperarla iniciando sesión; después se elimina de forma definitiva y automática con todo tu contenido, y las copias de seguridad del servidor caducan en un máximo de 30 días más. Los plazos si lo pides por correo y todos los pasos están en Eliminar tu cuenta." }
+          }
+        ]
       }
     ]
   }
@@ -133,7 +174,8 @@
     </ol>
   </nav>
 
-  <main id="contenido" class="layout-con-stage">
+  <main id="contenido">
+    <div class="layout-con-stage">
 
     <section id="hero" class="seccion seccion-hero" aria-labelledby="titular">
       <p class="hero-significado">Yaruki (<span lang="ja">やる気</span>): las ganas de hacer algo</p>
@@ -284,6 +326,99 @@
         </ol>
       </section>
     </div>
+    </div>
+
+    <section id="como-funciona" class="bloque" aria-labelledby="titulo-como-funciona">
+      <div class="container">
+        <h2 class="fase-titulo" id="titulo-como-funciona">Cómo funciona Yaruki</h2>
+        <p class="bloque-intro">De una frase suelta a algo ordenado, en tres pasos.</p>
+        <ol class="pasos-lista" role="list">
+          <li>
+            <h3>Díselo con tus palabras</h3>
+            <p>
+              Escríbelo o mándalo como mensaje de voz: «Recuérdame pagar la luz
+              el jueves a las 10 de la mañana». No hay formularios que llenar.
+              <a href="/recordatorios-por-voz/">Así funciona la voz</a>.
+            </p>
+          </li>
+          <li>
+            <h3>Yaruki lo anota y te pregunta lo que falte</h3>
+            <p>
+              Lo guarda como tarea, nota, lista, evento o hábito. Si una hora no
+              queda clara, te pregunta en lugar de suponer, y antes de editar,
+              cambiar de fecha o archivar algo que ya tenías te pide
+              confirmación. <a href="/organizar-tareas-con-ia/">Qué puede y qué
+              no puede hacer</a>.
+            </p>
+          </li>
+          <li>
+            <h3>Te avisa y lo ves ordenado</h3>
+            <p>
+              Lo que tiene hora te llega como notificación, y todo queda en sus
+              pantallas de tareas, notas, listas, eventos y hábitos, sin que lo
+              acomodes tú.
+            </p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="preguntas" class="bloque" aria-labelledby="titulo-preguntas">
+      <div class="container bloque-preguntas">
+        <div class="bloque-cabecera">
+          <h2 class="fase-titulo" id="titulo-preguntas">Preguntas frecuentes</h2>
+          <p class="bloque-intro">
+            Respuestas cortas. El detalle está en la
+            <a href="/privacidad/">política de privacidad</a> y en los
+            <a href="/terminos/">Términos</a>.
+          </p>
+        </div>
+        <div class="preguntas-lista">
+          <details class="pregunta">
+            <summary>¿Es gratis?</summary>
+            <div class="pregunta-respuesta">
+              <p>Hoy sí: durante la beta no se cobra nada y Yaruki no tiene anuncios. Los mensajes de voz son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope. Como dicen los <a href="/terminos/">Términos</a>, en el futuro algunas funciones (por ejemplo, las llamadas o un mayor uso de los mensajes de voz) podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes.</p>
+            </div>
+          </details>
+          <details class="pregunta">
+            <summary>¿Cómo cuidan mis datos?</summary>
+            <div class="pregunta-respuesta">
+              <p>Todo viaja cifrado (HTTPS) y en la base de datos guardamos cifrado lo más sensible, como tus notas, la descripción de tus tareas y los mensajes del chat. No vendemos tus datos, no hay anuncios ni analítica de terceros, y el historial de tus chats se borra a los 30 días. El detalle está en la <a href="/privacidad/">política de privacidad</a>.</p>
+            </div>
+          </details>
+          <details class="pregunta">
+            <summary>¿Funciona por voz?</summary>
+            <div class="pregunta-respuesta">
+              <p>Sí, con mensajes de voz: son parte del plan gratuito, hasta 5 al día, y en la prueba cerrada no hay tope. La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud; Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. Más en la guía de <a href="/recordatorios-por-voz/">recordatorios por voz</a>.</p>
+            </div>
+          </details>
+          <details class="pregunta">
+            <summary>¿Hay versión para iPhone?</summary>
+            <div class="pregunta-respuesta">
+              <p>Todavía no: Yaruki está en beta cerrada y solo para Android. Una versión para iPhone está planeada, pero sin fecha.</p>
+            </div>
+          </details>
+          <details class="pregunta">
+            <summary>¿Qué hace la IA con lo que le digo?</summary>
+            <div class="pregunta-respuesta">
+              <p>Tu mensaje pasa por el servidor de Yaruki, que lo envía a Gemini (la IA de Google, en Google Cloud Vertex AI) solo para interpretarlo y responderte; nunca se envían tu nombre ni tu correo. Según la documentación pública de Google Cloud, Vertex AI no usa lo que le envían sus clientes para entrenar sus modelos salvo autorización expresa, y nosotros no la damos. Como la IA puede equivocarse, antes de editar, cambiar de fecha, posponer, agregar un ítem a una lista, convertir o archivar algo que ya tenías te pide confirmación; crear algo nuevo o marcar una tarea como hecha suele aplicarse de una vez.</p>
+            </div>
+          </details>
+          <details class="pregunta">
+            <summary>¿Cómo me uno a la beta?</summary>
+            <div class="pregunta-respuesta">
+              <p>Yaruki está en beta cerrada para Android. Únete al <a href="https://groups.google.com/g/yaruki-beta/">grupo de testers</a> con tu cuenta de Google, espera unos minutos y acepta la <a href="https://play.google.com/apps/testing/dev.hjgr.yaruki">invitación en Google Play</a> con la misma cuenta; desde ahí descargas la app.</p>
+            </div>
+          </details>
+          <details class="pregunta">
+            <summary>¿Puedo borrar mi cuenta?</summary>
+            <div class="pregunta-respuesta">
+              <p>Sí, cuando quieras: desde la app (Perfil → Eliminar cuenta) o escribiendo a privacidad@hjgr.dev, aunque no tengas la app instalada. Tu cuenta se desactiva de inmediato y tienes 30 días para recuperarla iniciando sesión; después se elimina de forma definitiva y automática con todo tu contenido, y las copias de seguridad del servidor caducan en un máximo de 30 días más. Los plazos si lo pides por correo y todos los pasos están en <a href="/eliminar-cuenta/">Eliminar tu cuenta</a>.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="pie">
