@@ -22,7 +22,7 @@ if (a.ayuda || a.help) salir(0, "Uso: node sin-js.mjs [--salida DIR]");
 const dirSalida = a.salida ? carpetaSalida(a.salida) : null;
 
 const CTA_BETA = "https://groups.google.com/g/yaruki-beta/";
-const PAGINAS = ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/no-existe"];
+const PAGINAS = ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/organizar-tareas-con-ia/", "/recordatorios-por-voz/", "/no-existe"];
 const TAMANOS = { escritorio: { width: 1440, height: 900 }, tablet: { width: 820, height: 1180 }, movil: { width: 390, height: 844 } };
 const IGNORAR_OPACIDAD = "nav-recorrido-etiqueta";
 

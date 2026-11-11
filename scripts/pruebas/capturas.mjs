@@ -32,7 +32,7 @@ const TEMAS = { claro: "light", oscuro: "dark" };
 
 const salida = carpetaSalida(a.salida, "~/Pictures/yaruki-landing-2026-11/capturas");
 const paginasHome = "/";
-const paginas = lista(a.paginas, ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/404.html"]);
+const paginas = lista(a.paginas, ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/organizar-tareas-con-ia/", "/recordatorios-por-voz/", "/404.html"]);
 const temas = lista(a.temas, ["claro", "oscuro"]);
 const tamanos = lista(a.tamanos, ["escritorio", "tablet", "movil"]);
 const conVideo = !a["sin-video"];
