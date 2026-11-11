@@ -258,6 +258,17 @@ strong {
   margin: 0;
 }
 
+/* Bloque «Guías» del pie de la portada. */
+.footer-guias {
+  margin-top: var(--space-2);
+}
+
+.footer-guias-titulo {
+  margin: 0 0 0.2em;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 /* Documentos legales ------------------------------------------------------ */
 
 .legal {
