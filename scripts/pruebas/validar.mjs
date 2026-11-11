@@ -401,6 +401,10 @@ const dentroDe = (n, pred) => {
 };
 const textoDeNodo = (n) => textoDe(n).join(" ").replace(/\s+/g, " ").trim();
 const PREGUNTAS_MINIMAS = 7;
+/* «Lo que viene»: ideas, no compromisos. Sin fechas, precios, Premium ni lenguaje de promesa (decisión de Harold, 2026-11-10). */
+const PROMESA_DE_FUTURO = /\bpronto\b|próxima versión|próximas versiones|llegará|llegarán|\bpremium\b|\bprecio|\$\s?\d|\b20\d\d\b|\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b|gratis para siempre/i;
+const TARJETAS_VIENE = 5;
+const URL_GRUPO_AVISO = /^https:\/\/groups\.google\.com\/g\/[A-Za-z0-9._-]+\/?$/;
 if (activa("portada")) {
   const p = paginas.find((x) => x.url === "/");
   if (p) {
@@ -425,6 +429,45 @@ if (activa("portada")) {
       if (!ol) falla("portada", d(como), "#como-funciona debe llevar una lista ordenada <ol>");
       else if (pasos.length !== 3) falla("portada", d(ol), `#como-funciona debe tener exactamente 3 pasos y tiene ${pasos.length}`);
     }
+    const viene = revisar("lo-que-viene", "Lo que viene");
+    if (viene) {
+      const tarjetas = etiquetas(viene, "li").filter((x) => (attr(x, "class") ?? "").split(/\s+/).includes("tarjeta-viene"));
+      if (tarjetas.length !== TARJETAS_VIENE) falla("portada", d(viene), `#lo-que-viene debe tener ${TARJETAS_VIENE} tarjetas (.tarjeta-viene) y tiene ${tarjetas.length}`);
+      for (const t of tarjetas) if (!/Próximamente/.test(textoDeNodo(t))) falla("portada", d(t), "tarjeta de «Lo que viene» sin el chip «Próximamente»");
+      const m = textoDeNodo(viene).match(PROMESA_DE_FUTURO);
+      if (m) falla("portada", d(viene), `#lo-que-viene: «${m[0]}» suena a compromiso, fecha o precio (solo «estamos trabajando en», «queremos que»…)`);
+      for (const [clave, re] of [["Finanzas", /sin conexión a tus bancos|sin conexión a bancos/i], ["Finanzas", /sin asesoría financiera/i]])
+        if (!re.test(textoDeNodo(viene))) falla("portada", d(viene), `${clave} debe decir «${re.source}»`);
+    }
+    const quien = revisar("quien-esta-detras", "Quién está detrás");
+    if (quien) {
+      const t = textoDeNodo(quien);
+      if (!t.includes("Harold de Jesús García Ramírez") || !t.includes("Guadalajara")) falla("portada", d(quien), "#quien-esta-detras debe nombrar a Harold de Jesús García Ramírez y Guadalajara (solo lo que el sitio ya publica)");
+      const enlaces = etiquetas(quien, "a").map((x) => attr(x, "href"));
+      if (!enlaces.includes("/privacidad/")) falla("portada", d(quien), "#quien-esta-detras debe enlazar a /privacidad/");
+      if (enlaces.some((h) => !h?.startsWith("/")) || etiquetas(quien, "img").length) falla("portada", d(quien), "#quien-esta-detras: sin fotos, redes ni correos personales nuevos");
+    }
+    /* Aviso «avísame cuando salga» de iPhone: IPHONE_AVISO_URL (assets/js/config.js) vacía => no hay nada en el HTML; con URL => el enlace real está en el HTML. */
+    {
+      const cfg = fs.readFileSync(path.join(RAIZ_SITIO, "assets/js/config.js"), "utf8");
+      const mc = cfg.match(/export const IPHONE_AVISO_URL\s*=\s*"([^"]*)"\s*;/);
+      const avisos = etiquetas(p.arbol, "a").filter((x) => tiene(x, "data-aviso-iphone"));
+      const promete = /av[ií]same/i.test(textoVisible(p.arbol));
+      if (!mc) falla("portada", "assets/js/config.js", "falta `export const IPHONE_AVISO_URL = \"\";`");
+      else if (mc[1] === "") {
+        if (avisos.length || promete) falla("portada", p.r, "IPHONE_AVISO_URL está vacía: el HTML no puede tener el enlace [data-aviso-iphone] ni texto que prometa el aviso («avísame…»)");
+      } else {
+        if (!URL_GRUPO_AVISO.test(mc[1])) falla("portada", "assets/js/config.js", `IPHONE_AVISO_URL debe ser un Google Group (https://groups.google.com/g/…), no «${mc[1]}»`);
+        if (avisos.length !== 1) falla("portada", p.r, `IPHONE_AVISO_URL tiene valor: el HTML debe traer exactamente un <a data-aviso-iphone> y trae ${avisos.length}`);
+        else {
+          if (attr(avisos[0], "href") !== mc[1]) falla("portada", d(avisos[0]), "el href de [data-aviso-iphone] debe ser IPHONE_AVISO_URL");
+          if (viene && !dentroDe(avisos[0], (x) => x === viene)) falla("portada", d(avisos[0]), "[data-aviso-iphone] va dentro de #lo-que-viene");
+        }
+      }
+    }
+    /* Testimonios: todavía no. Nada publicado hasta tener permiso por escrito de cada persona (README, «Testimonios»). */
+    if (etiquetas(p.arbol, "blockquote").length || /testimonio/i.test(p.fuente.replace(/<!--[\s\S]*?-->/g, "")))
+      falla("portada", p.r, "hay marcado de testimonios en la portada: solo con permiso por escrito de cada persona (README); quita esta comprobación en la PR que los agregue");
     const faq = revisar("preguntas", "Preguntas frecuentes");
     if (faq) {
       const dets = etiquetas(faq, "details");

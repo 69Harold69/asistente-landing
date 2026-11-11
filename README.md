@@ -132,7 +132,7 @@ entre la espalda y el frente (`construirCanto`), visibles sólo cuando
 |sen θ| > 0.025 (`fijarRotacion`). `will-change: transform` sólo durante un
 vuelo.
 
-**Contenido después del recorrido (`#como-funciona`, `#preguntas`):** viven en `<main>`, pero **fuera** de
+**Contenido después del recorrido (`#como-funciona`, `#lo-que-viene`, `#preguntas`, `#quien-esta-detras`):** viven en `<main>`, pero **fuera** de
 `.layout-con-stage` (que cierra justo después de `#cta`): ahí termina el sticky del escenario, el teléfono ya salió de
 pantalla y `stage.js` no mide esas secciones (no están en `SECCIONES_ANCLA`, no tienen escena ni tramo; el teléfono se
 queda en la última escena, `dashboard`, de frente). Son texto plano en el HTML, sin `revelar.js` ni animación de entrada,
@@ -284,6 +284,54 @@ al primer clic en el toggle).
   los Términos y el código** (tabla en `.pm/landing-2026-11/contenido-cotejo.md` del monorepo). No escribas ahí
   «nunca cambia ni borra nada sin preguntarte» ni «nunca actúa a tus espaldas»: crear algo nuevo y marcar como hecho no piden
   confirmación; usa la redacción de `/organizar-tareas-con-ia/` (`validar` lo vigila en estas secciones).
+- **«Lo que viene» y «Quién está detrás» (`#lo-que-viene`, `#quien-esta-detras`):** también después del recorrido. El orden
+  final es: hero → recorrido (`#cta`) → Cómo funciona → Lo que viene → Preguntas frecuentes → Quién está detrás → Centro de
+  privacidad → pie. «Lo que viene» sigue las decisiones de Harold (llamadas, Finanzas, iPhone, personalización y logros,
+  avisos que se repiten): cada tarjeta lleva el chip «Próximamente» y **ninguna fecha, precio, etiqueta Premium ni lenguaje
+  de compromiso** («estamos trabajando en», «queremos que»; nunca «pronto», «llegará», «próxima versión»); `validar` lo vigila.
+  Finanzas dice que no hay conexión a bancos ni asesoría financiera. Llamadas no repite `#fase-llamada`: una línea y un
+  enlace ancla. «Quién está detrás» es una línea con el nombre y la ciudad que el sitio ya publica y un enlace a `/privacidad/`
+  (sin foto, redes ni correo nuevos).
+
+### Aviso de iPhone («avísame cuando salga»)
+
+La CSP bloquea formularios, así que el aviso es un **enlace a un Google Group**. La URL vive en `assets/js/config.js`
+(`IPHONE_AVISO_URL`, hoy `""`) y la regla es: **vacía ⇒ no se ve nada** (el HTML no trae el enlace ni texto que prometa
+el aviso); **con URL ⇒ el enlace real está en el HTML** (mejora progresiva, sin JS). `validar` (regla `portada`) falla si la
+constante y el HTML no coinciden, en cualquier dirección. Para activarlo (crear el grupo le toca a Harold):
+
+1. Pon la URL en `config.js`: `export const IPHONE_AVISO_URL = "https://groups.google.com/g/<grupo>/";`
+2. Pega este fragmento en `index.html`, dentro de la tarjeta «Yaruki para iPhone» (`#lo-que-viene`), justo después de su `</p>`:
+
+```html
+            <p class="aviso-iphone"><a data-aviso-iphone href="https://groups.google.com/g/<grupo>/">Avísame cuando salga la versión para iPhone</a></p>
+```
+
+3. Corre `node scripts/pruebas/validar.mjs`, sube el `lastmod` de `/` y, si quieres, menciona el aviso en la respuesta de
+   iPhone de `#preguntas` (cambia HTML y JSON-LD a la vez).
+
+### Testimonios (preparado, sin usar)
+
+Todavía no hay testimonios y **no hay marcado ni texto de ejemplo** en el HTML. Las clases están listas en `base.css`
+(`.testimonios`, `.testimonio`). Cuando existan, y **solo con permiso por escrito de cada persona** (nombre o alias tal como
+lo autorice), agrega una sección después de «Cómo funciona» con este marcado, quita la comprobación de testimonios de
+la regla `portada` en `validar.mjs` en la misma PR, y no agregues `Review` ni `aggregateRating` al JSON-LD (están prohibidos):
+
+```html
+<section id="testimonios" class="bloque" aria-labelledby="titulo-testimonios">
+  <div class="container">
+    <h2 class="fase-titulo" id="titulo-testimonios">Lo que dicen quienes lo prueban</h2>
+    <ul class="testimonios" role="list">
+      <li>
+        <figure class="testimonio">
+          <blockquote><p>…texto autorizado…</p></blockquote>
+          <figcaption>Nombre o alias autorizado, tester de la beta</figcaption>
+        </figure>
+      </li>
+    </ul>
+  </div>
+</section>
+```
 
 ## Íconos e imagen para compartir (`assets/img/`)
 

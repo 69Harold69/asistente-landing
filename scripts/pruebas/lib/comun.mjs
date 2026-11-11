@@ -136,11 +136,13 @@ export const SECCIONES_PORTADA = [
 /**
  * Secciones DESPUÉS del recorrido (en <main>, fuera de `.layout-con-stage`): no tienen escena propia. El teléfono ya
  * salió de pantalla y se queda en la última (dashboard), de frente. `capturas` y `tactil` las visitan igual y exigen
- * que el teléfono no se vea ahí; en `index.html` van en este orden, entre `#cta` y el Centro de privacidad.
+ * que el teléfono no se vea ahí; en `index.html` van en este orden, entre `#cta` y el Centro de privacidad (en `index.html` el orden es este mismo).
  */
 export const SECCIONES_FUERA_DEL_RECORRIDO = [
   { id: "como-funciona", escenas: ["dashboard"] },
+  { id: "lo-que-viene", escenas: ["dashboard"] },
   { id: "preguntas", escenas: ["dashboard"] },
+  { id: "quien-esta-detras", escenas: ["dashboard"] },
 ];
 export const ORDEN_ESCENAS = ["splash", "login", "chat", "elementos", "habitos", "logro", "avisos", "llamada", "dashboard"];
 
