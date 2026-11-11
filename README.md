@@ -305,7 +305,10 @@ los originales de `assets/fonts/` vía `fonts.css`, cuyas fuentes de respaldo
 ("Baloo 2 Fallback", "Manrope Fallback": Arial con `size-adjust` y
 `ascent/descent-override` medidos con fonttools contra la fuente real, una cara
 por grupo de pesos) evitan el CLS del cambio de fuente (#24, antes 0.134 en
-`/eliminar-cuenta/`). Si cambias las fuentes o el texto de esas páginas,
+`/eliminar-cuenta/`). Como en Android no hay Arial ni Liberation Sans, hay un
+segundo respaldo, "Baloo 2 Fallback Roboto" / "Manrope Fallback Roboto"
+(`local("Roboto")` con sus propias métricas), puesto después en la pila de
+`tokens.css`; sin él, en Android el CLS volvía a 0.098. Si cambias las fuentes o el texto de esas páginas,
 revisa con `node scripts/pruebas/cls.mjs`.
 
 **Originales (`assets/fonts/`):**
