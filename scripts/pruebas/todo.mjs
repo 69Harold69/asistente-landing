@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
   todo: corre validar + sin-js + cls + licencias + dominio (--check y sus pruebas) + las pruebas de JSON-LD,
-  IndexNow, guías y portada + malla + mirada + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese
+  IndexNow, guías y portada + malla + mirada + progreso + capturas + lighthouse (y la prueba tactil con --con-tactil) en ese
   orden, sin detenerse en la primera falla, y sale con 1 si CUALQUIERA falla.
   Antes de todo, la guardia «registro» (#50): falla si en esta carpeta (o en lib/) hay un `test_*.py` o un
   `.mjs` que ningún paso corre y que no está en EXCEPCIONES.
@@ -55,6 +55,8 @@ const pasos = [
   ["malla", process.execPath, ["malla.mjs", "--salida", path.join(salida, "malla")]],
   // Mirada de la mascota (#27): dirección y tope, giros, transform intacto, reduced-motion y táctil.
   ["mirada", process.execPath, ["mirada.mjs", "--salida", path.join(salida, "mirada")]],
+  // Avance de la portada (#60, opción B): sin barra superior; riel entre los puntos, 0-100 %, desvanecido, reduced-motion y sin JS.
+  ["progreso", process.execPath, ["progreso.mjs"]],
   ["capturas", process.execPath, ["capturas.mjs", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
   ["lighthouse", process.execPath, ["lighthouse.mjs", "--salida", path.join(salida, "lighthouse"), ...paginas, ...(a.corridas ? ["--corridas", String(a.corridas)] : []), ...(a.comparar ? ["--comparar", path.resolve(String(a.comparar).replace(/^~(?=$|\/)/, os.homedir()))] : [])]],
 ];
