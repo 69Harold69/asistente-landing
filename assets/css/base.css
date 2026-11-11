@@ -356,14 +356,18 @@ strong {
 }
 
 /* Móvil: celdas más compactas y guiones de corte (`lang="es-MX"`) para que la
-   tabla quepa; si aun así no cabe, se desplaza dentro de `.tabla-desplazable`. */
+   tabla quepa; si aun así no cabe, se desplaza dentro de `.tabla-desplazable`.
+   La primera columna (nombres de proveedores: «DigitalOcean», «Vertex») no se
+   silabea: un nombre propio partido con guion se lee mal. Safari solo entiende
+   la forma con prefijo. */
 @media (max-width: 480px) {
   .legal-body th,
   .legal-body td {
     padding: 0.55em 0.4em;
   }
 
-  .legal-body td {
+  .legal-body td:not(:first-child) {
+    -webkit-hyphens: auto;
     hyphens: auto;
   }
 }
