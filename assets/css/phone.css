@@ -171,6 +171,11 @@
     display: none;
   }
 
+  /* Sin franja arriba: el foco no necesita el margen de la rama móvil. */
+  .secciones :is(a, button) {
+    scroll-margin-top: 0;
+  }
+
   .escenario-3d {
     --phone-width: calc((100vh - 2.5rem) * 0.4615);
   }
