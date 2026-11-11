@@ -1,0 +1,25 @@
+{
+  "name": "yaruki-landing-pruebas",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Herramientas de prueba y revisión visual de la landing (solo desarrollo; no se publica).",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "instalar": "playwright install ffmpeg",
+    "servir": "node lib/servidor.mjs",
+    "validar": "node validar.mjs",
+    "capturas": "node capturas.mjs",
+    "tactil": "node tactil.mjs",
+    "lighthouse": "node lighthouse.mjs",
+    "todo": "node todo.mjs"
+  },
+  "devDependencies": {
+    "html-validate": "11.21.0",
+    "lighthouse": "13.6.0",
+    "parse5": "8.1.1",
+    "playwright": "1.65.0"
+  }
+}

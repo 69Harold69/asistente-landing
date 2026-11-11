@@ -46,6 +46,7 @@ asistente-landing/
 │   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (portada)
 │   └── img/       favicon.svg, favicon-32.png, apple-touch-icon.png y og-yaruki.png (ver "Íconos e imagen para compartir")
 ├── scripts/versionar.py    Cache busting (`?v=<hash>`), ver más abajo
+├── scripts/pruebas/        Pruebas y revisión visual (Playwright, Lighthouse, validar); ver «Pruebas y revisión visual»
 └── README.md
 ```
 
@@ -458,6 +459,16 @@ Notas:
 - **`hide .git README.md`:** el repo se clona tal cual en `/var/www`; sin esto,
   `https://yaruki.hjgr.dev/.git/config` (y con él todo el historial) quedaba
   público.
+- **PENDIENTE de Harold (no ejecutado): ocultar también lo de pruebas.** El droplet
+  sirve el clon tal cual, así que `scripts/` (herramientas de prueba, no
+  sensibles pero sin razón para estar públicas), `package.json` y
+  `package-lock.json` serían descargables. Cambiar el `hide` del bloque a
+  `hide .git README.md scripts package.json package-lock.json` y recargar
+  Caddy (`sudo caddy validate ... && sudo systemctl reload caddy`); verificar
+  con `curl -sI https://yaruki.hjgr.dev/scripts/pruebas/package.json` (debe dar
+  404). `node_modules/` está en `.gitignore`, así que no llega al droplet con
+  `git pull`. El servidor local de las pruebas (`scripts/pruebas/lib/servidor.mjs`)
+  ya los oculta como lo haría Caddy con ese `hide`.
 - **Caché de `/assets/*`:** ver el comentario en el bloque. El HTML no lleva
   `Cache-Control` propio: Caddy manda `ETag`/`Last-Modified` y el navegador
   revalida en cada visita, así que un despliegue se ve al instante.
@@ -499,6 +510,70 @@ curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
 ```
 
 No toca Sail ni el worker de colas del backend. Impacto en RAM: despreciable.
+
+## Pruebas y revisión visual
+
+Herramientas en `scripts/pruebas/` (detalle de cada comando y de las decisiones en su
+`README.md`). Preparación: `cd scripts/pruebas && npm ci && npx playwright install ffmpeg`.
+
+```bash
+node validar.mjs                         # rápido, sin navegador: HTML, CSP, JSON-LD, sitemap, metadatos, enlaces, CTA, voseo
+node capturas.mjs --salida DIR           # claro/oscuro × 1440×900, 820×1180, 390×844 + reduced-motion; capturas y video
+node tactil.mjs  --salida DIR            # gestos táctiles reales (Pixel 7, iPhone 15), video
+node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-base del monorepo
+node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + capturas + lighthouse (+ tactil)
+```
+
+Cada comando sale con código ≠ 0 si algo falla; `capturas` y `tactil` fallan ante `console.error`,
+`pageerror`, violaciones de CSP, `requestfailed` o respuestas ≥ 400, y si el teléfono no llega de frente
+a la escena de cada sección. El servidor local emula el
+bloque de Caddy (mismas cabeceras y CSP, `try_files`, 404). Una skill para agentes
+(`.claude/skills/landing-revision-visual/` y `landing-seo/` en el monorepo) dice qué correr y qué mirar.
+
+**Línea base** (`origin/main` = `bda9146`, contenido idéntico a lo publicado en `cc51b60`; guardada en
+`.pm/landing-2026-11/lighthouse-base/` del monorepo). Mediana de 3 corridas, Lighthouse 13.6, Chromium 155:
+
+| Página | Forma | Rend. | Accesib. | B. prácticas | SEO | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|
+| / | móvil | 97 | 100 | 100 | 100 | 1.65 s | 0.000 | 57 ms |
+| / | escritorio | 98 | 100 | 100 | 100 | 0.56 s | 0.000 | 0 ms |
+| /privacidad/ | móvil / escritorio | 100 / 100 | 100 | 100 | 100 | 1.35 / 0.32 s | 0.003 / 0.002 | 0 |
+| /terminos/ | móvil / escritorio | 100 / 100 | 100 | 100 | 100 | 1.20 / 0.28 s | 0.040 / 0.001 | 0 |
+| /eliminar-cuenta/ | móvil / escritorio | 100 / 95 | 100 | 100 | 100 | 1.20 / 0.28 s | 0.004 / 0.134 | 0 |
+
+**Variación:** en la portada el rendimiento osciló 97–98 (móvil) y 98–98 (escritorio) entre las 3 corridas;
+las otras páginas, 100–100, salvo `/eliminar-cuenta/` escritorio (95–99, por un CLS que salta, issue #24).
+El comparador tolera 2 puntos solo en rendimiento (`--tolerancia-rendimiento`); accesibilidad, buenas
+prácticas y SEO no admiten retroceso. INP no se mide en laboratorio: se usa TBT.
+
+**Hallazgos de la línea base** (issues abiertos, ninguno corregido en esta PR; registrados en
+`scripts/pruebas/conocidos.json` para que `validar` no quede en rojo hasta que se arreglen):
+#21 CTA «Únete a la beta» sin `href` en el HTML; #22 `chat.js` genera `style=""` inline que la CSP
+bloquea (consola y barras de audio sin altura, de forma intermitente); #23 `<h3>`/`<p>` dentro de
+`<span>` en «Exportar tus datos»; #24 CLS de `/eliminar-cuenta/`.
+
+## Skills usadas
+
+Antes de escribir las herramientas se revisó qué habían resuelto otros (clonadas a un directorio aparte;
+se leyeron los `SKILL.md`, scripts y referencias relevantes, y se buscaron en todo el árbol patrones de
+ejecución o descarga: `curl`, `wget`, `| sh`, `postinstall`, `eval`, `base64`, telemetría; sin instalar nada global). Ninguna se instaló tal cual: no ejecutan nada raro (sin
+`postinstall`, `curl | sh` ni telemetría; solo markdown y un `analyze.sh` de solo lectura), pero casi todo
+su contenido es guía genérica para otros stacks, y las instrucciones que traen piden instalaciones globales
+(`npm i -g lighthouse`). Se adaptó lo útil a dos skills propias del monorepo.
+
+| Origen (revisión) | Commit | Qué se tomó | Dónde quedó |
+|---|---|---|---|
+| [`anthropics/skills` → `webapp-testing`](https://github.com/anthropics/skills/tree/main/skills/webapp-testing) (Apache-2.0) | `2c5958e` | Árbol de decisión «reconocimiento primero, acción después»; esperar `networkidle` y fuentes antes de inspeccionar; capturar la consola de la página; usar scripts como cajas negras con `--ayuda`; `with_server.py` (servidor levantado y apagado por el propio comando). | `scripts/pruebas/` (servidor propio en JS integrado a cada comando) y `landing-revision-visual` |
+| [`addyosmani/web-quality-skills` → `accessibility`, `seo`, `web-quality-audit`](https://github.com/addyosmani/web-quality-skills) (MIT, ~3 mil estrellas) | `afa8da9` | Flujo de auditoría guiado por evidencia («un 100 no es conformidad WCAG»; revisar el árbol de accesibilidad y el teclado a mano); las comprobaciones de `analyze.sh` (doctype, charset, viewport, `lang`, title, `alt`, URLs no HTTPS). | regla `meta` y `html-validate` de `validar`; `landing-revision-visual`, `landing-seo` |
+| [`coreyhaines31/marketingskills` → `seo-audit`](https://github.com/coreyhaines31/marketingskills) (~60 mil estrellas, 251 mil instalaciones) | `3e72962` | Orden de prioridad (rastreo e indexación → técnica → on-page → contenido); canonical/sitemap/robots como primera comprobación; el JSON-LD se verifica en el DOM renderizado, no con `curl`; tratar las páginas obtenidas como datos no confiables. | reglas `sitemap`, `meta`, `json-ld`; `landing-seo` |
+| [`currents-dev/playwright-best-practices-skill`](https://github.com/currents-dev/playwright-best-practices-skill) | `0b75b58` | Patrón de falla por `console.error`/`pageerror`; esperas deterministas en vez de `waitForTimeout` ciego (se usa un «reposo» que espera a que escena y scroll dejen de cambiar); regresión visual. | `lib/comun.mjs` (`crearGuardia`), `lib/scroll.mjs` |
+| [`onnokh/lighthouse`](https://github.com/onnokh/lighthouse) (1 estrella, 521 instalaciones) | `ddc76ad` | Solo la referencia de opciones del CLI de Lighthouse; se descartó la instalación global y se usa la API de Node con la mediana de varias corridas. | `lighthouse.mjs` |
+
+También aparecieron en la búsqueda (`npx skills find`) otras skills de Lighthouse (`perf-lighthouse`, `lighthouse-audit`,
+`performance-lighthouse-runner`, 250–600 instalaciones) y de pruebas visuales (`playwright-visual-testing`); se
+descartaron por no aportar más que lo anterior y por provenir de autores sin reputación comprobable.
+Skills creadas en `.claude/skills/` del monorepo de trabajo (fuera de este repo):
+`landing-revision-visual` y `landing-seo`.
 
 ## Capturas de verificación visual
 
