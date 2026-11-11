@@ -396,6 +396,10 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--color-accent);
+  /* Mirada (tilt.js, #27): hasta 9 % de su propio tamaño hacia el cursor, por `translate`
+     (se compone con la respiración, que usa `transform`). A 180° la espalda queda sin
+     espejo en pantalla (giro del teléfono + rotateY de la cara), así que no se invierte. */
+  translate: calc(var(--mira-x, 0) * 9%) calc(var(--mira-y, 0) * 9%);
 }
 
 .phone-mascota-halo::before {
