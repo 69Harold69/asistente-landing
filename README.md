@@ -32,7 +32,7 @@ asistente-landing/
 │   │   ├── phone.css    El teléfono 3D (marco, bisel, isla, canto en capas, espalda)
 │   │   └── scenes.css   Contenido de cada escena dentro de la pantalla del teléfono
 │   ├── js/
-│   │   ├── config.js    BRAND_NAME / BETA_URL
+│   │   ├── config.js    BRAND_NAME (el enlace de la beta vive en el `href` de `index.html`)
 │   │   ├── guias.js     Solo el toggle de tema de las páginas-guía (sin GSAP ni teléfono)
 │   │   ├── theme.js     Toggle sol/luna (revelado circular con View Transitions, crossfade de respaldo)
 │   │   ├── theme-demo.js  Demo de tema al cargar, una vez por visita, con la pista junto al toggle
@@ -197,20 +197,36 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 - **`theme-color`** claro y oscuro y `og:image:alt`/`twitter:image:alt` en las 4 páginas públicas (`validar` los exige).
 - **Páginas legales:** cada una tiene su `<title>`, meta description y `<link rel="canonical">`.
 
-## BRAND_NAME y BETA_URL
+## BRAND_NAME y el enlace de la beta
 
-`assets/js/config.js` tiene las dos constantes del plan:
+`assets/js/config.js` tiene una sola constante:
 - `BRAND_NAME = "Yaruki"` — el HTML de cada página sigue escribiendo "Yaruki"
   literal en el texto visible (título, wordmark, copy); la constante es para
   lo que genera JS, no reemplaza al texto estático.
-- `BETA_URL` — el Google Group de testers
-  (`https://groups.google.com/g/yaruki-beta/`). La prueba cerrada de Google
-  Play usa ese grupo como lista de testers, así que unirse es el paso 1;
-  `main.js` activa los dos botones "Únete a la beta" (`#hero` y `#cta`) y
-  quita su chip "Próximamente". El paso 2, aceptar la invitación en
-  `https://play.google.com/apps/testing/dev.hjgr.yaruki`, está escrito en la
-  lista `.pasos-beta` de `#cta`. Con `BETA_URL` vacía los botones vuelven a
-  salir deshabilitados con el chip.
+
+El enlace de "Únete a la beta" **ya no es una constante de JS** (#21): es el
+`href` de los dos botones `[data-cta-beta]` de `index.html` (`#hero` y `#cta`),
+escrito a mano, activo y sin chip "Próximamente" desde el HTML. Apunta al
+Google Group de testers (`https://groups.google.com/g/yaruki-beta/`); la
+prueba cerrada de Google Play usa ese grupo como lista, así que unirse es el
+paso 1. El paso 2, aceptar la invitación en
+`https://play.google.com/apps/testing/dev.hjgr.yaruki`, está escrito en la
+lista `.pasos-beta` de `#cta`. Así el enlace existe para rastreadores y para
+quien navega sin JS, y no queda una segunda fuente de verdad que pueda
+contradecir al HTML en silencio. Para cambiarlo, edita el `href` en los dos
+botones (y el de la lista `.pasos-beta`, que apunta al mismo grupo), y los
+de las páginas-guía (`organizar-tareas-con-ia/`, `recordatorios-por-voz/`),
+que repiten el botón y la lista (`git grep yaruki-beta`);
+`node scripts/pruebas/sin-js.mjs` comprueba que sean enlaces navegables.
+`main.js` ya no toca esos botones; solo el efecto magnético los toma.
+
+**Sin JavaScript** (`sin-js.mjs`): el contenido y los enlaces están en el HTML.
+Lo decorativo que solo vive con JS (el teléfono, que `stage.js` llena y
+coloca; el toggle de tema; la pista «Desliza para descubrir») se oculta con
+`assets/css/sin-js.css`, que `index.html` carga dentro de `<noscript>` (con JS
+no se descarga) y que también quita las alturas de pantalla completa de las
+secciones. Los textos nunca los oculta el CSS: `revelar.js` pone la opacidad 0
+solo cuando corre.
 
 Si el nombre cambia, además de `config.js` es un buscar-y-reemplazar de
 "Yaruki" en el HTML de las 4 páginas (y del lema "las ganas de hacerlo").
@@ -241,9 +257,9 @@ al primer clic en el toggle).
 - **Navegación con puntos (`nav-recorrido.js`):** `nav` con `aria-label`,
   `aria-current="location"` y salto a la posición en la que cada sección
   queda en lectura.
-- **Mascota del header:** respira y se infla con el hover de un CTA de la beta (también mientras dice "Próximamente") o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
+- **Mascota del header:** respira y se infla con el hover de un CTA de la beta o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
-  magnéticos toman únicamente CTAs activos: con `BETA_URL` vacía no se ven.
+  magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
   Dashboard cuentan desde 0; el valor final ya está en el HTML.
 
@@ -516,7 +532,7 @@ URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus
 8. **App Android:** `app/src/main/res/values/enlaces_legales.xml` tiene escritas las URLs legales de
    `yaruki.hjgr.dev`. Siguen funcionando mientras el 301 exista, pero conviene cambiarlas en la siguiente versión
    (y su prueba `AbrirEnlaceExternoTest`). Backend: solo un comentario en `config/legal.php` y los runbooks.
-9. **`BETA_URL`:** es el Google Group de testers; no depende del dominio. No cambia.
+9. **Enlace de la beta** (`href` de los botones `[data-cta-beta]` de `index.html`; antes `BETA_URL`): es el Google Group de testers; no depende del dominio. No cambia.
 10. **Política de privacidad y Términos:** no nombran el dominio del sitio (solo el correo): no requieren texto nuevo.
 11. **Ficha de Play Console:** actualiza la **URL de la política de privacidad** (Contenido de la app), el sitio web
     del desarrollador, el enlace de eliminación de cuenta del formulario de Seguridad de los datos y el correo/URL de
