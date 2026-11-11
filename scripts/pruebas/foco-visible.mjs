@@ -6,6 +6,9 @@
   teléfono terminaba de girar (WCAG 2.4.7, foco visible; auditoría de tablet y auditoría integral).
   Recorre con Tab TODOS los elementos enfocables de la portada (1440×900 y 390×844, claro) y, a los 120 ms de cada
   foco, mide la opacidad efectiva (producto de la opacidad de él y de sus ancestros). Falla si alguno queda < 0.9.
+  También de regreso con Shift+Tab, y falla si el elemento con foco queda debajo de lo que pinta encima del texto (WCAG
+  2.4.11, foco no tapado): en móvil, la franja opaca del teléfono, pegada arriba (al subir con Shift+Tab el navegador
+  deja el enlace en el borde superior, justo detrás de ella); en escritorio, el teléfono.
   Y al revés (auditoría integral, pasada 2): el foco que deja un CLIC de mouse no cuenta. Si un enlace se queda con el
   foco tras un Ctrl+clic (o al volver con Atrás), su bloque no puede quedarse visible a la fuerza: el teléfono le pasaría
   por encima en el siguiente giro. Solo el foco de teclado (`:focus-visible`) muestra el bloque al instante. En
@@ -30,22 +33,33 @@ for (const [nombre, viewport, movil] of [["escritorio", { width: 1440, height: 9
   await page.goto(`${srv.url}/`, { waitUntil: "load" });
   await page.waitForSelector(".capa-escena", { state: "attached", timeout: 10000 }).catch(() => {});
   await dormir(2200);
-  const vistos = new Set();
-  for (let i = 0; i < 60; i++) {
-    await page.keyboard.press("Tab");
-    await dormir(120);
-    const r = await page.evaluate(() => {
-      const el = document.activeElement;
-      if (!el || el === document.body) return null;
-      let op = 1;
-      for (let n = el; n && n.nodeType === 1; n = n.parentElement) op *= Number(getComputedStyle(n).opacity);
-      const sec = el.closest("section, header, footer, nav");
-      return { id: `${sec?.id || sec?.tagName || "?"} › ${el.tagName} «${(el.textContent || el.getAttribute("aria-label") || "").trim().slice(0, 30)}»`, op };
-    });
-    if (!r || vistos.has(r.id)) break;
-    vistos.add(r.id);
-    if (a.verbose) console.log(`  ${nombre} ${r.op.toFixed(2)} ${r.id}`);
-    if (r.op < 0.9) fallas.push(`${nombre}: ${r.id} recibe el foco con opacidad ${r.op.toFixed(2)}`);
+  // Hacia adelante (Tab) y de regreso (Shift+Tab): al subir, el navegador deja el enlace en el borde de arriba.
+  for (const tecla of ["Tab", "Shift+Tab"]) {
+    const vistos = new Set();
+    for (let i = 0; i < 60; i++) {
+      await page.keyboard.press(tecla);
+      await dormir(120);
+      const r = await page.evaluate(() => {
+        const el = document.activeElement;
+        if (!el || el === document.body) return null;
+        let op = 1;
+        for (let n = el; n && n.nodeType === 1; n = n.parentElement) op *= Number(getComputedStyle(n).opacity);
+        // Lo que pinta encima del texto: en móvil la franja opaca del teléfono (sticky arriba); en escritorio, el teléfono.
+        const stage = document.getElementById("stage");
+        const encima = !stage || getComputedStyle(stage).display === "none" ? null : (innerWidth < 1024 ? stage : document.getElementById("escenario-3d")).getBoundingClientRect();
+        const b = el.getBoundingClientRect();
+        const w = encima ? Math.max(0, Math.min(b.right, encima.right) - Math.max(b.left, encima.left)) : 0;
+        const h = encima ? Math.max(0, Math.min(b.bottom, encima.bottom) - Math.max(b.top, encima.top)) : 0;
+        const tapado = b.width * b.height ? (w * h) / (b.width * b.height) : 0;
+        const sec = el.closest("section, header, footer, nav");
+        return { id: `${sec?.id || sec?.tagName || "?"} › ${el.tagName} «${(el.textContent || el.getAttribute("aria-label") || "").trim().slice(0, 30)}»`, op, tapado };
+      });
+      if (!r || vistos.has(r.id)) break;
+      vistos.add(r.id);
+      if (a.verbose) console.log(`  ${nombre} ${tecla} ${r.op.toFixed(2)} tapado ${r.tapado.toFixed(2)} ${r.id}`);
+      if (r.op < 0.9) fallas.push(`${nombre} ${tecla}: ${r.id} recibe el foco con opacidad ${r.op.toFixed(2)}`);
+      if (r.tapado > 0) fallas.push(`${nombre} ${tecla}: ${r.id} recibe el foco tapado por el teléfono (${Math.round(r.tapado * 100)} % de su área)`);
+    }
   }
   await ctx.close();
 }
