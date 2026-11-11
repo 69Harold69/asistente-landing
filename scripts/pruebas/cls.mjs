@@ -19,7 +19,7 @@
 
   --android DIR simula Android: Chromium con un fontconfig propio que solo ve las fuentes de DIR
   (p. ej. Roboto-Regular.ttf y Roboto-Bold.ttf) más Noto, con `sans-serif`, `system-ui` y
-  `ui-rounded` → Roboto, y sin Arial ni Liberation Sans. Sin la bandera se usan las fuentes del sistema.
+  `ui-rounded` → Roboto, sin Arial ni Liberation Sans y sin hinting (como Android). Sin la bandera se usan las fuentes del sistema.
 
   Uso: node cls.mjs [--paginas /,/eliminar-cuenta/] [--max 0.02] [--corridas 3] [--android DIR] [--verbose]
 */
@@ -47,7 +47,11 @@ function fontconfigAndroid(dir) {
   const dirs = [abs, "/usr/share/fonts/noto", "/usr/share/fonts/noto-cjk"].filter((d) => fs.existsSync(d));
   const alias = ["sans-serif", "system-ui", "ui-rounded"].map((f) => `<alias binding="strong"><family>${f}</family><prefer><family>Roboto</family></prefer></alias>`).join("");
   const archivo = path.join(tmp, "fonts.conf");
-  fs.writeFileSync(archivo, `<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.dtd"><fontconfig>${dirs.map((d) => `<dir>${d}</dir>`).join("")}<cachedir>${tmp}/cache</cachedir>${alias}</fontconfig>`);
+  // Android no aplica el hinting TrueType: con hinting, Chromium de Linux redondea los avances de Roboto a
+  // píxeles enteros y a 14 px el respaldo mide ~3% menos que en un teléfono (a 18 px, no). Sin hinting, la
+  // proporción respaldo/real es la misma en todos los tamaños, como en Android.
+  const sinHinting = '<match target="font"><edit name="hinting" mode="assign"><bool>false</bool></edit><edit name="hintstyle" mode="assign"><const>hintnone</const></edit></match>';
+  fs.writeFileSync(archivo, `<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.dtd"><fontconfig>${dirs.map((d) => `<dir>${d}</dir>`).join("")}<cachedir>${tmp}/cache</cachedir>${alias}${sinHinting}</fontconfig>`);
   return { archivo, tmp };
 }
 
