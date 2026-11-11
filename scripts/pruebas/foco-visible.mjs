@@ -39,7 +39,7 @@ for (const [nombre, viewport, movil] of [["escritorio", { width: 1440, height: 9
     for (let i = 0; i < 60; i++) {
       await page.keyboard.press(tecla);
       await dormir(120);
-      const r = await page.evaluate(() => {
+      const medir = () => {
         const el = document.activeElement;
         if (!el || el === document.body) return null;
         let op = 1;
@@ -53,12 +53,19 @@ for (const [nombre, viewport, movil] of [["escritorio", { width: 1440, height: 9
         const tapado = b.width * b.height ? (w * h) / (b.width * b.height) : 0;
         const sec = el.closest("section, header, footer, nav");
         return { id: `${sec?.id || sec?.tagName || "?"} › ${el.tagName} «${(el.textContent || el.getAttribute("aria-label") || "").trim().slice(0, 30)}»`, op, tapado };
-      });
+      };
+      const r = await page.evaluate(medir);
       if (!r || vistos.has(r.id)) break;
+      // En escritorio el teléfono cruza encima hasta ~1.1 s mientras termina el giro hacia el centro (rectángulo plano: el
+      // teléfono va de canto y tapa menos): cuenta solo si sigue tapado ya quieto.
+      if (r.tapado > 0) {
+        await dormir(2500);
+        r.tapado = (await page.evaluate(medir))?.tapado ?? 0;
+      }
       vistos.add(r.id);
       if (a.verbose) console.log(`  ${nombre} ${tecla} ${r.op.toFixed(2)} tapado ${r.tapado.toFixed(2)} ${r.id}`);
       if (r.op < 0.9) fallas.push(`${nombre} ${tecla}: ${r.id} recibe el foco con opacidad ${r.op.toFixed(2)}`);
-      if (r.tapado > 0) fallas.push(`${nombre} ${tecla}: ${r.id} recibe el foco tapado por el teléfono (${Math.round(r.tapado * 100)} % de su área)`);
+      if (r.tapado > 0) fallas.push(`${nombre} ${tecla}: ${r.id} queda tapado por el teléfono con el foco (${Math.round(r.tapado * 100)} % de su área, 2.6 s después)`);
     }
   }
   await ctx.close();
