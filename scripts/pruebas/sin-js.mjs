@@ -23,7 +23,7 @@ const dirSalida = a.salida ? carpetaSalida(a.salida) : null;
 
 const CTA_BETA = "https://groups.google.com/g/yaruki-beta/";
 const PAGINAS = ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/organizar-tareas-con-ia/", "/recordatorios-por-voz/", "/no-existe"];
-const TAMANOS = { escritorio: { width: 1440, height: 900 }, tablet: { width: 820, height: 1180 }, movil: { width: 390, height: 844 } };
+const TAMANOS = { escritorio: { width: 1440, height: 900 }, tablet: { width: 820, height: 1180 }, tablet768: { width: 768, height: 1024 }, tabletapaisada: { width: 1024, height: 768 }, movil: { width: 390, height: 844 } };
 const IGNORAR_OPACIDAD = "nav-recorrido-etiqueta";
 
 const fallas = [];

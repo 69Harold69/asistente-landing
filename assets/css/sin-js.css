@@ -24,13 +24,13 @@
 
 /* El cierre (#cta) reserva 150vh y 22vh arriba en escritorio para el
    aterrizaje del Dashboard; sin teléfono es un hueco. */
-@media (min-width: 1024px) {
+@media (min-width: 1024px), (min-width: 768px) and (min-height: 521px) {
   #cta {
     padding-top: var(--space-6);
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 767px), (max-width: 1023px) and (max-height: 520px) {
   .seccion:not(.seccion-hero) {
     padding-top: var(--space-6);
   }

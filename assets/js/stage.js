@@ -299,7 +299,11 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   const stageEl = telefono.closest(".stage");
   const escenario = document.getElementById("escenario-3d") ?? telefono;
   const mqReducido = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const mqEscritorio = window.matchMedia("(min-width: 1024px)");
+  const mqEscritorio = window.matchMedia("(min-width: 1024px), (min-width: 768px) and (min-height: 521px)");
+  // Tablet (768–1023 px con altura): dos columnas como en escritorio, pero el cierre aterriza en la columna
+  // derecha (no al centro): con columnas de ~330 px el texto del cierre y el teléfono centrado se encimarían.
+  const mqTablet = window.matchMedia("(min-width: 768px) and (max-width: 1023px) and (min-height: 521px)");
+  const fasesActuales = () => (mqTablet.matches ? FASES.map((f) => (f.lado === 0 ? { ...f, lado: LADO_HERO } : f)) : FASES);
 
   let modo = null; // "escritorio" | "movil" | "reducido"
   let geo = null;
@@ -314,6 +318,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   const calcularModo = () => (mqReducido.matches ? "reducido" : mqEscritorio.matches ? "escritorio" : "movil");
 
   function medir() {
+    const FASES = fasesActuales();
     modo = calcularModo();
     const vh = window.innerHeight;
     const tr = mqEscritorio.matches ? TRAMOS.escritorio : TRAMOS.movil;

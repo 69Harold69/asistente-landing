@@ -46,7 +46,7 @@
   pointer-events: none;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 767px), (max-width: 1023px) and (max-height: 520px) {
   .stage {
     height: 44vh;
     background: var(--color-bg);
@@ -66,7 +66,7 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px), (min-width: 768px) and (min-height: 521px) {
   .stage {
     top: var(--space-3);
     height: calc(100vh - var(--space-4));
@@ -74,6 +74,13 @@
     /* Abarca el ancho completo del layout y pinta encima del texto: sin
        eventos de puntero, para no tapar enlaces ni botones. */
     overflow: visible;
+  }
+}
+
+/* Tablet (768–1023 px con altura): dos columnas de ~330 px; el teléfono de escritorio (296 px) las ahogaría. */
+@media (min-width: 768px) and (max-width: 1023px) and (min-height: 521px) {
+  .escenario-3d {
+    --phone-width: min(clamp(216px, 30vw, 296px), (100vh - 8rem) * 0.4615);
   }
 }
 
@@ -126,7 +133,7 @@
    recortaba o se pasaba según el aparato. 18vh de ancho → ~39vh de alto
    (×19.5/9), con aire de sobra dentro de los 44vh en los 2 tamaños de
    prueba (390×844 y 360×740). */
-@media (max-width: 1023px) {
+@media (max-width: 767px), (max-width: 1023px) and (max-height: 520px) {
   .escenario-3d {
     --phone-width: clamp(120px, 18vh, 170px);
   }
@@ -396,6 +403,10 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--color-accent);
+  /* Mirada (tilt.js, #27): hasta 9 % de su propio tamaño hacia el cursor, por `translate`
+     (se compone con la respiración, que usa `transform`). A 180° la espalda queda sin
+     espejo en pantalla (giro del teléfono + rotateY de la cara), así que no se invierte. */
+  translate: calc(var(--mira-x, 0) * 9%) calc(var(--mira-y, 0) * 9%);
 }
 
 .phone-mascota-halo::before {

@@ -779,7 +779,7 @@ strong {
   color del fondo fundiéndose sobre el fondo elevado del pie (#11). `clip`
   no crea un contenedor de scroll, así que el sticky sigue funcionando.
 */
-@media (max-width: 1023px) {
+@media (max-width: 767px), (max-width: 1023px) and (max-height: 520px) {
   .layout-con-stage {
     overflow: clip;
   }
@@ -797,7 +797,7 @@ strong {
   z-index: 2;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px), (min-width: 768px) and (min-height: 521px) {
   .site-header .container,
   .layout-con-stage {
     max-width: 78rem;
@@ -875,7 +875,7 @@ strong {
   mitad inferior. Hábitos mide más: además de su vuelo tiene el sub-cruce a
   "logro" (stage.js, TRAMO_LOGRO).
 */
-@media (max-width: 1023px) {
+@media (max-width: 767px), (max-width: 1023px) and (max-height: 520px) {
   .seccion:not(.seccion-hero) {
     padding-top: 46vh;
     min-height: 100vh;
@@ -900,7 +900,7 @@ strong {
   vertical, a la altura del teléfono sticky — así lo que dice el texto y lo
   que muestra el teléfono coinciden mientras se lee (stage.js, TRAMOS).
 */
-@media (min-width: 1024px) {
+@media (min-width: 1024px), (min-width: 768px) and (min-height: 521px) {
   .seccion {
     --ancho-texto: min(31rem, var(--columna));
     width: var(--ancho-texto);
@@ -930,7 +930,7 @@ strong {
   padding-bottom: var(--space-5);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px), (min-width: 768px) and (min-height: 521px) {
   .seccion-hero {
     /* El primer pantallazo completo es el hero, a la par del teléfono. */
     --ancho-texto: min(36rem, var(--columna));
@@ -1237,7 +1237,7 @@ strong {
   El texto va arriba de la sección y angosto, alineado a la izquierda, para
   quedar siempre a un lado del teléfono centrado (sin solaparse).
 */
-@media (min-width: 1024px) {
+@media (min-width: 1024px), (min-width: 768px) and (min-height: 521px) {
   #cta {
     width: 21rem;
     margin-left: 0;
@@ -1367,7 +1367,7 @@ strong {
   opacity: 0;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px), (min-width: 768px) and (min-height: 521px) {
   .pista-scroll {
     position: absolute;
     bottom: var(--space-4);
@@ -1783,4 +1783,17 @@ main > .bloque:last-child {
 .testimonio figcaption {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+}
+
+/* Tablet (768–1023 px con altura): titular más chico para que quepa en una columna de ~330 px, y el cierre
+   (texto a la izquierda) comparte la columna del teléfono, que aterriza a la derecha (stage.js). */
+@media (min-width: 768px) and (max-width: 1023px) and (min-height: 521px) {
+  .titular-hero {
+    font-size: 2.25rem;
+    max-width: none;
+  }
+
+  #cta {
+    width: min(21rem, var(--columna));
+  }
 }

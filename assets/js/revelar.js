@@ -55,11 +55,11 @@ export function inicializarReveals(escenario) {
   const fases = secciones.filter((s) => s !== cierre);
   const mm = gsap.matchMedia();
 
-  mm.add("(max-width: 1023.98px) and (prefers-reduced-motion: no-preference)", () => {
+  mm.add("(max-width: 767.98px) and (prefers-reduced-motion: no-preference), (max-width: 1023.98px) and (max-height: 520px) and (prefers-reduced-motion: no-preference)", () => {
     secciones.forEach(revelarAlEntrar);
   });
 
-  mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
+  mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference), (min-width: 768px) and (min-height: 521px) and (prefers-reduced-motion: no-preference)", () => {
     // Sin coreografía (modo de inspección), el texto queda visible tal cual.
     const telefono = document.getElementById("telefono");
     if (!escenario || !telefono) return;
