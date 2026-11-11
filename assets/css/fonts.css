@@ -3,11 +3,18 @@
   Archivos .woff2 convertidos de los .ttf que empaqueta asistente-android
   (app/src/main/res/font/), con woff2_compress. Licencia SIL OFL en
   assets/fonts/OFL-Baloo2.txt y OFL-Manrope.txt.
+  Desde la auditoría integral (pasada 1) las legales, las guías y la 404 usan
+  los mismos recortes latinos que la portada (`assets/fuentes/*-latin.woff2`,
+  ver fuentes-portada.css): cubren todos los caracteres de esas páginas
+  (comprobado con fonttools) y pesan 105 KB en vez de 291 KB. Con los
+  completos, la simulación de Lighthouse móvil daba un LCP de ~2.85 s en
+  ~1 de cada 3–5 corridas (las fuentes en la ruta del LCP); con los recortes,
+  ~1.65 s. Los completos de `assets/fonts/` ya no los usa ninguna página.
 */
 
 @font-face {
   font-family: "Baloo 2";
-  src: url("../fonts/baloo2-semibold.woff2") format("woff2");
+  src: url("../fuentes/baloo2-semibold-latin.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -15,7 +22,7 @@
 
 @font-face {
   font-family: "Baloo 2";
-  src: url("../fonts/baloo2-bold.woff2") format("woff2");
+  src: url("../fuentes/baloo2-bold-latin.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -23,7 +30,7 @@
 
 @font-face {
   font-family: "Baloo 2";
-  src: url("../fonts/baloo2-extrabold.woff2") format("woff2");
+  src: url("../fuentes/baloo2-extrabold-latin.woff2") format("woff2");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -31,7 +38,7 @@
 
 @font-face {
   font-family: "Manrope";
-  src: url("../fonts/manrope-regular.woff2") format("woff2");
+  src: url("../fuentes/manrope-regular-latin.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -39,7 +46,7 @@
 
 @font-face {
   font-family: "Manrope";
-  src: url("../fonts/manrope-medium.woff2") format("woff2");
+  src: url("../fuentes/manrope-medium-latin.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -47,7 +54,7 @@
 
 @font-face {
   font-family: "Manrope";
-  src: url("../fonts/manrope-semibold.woff2") format("woff2");
+  src: url("../fuentes/manrope-semibold-latin.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -55,7 +62,7 @@
 
 @font-face {
   font-family: "Manrope";
-  src: url("../fonts/manrope-bold.woff2") format("woff2");
+  src: url("../fuentes/manrope-bold-latin.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;

@@ -1,5 +1,5 @@
-import { barraDeNavegacion } from "../icons.js?v=7e55092f39";
-import { contar, detener } from "./contar.js?v=7e55092f39";
+import { barraDeNavegacion } from "../icons.js?v=d7ff6de592";
+import { contar, detener } from "./contar.js?v=d7ff6de592";
 
 /**
  * Dashboard (cierre) — real de `ui/dashboard/DashboardScreen.kt` (plan,

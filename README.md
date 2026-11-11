@@ -25,7 +25,7 @@ asistente-landing/
 ├── assets/
 │   ├── css/
 │   │   ├── tokens.css   Colores/tipografía/espaciado/tema (claro, oscuro, y el `data-theme` del toggle)
-│   │   ├── fonts.css    @font-face de las páginas legales y 404 (assets/fonts/)
+│   │   ├── fonts.css    @font-face de las legales, las guías y la 404 (los mismos recortes de assets/fuentes/)
 │   │   ├── fuentes-portada.css  @font-face de la portada (recortes latinos de assets/fuentes/)
 │   │   ├── base.css     Layout, grid con escenario sticky, componentes compartidos
 │   │   ├── guias.css    Páginas-guía: resumen, pasos, ejemplos de chat en CSS, tabla comparativa, cierre con la beta
@@ -47,8 +47,8 @@ asistente-landing/
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
 │   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, avisos, llamada, dashboard (+ contar.js)
 │   │   └── vendor/      GSAP + ScrollTrigger + canvas-confetti vendorizados (ver licencias abajo)
-│   ├── fonts/     .woff2 completos + un `OFL-<Familia>.txt` por familia (páginas legales)
-│   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (portada)
+│   ├── fonts/     .woff2 completos + un `OFL-<Familia>.txt` por familia (ninguna página los usa: son la fuente de los recortes)
+│   ├── fuentes/   los mismos pesos recortados al rango latino + los mismos `OFL-*.txt` (todas las páginas)
 │   └── img/       favicon.svg, favicon-32.png, apple-touch-icon.png y og-yaruki.png (ver "Íconos e imagen para compartir")
 ├── scripts/versionar.py    Cache busting (`?v=<hash>`), ver más abajo
 ├── scripts/pruebas/        Pruebas y revisión visual (Playwright, Lighthouse, validar); ver «Pruebas y revisión visual»
@@ -280,7 +280,10 @@ al primer clic en el toggle).
   columna) y la anterior se va en el primer 35% (antes de que llegue). Por
   eso nunca se enciman, tampoco con saltos. En móvil, entrada al 84% del
   viewport.
-- **Titular del hero:** palabra por palabra en CSS (`base.css`), sin JS ni CLS.
+- **Titular del hero:** palabra por palabra en CSS (`base.css`), sin JS ni CLS. Su `max-width` va en `em`
+  (7.877em = 13ch de Baloo 2 ExtraBold), no en `ch`: el `ch` es el avance del «0» de la fuente que esté
+  pintando y con el respaldo el titular cambiaba de renglones al llegar Baloo 2 (#53). `cls.mjs` lo vigila
+  también en 820, 1024 y 1440 px con las fuentes 1.5 s tarde.
 - **Barra de progreso:** `animation-timeline: scroll()` cuando existe;
   si no, `progreso.js`.
 - **Navegación con puntos (`nav-recorrido.js`):** `nav` con `aria-label`,
@@ -417,9 +420,9 @@ falta — no quedó ningún `node_modules/`/`package.json` en el repo.
 
 - **GSAP 3.15.0 + ScrollTrigger 3.15.0** (`gsap.min.js`, `ScrollTrigger.min.js`)
   — **en uso desde la etapa 4** (`assets/js/stage.js`, toda la coreografía de
-  scroll), cargados como `<script src>` clásico ANTES del `<script
-  type="module">` (así `window.gsap`/`window.ScrollTrigger` ya existen
-  cuando corre `main.js`). Licencia: **Standard "No Charge" GSAP License**
+  scroll), inyectados por `main.js` (`cargarVendor`, en orden) y no como
+  `<script defer>` del `<head>`: ver «Presupuesto de rendimiento» (el `defer` hacía que
+  Lighthouse contara los ~115 KB de GSAP como bloqueantes del primer pintado). Licencia: **Standard "No Charge" GSAP License**
   de Webflow (dueño de GSAP desde la adquisición a GreenSock) — gratuita
   para uso comercial o no comercial en sitios/apps siempre que la persona
   que usa el sitio no pague una cuota por acceder a él o a una parte de él
@@ -444,8 +447,14 @@ pesos hechos con `fonttools subset` (rango: U+0000-00FF, U+0131, U+0152-0153,
 U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122,
 U+2190-2193, U+2212, U+2713, U+2022; `--layout-features='*'`). De 431 KB a
 109 KB. Si se agrega texto con caracteres fuera de ese rango, regenerarlos
-desde `assets/fonts/` con el mismo comando. Las páginas legales siguen con
-los originales de `assets/fonts/` vía `fonts.css`, cuyas fuentes de respaldo
+desde `assets/fonts/` con el mismo comando (por eso se conservan, aunque ya ninguna página los
+carga). Las legales, las guías y la 404
+usan los mismos recortes vía `fonts.css` (desde la auditoría integral, pasada 1:
+con los originales de 291 KB la simulación de Lighthouse móvil ponía las
+fuentes en la ruta del LCP en ~1 de cada 3–5 corridas, LCP ~2.85 s; con los
+recortes, ~1.65 s). Las guías además precargan Baloo 2 ExtraBold y Manrope
+Regular (sin eso el titular largo de `/organizar-tareas-con-ia/` ganaba un
+renglón al llegar la fuente: CLS 0.026 a 412 px). Las fuentes de respaldo de `fonts.css`
 ("Baloo 2 Fallback", "Manrope Fallback": Arial con `size-adjust` y
 `ascent/descent-override` medidos con fonttools contra la fuente real, una cara
 por grupo de pesos) evitan el CLS del cambio de fuente (#24, antes 0.134 en
@@ -871,7 +880,9 @@ Herramientas en `scripts/pruebas/` (detalle de cada comando y de las decisiones 
 node validar.mjs                         # rápido, sin navegador: HTML, CSP, JSON-LD, sitemap, metadatos, enlaces, CTA, voseo
 node capturas.mjs --salida DIR           # claro/oscuro × 1440×900, 820×1180, 390×844 + reduced-motion; capturas y video (--tamanos suma tablet768 = 768×1024 y tabletapaisada = 1024×768)
 node tactil.mjs  --salida DIR            # gestos táctiles reales (Pixel 7, iPhone 15), video
-node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-base del monorepo
+node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-final/vigente del monorepo
+node rendimiento.mjs                     # presupuesto de la portada: LCP texto del hero, CLS, TBT, sin scripts en el <head>, interacciones ≤ 200 ms con CPU ×4
+node compresion.mjs                      # el servidor de pruebas comprime como Caddy (`encode gzip zstd`: Chrome recibe gzip)
 node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + pruebas python + capturas + lighthouse (+ tactil)
 python3 -I test_portada.py               # defectos sembrados de la portada (pasos, preguntas, FAQPage, promesas absolutas)
 ```
@@ -882,7 +893,12 @@ a la escena de cada sección. El servidor local emula el
 bloque de Caddy (mismas cabeceras y CSP, `try_files`, 404). Una skill para agentes
 (`.claude/skills/landing-revision-visual/` y `landing-seo/` en el monorepo) dice qué correr y qué mirar.
 
-**Línea base** (`origin/main` = `bda9146`, contenido idéntico a lo publicado en `cc51b60`; guardada en
+**Línea base vigente:** `.pm/landing-2026-11/lighthouse-final/vigente/` (ver «Presupuesto de rendimiento»).
+`lighthouse-base/` queda como histórico: se midió con un servidor de pruebas SIN compresión (producción sí comprime), así que
+sus números de rendimiento y LCP no son comparables con los actuales. `lighthouse-final/publicado-cc51b60/` y `main/` son
+las mismas versiones medidas con el servidor que comprime.
+
+**Línea base histórica, sin compresión** (`origin/main` = `bda9146`, contenido idéntico a lo publicado en `cc51b60`; guardada en
 `.pm/landing-2026-11/lighthouse-base/` del monorepo). Mediana de 3 corridas, Lighthouse 13.6, Chromium 155:
 
 | Página | Forma | Rend. | Accesib. | B. prácticas | SEO | LCP | CLS | TBT |
@@ -903,6 +919,52 @@ prácticas y SEO no admiten retroceso. INP no se mide en laboratorio: se usa TBT
 #21 CTA «Únete a la beta» sin `href` en el HTML; #22 `chat.js` genera `style=""` inline que la CSP
 bloquea (consola y barras de audio sin altura, de forma intermitente); #23 `<h3>`/`<p>` dentro de
 `<span>` en «Exportar tus datos»; #24 CLS de `/eliminar-cuenta/`.
+
+## Presupuesto de rendimiento
+
+Qué vigila cada prueba (todas corren en `todo.mjs`):
+
+| Prueba | Vigila |
+|---|---|
+| `lighthouse.mjs --comparar .pm/landing-2026-11/lighthouse-final/vigente` | Nota por categoría (≥ 90 y sin retroceso; el rendimiento admite 2 puntos de ruido). Meta de la portada: móvil ≥ 97 (mediana), escritorio ≥ 98, el resto 100, CLS 0. El LCP móvil simulado todavía sale ~2.3 s en ~1 de cada 5 corridas (ver abajo): juzga la mediana, no una corrida. |
+| `rendimiento.mjs` | Arranque de la portada en móvil con CPU ×4 y 4G lenta: el LCP es texto del hero (no una imagen ni la malla) y llega en ≤ 2 s; CLS 0.000; TBT ≤ 250 ms (medido con CPU ×4: el de Lighthouse es otra escala); **ningún `<script src>` clásico en el `<head>`** y GSAP no se pide antes del primer pintado. Interacción (Event Timing, el INP de laboratorio): toggle de tema, abrir/cerrar un `<details>`, punto de la navegación, mouse sobre el hero con la malla; cada una ≤ 200 ms con CPU ×4 (hoy la peor, el toggle de tema, ronda 150–180 ms). |
+| `cls.mjs` | CLS ≤ 0.02 en la portada a 360, 390, 412, 820, 1024 y 1440 px con las fuentes 1.5 s tarde, y el reacomodo del hero en el barrido de 320 a 480 px. |
+| `compresion.mjs` | Que el servidor de pruebas comprima como Caddy; sin esto los números del laboratorio no representan a producción. |
+| `malla.mjs` | Costo por cuadro de la malla (< 4 ms) y sin tareas largas con el cursor moviéndose. |
+
+**Por qué el LCP móvil era «bimodal» (1.65 s o 2.3 s, y 1.05 s o 1.5 s con compresión).** Lighthouse no mide el LCP:
+lo *simula* (Lantern) desde el trazo de una corrida rápida en local. Su gráfica del primer pintado incluye la tarea de
+CPU que hizo el primer diseño/pintado/`ParseHTML` y todo lo que esa tarea necesitó. Los dos `<script defer>` de GSAP y
+ScrollTrigger (~115 KB crudos, ~40 KB comprimidos) se ejecutan al terminar el análisis del HTML, y en un servidor local
+rápido la ejecución a veces cae en la MISMA tarea que el primer pintado: entonces Lantern los cuenta como bloqueantes y
+suma sus descargas (+0.5–0.75 s). En el navegador real el primer pintado es igual de rápido en las dos modalidades
+(`rendimiento.mjs`: 0.9–1.0 s con CPU ×4 y 4G lenta, ambos casos); es un artefacto de la simulación, pero distorsiona la
+nota y el TBT. Se corrigió inyectando GSAP desde `main.js` (que solo corre cuando termina su cascada de imports, ya
+pintado el hero): el FCP simulado ya no se infla (0 de 14 corridas, contra 3 de 10 en `main`) y el TBT de Lighthouse baja
+(mediana ~15 ms, contra colas de 75–123 ms en `main`). **No elimina toda la bimodalidad:** la auditoría (servidor que negocia
+como Caddy, 10 + 10 corridas intercaladas) vio LCP simulado de 2.25–2.56 s con FCP de 1.05 s en la rama (3 de 14 corridas)
+y también en `main` (1 de 10). No es GSAP ni la cascada de módulos: el mismo modo sale en `/privacidad/`, que no carga JS
+(LCP simulado 2.85 s con FCP 1.05 s en ~1 de 5 corridas, igual con gzip que con zstd); el candidato son las fuentes del
+elemento LCP, sin confirmar. En el
+navegador real tampoco cambia el LCP. Es, sobre todo, una mejora de la medición (nota y TBT de Lighthouse), no de lo que ve
+el visitante. Costo: el teléfono monta su primera
+escena ~0.2 s más tarde en el caso extremo (CPU ×4, 4G lenta), porque GSAP ya no se ejecuta mientras esperan los módulos.
+En escritorio eso alarga lo mismo un salto que ya existía en `main`: antes de que `stage.js` arranque, el teléfono se pinta
+más a la izquierda (encima del final del titular) y luego salta a su columna (~1.3 s en `main` y ~1.5 s aquí con CPU ×4).
+
+**Segundo factor: bytes de CSS bloqueante.** Sin compresión, 6 KB más de CSS empujaban el LCP un paso de red (+0.15 s) y, junto
+con la carrera anterior, la nota de 97 a 93. Con compresión la ventana desaparece: el CSS bloqueante de la portada
+(`tokens` + `fuentes-portada` + `base` + `phone` + `scenes`) pesa 99 KB crudos y ~25 KB comprimidos con gzip; quitar a propósito
+`phone.css` + `scenes.css` (21 KB comprimidos) no movió el FCP simulado (1.05 s en ambos casos), así que no se separa CSS crítico
+de diferible (complicaría el CSP y el caso sin JS sin ganar nada). Los comentarios son ~29 KB crudos del CSS pero casi no pesan
+comprimidos; no vale la pena un paso de minificación.
+
+**Descartado por los números:** separar CSS crítico (sin ganancia, arriba); `modulepreload`/`preload` de la cascada de
+`main.js` y de GSAP (el montaje de la primera escena no se adelanta: lo limita el CPU, no la red; y agrega entradas al
+primer pintado); montar la malla solo con hover (ya arranca después de `load` + idle y en táctil no aparece entre las tareas
+largas de la traza); `content-visibility: auto` en las secciones bajo el pliegue (no se probó: `stage.js`/ScrollTrigger y los puntos
+de la navegación miden alturas de sección y el cambio de altura intrínseca movería los disparadores sin una ganancia medible en LCP,
+CLS ni INP); imágenes: la portada no tiene `<img>`.
 
 ## Skills usadas
 

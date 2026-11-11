@@ -64,6 +64,13 @@
     background: linear-gradient(var(--color-bg), transparent);
     pointer-events: none;
   }
+
+  /* Foco no tapado (WCAG 2.4.11): al subir con Shift+Tab el navegador deja
+     el enlace en el borde de arriba, detrás de la franja. Con este margen lo
+     deja debajo de la franja y de su difuminado (prueba `foco-visible.mjs`). */
+  .secciones :is(a, button) {
+    scroll-margin-top: calc(44vh + 2.5rem);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -74,6 +81,8 @@
     /* Abarca el ancho completo del layout y pinta encima del texto: sin
        eventos de puntero, para no tapar enlaces ni botones. */
     overflow: visible;
+    /* Contenedor para `cqw`: el teléfono nace en su columna (abajo). */
+    container-type: inline-size;
   }
 }
 
@@ -90,6 +99,21 @@
   /* Vuelo de una columna a la otra: la perspectiva viaja con el teléfono,
      así el giro se ve simétrico en cualquier punto del recorrido. */
   transform: translateX(var(--vuelo-x, 0px)) scale(var(--vuelo-escala, 1));
+}
+
+@media (min-width: 1024px) {
+  /*
+    Posición inicial del teléfono antes de que llegue la coreografía: el
+    centro de la columna derecha (la del hero, `LADO_HERO` en stage.js), la
+    misma cuenta que `columnas["1"]` (`.seccion--derecha`: (ancho + hueco) / 4
+    desde el centro del escenario). Sin esto nacía en el centro, encima del
+    final del titular, y saltaba a su columna cuando stage.js fijaba
+    `--vuelo-x` (0.05–0.35 s, también con reduced-motion; auditoría integral,
+    prueba `arranque-telefono.mjs`). Si GSAP no carga, se queda aquí.
+  */
+  .escenario-3d {
+    transform: translateX(var(--vuelo-x, calc((100cqw + var(--hueco, 0px)) / 4))) scale(var(--vuelo-escala, 1));
+  }
 }
 
 /* Inclinación sutil con el mouse (tilt.js), compuesta aparte del giro. */
@@ -152,6 +176,11 @@
 
   .stage::after {
     display: none;
+  }
+
+  /* Sin franja arriba: el foco no necesita el margen de la rama móvil. */
+  .secciones :is(a, button) {
+    scroll-margin-top: 0;
   }
 
   .escenario-3d {
@@ -232,6 +261,16 @@
   background: var(--color-bg);
   container-type: inline-size;
   container-name: pantalla;
+}
+
+/*
+  Mientras llegan los módulos y GSAP (en red lenta, ~2 s) la pantalla está
+  vacía: con el fondo del Splash (la primera escena, `.ps-splash` en
+  scenes.css) no se ve blanca y luego morada de golpe. En cuanto stage.js
+  monta una escena deja de estar vacía (prueba `arranque-telefono.mjs`).
+*/
+.phone-pantalla:empty {
+  background: var(--color-accent);
 }
 
 /*
