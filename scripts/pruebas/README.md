@@ -45,8 +45,8 @@ arregle el issue.
 ## Decisiones
 
 - **Servidor y Caddy:** `lib/servidor.mjs` copia las cabeceras del bloque de Caddy del README; la regla `csp-readme` de `validar`
-  falla si dejan de coincidir. También oculta (404) lo que el README pide ocultar y lo que **conviene ocultar** (`scripts`,
-  `package.json`, `package-lock.json`).
+  falla si dejan de coincidir. También oculta (404) exactamente lo mismo que el `hide` del bloque de Caddy del README
+  (`HIDE_CADDY`; la regla `hide-readme` de `validar` compara las dos listas y comprueba que no se oculte nada que deba servirse).
 - **Tema determinista:** `theme.js` lee `localStorage["yaruki-theme"]` y, si no hay, `prefers-color-scheme`. Las herramientas fijan
   las dos cosas (`colorScheme` del contexto + `localStorage`) y marcan `sessionStorage["yaruki-theme-demo-visto"]` para que la demo de
   tema al cargar (`theme-demo.js`, que cambia el tema a los ~1.3 s) no ensucie las capturas. `--demo-tema` la deja correr.
