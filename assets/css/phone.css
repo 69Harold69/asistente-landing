@@ -245,6 +245,16 @@
 }
 
 /*
+  Mientras llegan los módulos y GSAP (en red lenta, ~2 s) la pantalla está
+  vacía: con el fondo del Splash (la primera escena, `.ps-splash` en
+  scenes.css) no se ve blanca y luego morada de golpe. En cuanto stage.js
+  monta una escena deja de estar vacía (prueba `arranque-telefono.mjs`).
+*/
+.phone-pantalla:empty {
+  background: var(--color-accent);
+}
+
+/*
   Capas apiladas dentro de la pantalla — sólo las usa el cruce Splash→Login
   del hero (etapa 3): dos escenas montadas A LA VEZ, una encima de la otra,
   para poder cruzarlas con `opacity` en vez de reemplazar el HTML de golpe.
