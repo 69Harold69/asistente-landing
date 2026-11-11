@@ -1497,7 +1497,12 @@ strong {
   /* Los puntos ya recorridos toman el acento: el riel pasa "por dentro" de ellos. */
   .nav-recorrido a[data-pasado]::before {
     background: var(--color-accent);
-    opacity: 0.85;
+    opacity: 0.7;
+  }
+
+  /* Sin esto, la regla de arriba (misma especificidad, después) anulaba el hover en los puntos recorridos. */
+  .nav-recorrido a[data-pasado]:hover::before {
+    opacity: 1;
   }
 
   .nav-recorrido a[aria-current="location"]::before {
