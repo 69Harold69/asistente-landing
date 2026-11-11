@@ -82,7 +82,7 @@
      --color-border-card) y encendidos por el cursor (color --color-accent). */
   --malla-linea-reposo: 0.4;
   --malla-linea-activa: 0.05;
-  --malla-punto-reposo: 0.35;
+  --malla-punto-reposo: 0.25;
   --malla-punto-activo: 0.09;
 }
 
@@ -166,6 +166,6 @@
   --color-on-accent-ui: #ffffff;
   --malla-linea-reposo: 0.4;
   --malla-linea-activa: 0.05;
-  --malla-punto-reposo: 0.35;
+  --malla-punto-reposo: 0.25;
   --malla-punto-activo: 0.09;
 }
