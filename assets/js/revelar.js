@@ -16,6 +16,10 @@
 
   Sin JS o con "reducir movimiento", el texto está visible desde el
   principio: el estado oculto lo pone este módulo, nunca el CSS.
+  Foco visible (WCAG 2.4.7): una sección que tiene el foco del teclado
+  (`:focus-within`) se muestra completa al instante, aunque el teléfono no
+  haya terminado su giro; si no, con Tab el foco caía en un botón todavía en
+  opacidad 0 (prueba `foco-visible.mjs`).
   El hero tiene su propia entrada al cargar, en CSS (base.css).
 */
 
@@ -37,6 +41,8 @@ function revelarAlEntrar(seccion) {
     stagger: 0.08,
     paused: true,
   });
+  // Foco visible: si el teclado llega antes que el umbral de scroll, la sección se muestra entera ya.
+  seccion.addEventListener("focusin", () => entrada.progress(1));
   ScrollTrigger.create({
     trigger: piezas[0],
     start: "top 84%",
@@ -88,18 +94,26 @@ export function inicializarReveals(escenario) {
       const geo = escenario.geometria;
       if (!geo?.escritorio) return;
       let previa = "hero";
+      const conFoco = (id) => !!document.getElementById(id)?.matches(":focus-within");
       for (const s of geo.segmentos) {
         if (s.tipo !== "giro") continue;
         const p = limitar01((y - s.ini) / (s.fin - s.ini));
-        entradas.get(s.seccion)?.progress(limitar01((p - ENTRADA_DESDE) / (1 - ENTRADA_DESDE)));
-        salidas.get(previa)?.progress(limitar01(p / SALIDA_HASTA));
+        entradas.get(s.seccion)?.progress(conFoco(s.seccion) ? 1 : limitar01((p - ENTRADA_DESDE) / (1 - ENTRADA_DESDE)));
+        salidas.get(previa)?.progress(conFoco(previa) ? 0 : limitar01(p / SALIDA_HASTA));
         previa = s.seccion;
       }
     }
 
     const alEstado = (ev) => sincronizar(ev.detail.y);
+    const alFoco = () => sincronizar(escenario.y);
     telefono.addEventListener("yaruki:estado", alEstado);
+    document.addEventListener("focusin", alFoco);
+    document.addEventListener("focusout", alFoco);
     sincronizar(escenario.y);
-    return () => telefono.removeEventListener("yaruki:estado", alEstado);
+    return () => {
+      telefono.removeEventListener("yaruki:estado", alEstado);
+      document.removeEventListener("focusin", alFoco);
+      document.removeEventListener("focusout", alFoco);
+    };
   });
 }
