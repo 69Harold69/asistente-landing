@@ -35,6 +35,7 @@ const pasos = [
   ["dominio-pruebas", "python3", ["-I", "test_dominio.py"]],
   ["jsonld-pruebas", "python3", ["-I", "test_jsonld.py"]],
   ["indexnow-pruebas", "python3", ["-I", "test_indexnow.py"]],
+  ["portada-pruebas", "python3", ["-I", "test_portada.py"]],
   // Malla del hero (#26): pausas, reduced-motion, costo por cuadro y contraste AA en píxeles reales.
   ["malla", process.execPath, ["malla.mjs", "--salida", path.join(salida, "malla")]],
   ["capturas", process.execPath, ["capturas.mjs", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],

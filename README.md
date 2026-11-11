@@ -133,6 +133,16 @@ entre la espalda y el frente (`construirCanto`), visibles sólo cuando
 |sen θ| > 0.025 (`fijarRotacion`). `will-change: transform` sólo durante un
 vuelo.
 
+**Contenido después del recorrido (`#como-funciona`, `#lo-que-viene`, `#preguntas`, `#quien-esta-detras`):** viven en `<main>`, pero **fuera** de
+`.layout-con-stage` (que cierra justo después de `#cta`): ahí termina el sticky del escenario, el teléfono ya salió de
+pantalla y `stage.js` no mide esas secciones (no están en `SECCIONES_ANCLA`, no tienen escena ni tramo; el teléfono se
+queda en la última escena, `dashboard`, de frente). Son texto plano en el HTML, sin `revelar.js` ni animación de entrada,
+y con `sin-js.css` no necesitan ajuste (no reservan alto de pantalla). `nav-recorrido.js` oculta los puntos
+(`data-fuera`) cuando el recorrido ya quedó arriba de la mitad de la pantalla. Una sección nueva de este tipo se agrega
+**después** del recorrido, nunca dentro de `.secciones`; `validar` (regla `portada`) lo exige para las existentes, y
+`capturas.mjs`/`tactil.mjs` la visitan (lista `SECCIONES_FUERA_DEL_RECORRIDO` en `scripts/pruebas/lib/comun.mjs`) y exigen
+que el teléfono ya no esté a la vista.
+
 **Escenas (`assets/js/scenes/*.js`):** cada una expone `id`, `mount`,
 `play`, `pause` y `reset` (plan 5.3); `stage.js` llama `play`/`pause` en cada
 cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
@@ -178,7 +188,10 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
   - **Prohibido** `aggregateRating`, `review` y `downloadUrl` (no existen todavía). Google exige `aggregateRating` o `review`
     para la ficha enriquecida de app, así que esa ficha no saldrá hasta que haya reseñas reales; el bloque sigue
     describiendo la app. Cuando haya ficha en Google Play, se agregan `downloadUrl` y las calificaciones reales.
-  - **`FAQPage`** lo agrega quien escriba las preguntas visibles (el JSON-LD debe reflejar texto visible).
+  - **`FAQPage` de la portada** (`#preguntas`, `@id` `…/#preguntas`): las 7 preguntas de los `<details>` visibles, con el
+    texto de la respuesta idéntico al visible (`faq-visible`) y en el mismo orden (`portada`). Se agrega aunque Google
+    retiró el resultado enriquecido de FAQ el 7 de mayo de 2026: el tipo sigue siendo válido y ayuda a entender la página.
+    Al editar una respuesta se cambia en los dos lugares (el HTML y el JSON-LD); `validar` falla si difieren.
   - **Validación:** `validar` (estructura mínima por tipo, referencias `@id` resueltas, prohibidas) y
     `scripts/pruebas/test_jsonld.py` (defectos sembrados). No existe un validador offline mantenido y de licencia limpia
     (`structured-data-testing-tool` no se actualiza desde 2022), así que además pega la URL publicada, o el bloque, en el
@@ -288,6 +301,63 @@ al primer clic en el toggle).
   magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
   Dashboard cuentan desde 0; el valor final ya está en el HTML.
+- **«Cómo funciona» y preguntas frecuentes (`#como-funciona`, `#preguntas`):** contenido indexable debajo del recorrido
+  (ver «Coreografía de scroll»). Los 3 pasos son una `<ol>` (numeración con contador CSS: es una secuencia real). Las
+  preguntas usan `<details>/<summary>` nativo: accesible por teclado (Tab, Enter/Espacio) y para lectores de pantalla
+  sin JS, la respuesta está en el HTML (indexable) y cierra la página unos cientos de píxeles más corta que con
+  encabezados siempre abiertos (las guías, que son artículos, sí usan encabezados visibles). El marcador nativo se
+  reemplaza por un chevron CSS; el foco es el anillo global `:focus-visible`. **Cada respuesta se cotejó con la política,
+  los Términos y el código** (tabla en `.pm/landing-2026-11/contenido-cotejo.md` del monorepo). No escribas ahí
+  «nunca cambia ni borra nada sin preguntarte» ni «nunca actúa a tus espaldas»: crear algo nuevo y marcar como hecho no piden
+  confirmación; usa la redacción de `/organizar-tareas-con-ia/` (`validar` lo vigila en estas secciones).
+- **«Lo que viene» y «Quién está detrás» (`#lo-que-viene`, `#quien-esta-detras`):** también después del recorrido. El orden
+  final es: hero → recorrido (`#cta`) → Cómo funciona → Lo que viene → Preguntas frecuentes → Quién está detrás → Centro de
+  privacidad → pie. «Lo que viene» sigue las decisiones de Harold (llamadas, Finanzas, iPhone, personalización y logros,
+  avisos que se repiten): cada tarjeta lleva el chip «Próximamente» y **ninguna fecha, precio, etiqueta Premium ni lenguaje
+  de compromiso** («estamos trabajando en», «queremos que»; nunca «pronto», «llegará», «próxima versión»); `validar` lo vigila.
+  Finanzas dice que no hay conexión a bancos ni asesoría financiera. Llamadas no repite `#fase-llamada`: una línea y un
+  enlace ancla. «Quién está detrás» es una línea con el nombre y la ciudad que el sitio ya publica y un enlace a `/privacidad/`
+  (sin foto, redes ni correo nuevos).
+
+### Aviso de iPhone («avísame cuando salga»)
+
+La CSP bloquea formularios, así que el aviso es un **enlace a un Google Group**. La URL vive en `assets/js/config.js`
+(`IPHONE_AVISO_URL`, hoy `""`) y la regla es: **vacía ⇒ no se ve nada** (el HTML no trae el enlace ni texto que prometa
+el aviso); **con URL ⇒ el enlace real está en el HTML** (mejora progresiva, sin JS). `validar` (regla `portada`) falla si la
+constante y el HTML no coinciden, en cualquier dirección. Para activarlo (crear el grupo le toca a Harold):
+
+1. Pon la URL en `config.js`: `export const IPHONE_AVISO_URL = "https://groups.google.com/g/<grupo>/";`
+2. Pega este fragmento en `index.html`, dentro de la tarjeta «Yaruki para iPhone» (`#lo-que-viene`), justo después de su `</p>`:
+
+```html
+            <p class="aviso-iphone"><a data-aviso-iphone href="https://groups.google.com/g/<grupo>/">Avísame cuando salga la versión para iPhone</a></p>
+```
+
+3. Corre `node scripts/pruebas/validar.mjs`, sube el `lastmod` de `/` y, si quieres, menciona el aviso en la respuesta de
+   iPhone de `#preguntas` (cambia HTML y JSON-LD a la vez).
+
+### Testimonios (preparado, sin usar)
+
+Todavía no hay testimonios y **no hay marcado ni texto de ejemplo** en el HTML. Las clases están listas en `base.css`
+(`.testimonios`, `.testimonio`). Cuando existan, y **solo con permiso por escrito de cada persona** (nombre o alias tal como
+lo autorice), agrega una sección después de «Cómo funciona» con este marcado, quita la comprobación de testimonios de
+la regla `portada` en `validar.mjs` en la misma PR, y no agregues `Review` ni `aggregateRating` al JSON-LD (están prohibidos):
+
+```html
+<section id="testimonios" class="bloque" aria-labelledby="titulo-testimonios">
+  <div class="container">
+    <h2 class="fase-titulo" id="titulo-testimonios">Lo que dicen quienes lo prueban</h2>
+    <ul class="testimonios" role="list">
+      <li>
+        <figure class="testimonio">
+          <blockquote><p>…texto autorizado…</p></blockquote>
+          <figcaption>Nombre o alias autorizado, tester de la beta</figcaption>
+        </figure>
+      </li>
+    </ul>
+  </div>
+</section>
+```
 
 ## Íconos e imagen para compartir (`assets/img/`)
 
@@ -718,7 +788,8 @@ node validar.mjs                         # rápido, sin navegador: HTML, CSP, JS
 node capturas.mjs --salida DIR           # claro/oscuro × 1440×900, 820×1180, 390×844 + reduced-motion; capturas y video
 node tactil.mjs  --salida DIR            # gestos táctiles reales (Pixel 7, iPhone 15), video
 node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-base del monorepo
-node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + capturas + lighthouse (+ tactil)
+node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + pruebas python + capturas + lighthouse (+ tactil)
+python3 -I test_portada.py               # defectos sembrados de la portada (pasos, preguntas, FAQPage, promesas absolutas)
 ```
 
 Cada comando sale con código ≠ 0 si algo falla; `capturas` y `tactil` fallan ante `console.error`,

@@ -26,7 +26,7 @@ import { devices } from "playwright";
 import { iniciarServidor } from "./lib/servidor.mjs";
 import {
   leerArgs, lista, lanzarChromium, carpetaSalida, crearGuardia, scriptInicial, esperarCarga,
-  leerEstado, SECCIONES_PORTADA, ORDEN_ESCENAS, dormir, salir,
+  leerEstado, SECCIONES_PORTADA, SECCIONES_FUERA_DEL_RECORRIDO, ORDEN_ESCENAS, dormir, salir,
 } from "./lib/comun.mjs";
 import { reposo } from "./lib/scroll.mjs";
 
@@ -37,7 +37,7 @@ const tema = a.tema === "oscuro" ? "dark" : "light";
 const srv = a.url ? { url: String(a.url).replace(/\/$/, ""), cerrar: async () => {} } : await iniciarServidor();
 const navegador = await lanzarChromium();
 const guardia = crearGuardia(srv.url);
-const permitidas = Object.fromEntries(SECCIONES_PORTADA.map((s) => [s.id, s.escenas]));
+const permitidas = Object.fromEntries([...SECCIONES_PORTADA, ...SECCIONES_FUERA_DEL_RECORRIDO].map((s) => [s.id, s.escenas]));
 permitidas.privacidad = ["dashboard"];
 
 const v = (m) => a.verbose && console.log(`   [${new Date().toISOString().slice(11, 19)}] ${m}`);
@@ -192,7 +192,7 @@ async function probar(nombre) {
     await page.evaluate((ids) => ids.map((id) => {
       const el = document.getElementById(id);
       return el ? { id, top: Math.round(el.getBoundingClientRect().top + window.scrollY) } : null;
-    }), [...SECCIONES_PORTADA.map((s) => s.id), "privacidad"])
+    }), [...SECCIONES_PORTADA, ...SECCIONES_FUERA_DEL_RECORRIDO].map((s) => s.id).concat("privacidad"))
   ).filter(Boolean);
   const maximo = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
   const inicio = await page.evaluate(leerEstado);
