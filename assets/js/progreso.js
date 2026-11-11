@@ -17,6 +17,8 @@ export function inicializarProgreso() {
   let pendiente = 0;
   let largo = 0; // scroll (px) al que el recorrido termina
   let salida = 0; // scroll (px) desde el que ya se considera fuera del recorrido
+  let y = 0; // scrollY leído en el evento de scroll (ver alScroll)
+  let escrito = ""; // último --avance escrito
 
   function medir() {
     if (!recorrido) return;
@@ -28,14 +30,16 @@ export function inicializarProgreso() {
   function actualizar() {
     pendiente = 0;
     if (!barra || !recorrido) return;
-    const y = window.scrollY;
-    const p = Math.min(Math.max(y / largo, 0), 1);
-    barra.style.setProperty("--avance", p.toFixed(4));
+    // Sin lecturas de layout aquí: este rAF corre después del de stage.js, que ya escribió estilos, y leer
+    // scrollY ahora forzaba un recálculo síncrono de estilo en cada cuadro (#60).
+    const p = Math.min(Math.max(y / largo, 0), 1).toFixed(4);
+    if (p !== escrito) barra.style.setProperty("--avance", (escrito = p));
     barra.toggleAttribute("data-fuera", y >= salida);
   }
 
   function alScroll() {
-    if (pista && window.scrollY > 8 && !pista.classList.contains("pista-scroll--oculta")) {
+    y = window.scrollY;
+    if (pista && y > 8 && !pista.classList.contains("pista-scroll--oculta")) {
       pista.classList.add("pista-scroll--oculta");
     }
     if (!pendiente) pendiente = requestAnimationFrame(actualizar);
