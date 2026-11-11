@@ -132,6 +132,16 @@ entre la espalda y el frente (`construirCanto`), visibles sólo cuando
 |sen θ| > 0.025 (`fijarRotacion`). `will-change: transform` sólo durante un
 vuelo.
 
+**Contenido después del recorrido (`#como-funciona`, `#preguntas`):** viven en `<main>`, pero **fuera** de
+`.layout-con-stage` (que cierra justo después de `#cta`): ahí termina el sticky del escenario, el teléfono ya salió de
+pantalla y `stage.js` no mide esas secciones (no están en `SECCIONES_ANCLA`, no tienen escena ni tramo; el teléfono se
+queda en la última escena, `dashboard`, de frente). Son texto plano en el HTML, sin `revelar.js` ni animación de entrada,
+y con `sin-js.css` no necesitan ajuste (no reservan alto de pantalla). `nav-recorrido.js` oculta los puntos
+(`data-fuera`) cuando el recorrido ya quedó arriba de la mitad de la pantalla. Una sección nueva de este tipo se agrega
+**después** del recorrido, nunca dentro de `.secciones`; `validar` (regla `portada`) lo exige para las existentes, y
+`capturas.mjs`/`tactil.mjs` la visitan (lista `SECCIONES_FUERA_DEL_RECORRIDO` en `scripts/pruebas/lib/comun.mjs`) y exigen
+que el teléfono ya no esté a la vista.
+
 **Escenas (`assets/js/scenes/*.js`):** cada una expone `id`, `mount`,
 `play`, `pause` y `reset` (plan 5.3); `stage.js` llama `play`/`pause` en cada
 cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
@@ -177,7 +187,10 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
   - **Prohibido** `aggregateRating`, `review` y `downloadUrl` (no existen todavía). Google exige `aggregateRating` o `review`
     para la ficha enriquecida de app, así que esa ficha no saldrá hasta que haya reseñas reales; el bloque sigue
     describiendo la app. Cuando haya ficha en Google Play, se agregan `downloadUrl` y las calificaciones reales.
-  - **`FAQPage`** lo agrega quien escriba las preguntas visibles (el JSON-LD debe reflejar texto visible).
+  - **`FAQPage` de la portada** (`#preguntas`, `@id` `…/#preguntas`): las 7 preguntas de los `<details>` visibles, con el
+    texto de la respuesta idéntico al visible (`faq-visible`) y en el mismo orden (`portada`). Se agrega aunque Google
+    retiró el resultado enriquecido de FAQ el 7 de mayo de 2026: el tipo sigue siendo válido y ayuda a entender la página.
+    Al editar una respuesta se cambia en los dos lugares (el HTML y el JSON-LD); `validar` falla si difieren.
   - **Validación:** `validar` (estructura mínima por tipo, referencias `@id` resueltas, prohibidas) y
     `scripts/pruebas/test_jsonld.py` (defectos sembrados). No existe un validador offline mantenido y de licencia limpia
     (`structured-data-testing-tool` no se actualiza desde 2022), así que además pega la URL publicada, o el bloque, en el
@@ -262,6 +275,15 @@ al primer clic en el toggle).
   magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
   Dashboard cuentan desde 0; el valor final ya está en el HTML.
+- **«Cómo funciona» y preguntas frecuentes (`#como-funciona`, `#preguntas`):** contenido indexable debajo del recorrido
+  (ver «Coreografía de scroll»). Los 3 pasos son una `<ol>` (numeración con contador CSS: es una secuencia real). Las
+  preguntas usan `<details>/<summary>` nativo: accesible por teclado (Tab, Enter/Espacio) y para lectores de pantalla
+  sin JS, la respuesta está en el HTML (indexable) y cierra la página unos cientos de píxeles más corta que con
+  encabezados siempre abiertos (las guías, que son artículos, sí usan encabezados visibles). El marcador nativo se
+  reemplaza por un chevron CSS; el foco es el anillo global `:focus-visible`. **Cada respuesta se cotejó con la política,
+  los Términos y el código** (tabla en `.pm/landing-2026-11/contenido-cotejo.md` del monorepo). No escribas ahí
+  «nunca cambia ni borra nada sin preguntarte» ni «nunca actúa a tus espaldas»: crear algo nuevo y marcar como hecho no piden
+  confirmación; usa la redacción de `/organizar-tareas-con-ia/` (`validar` lo vigila en estas secciones).
 
 ## Íconos e imagen para compartir (`assets/img/`)
 
@@ -692,7 +714,8 @@ node validar.mjs                         # rápido, sin navegador: HTML, CSP, JS
 node capturas.mjs --salida DIR           # claro/oscuro × 1440×900, 820×1180, 390×844 + reduced-motion; capturas y video
 node tactil.mjs  --salida DIR            # gestos táctiles reales (Pixel 7, iPhone 15), video
 node lighthouse.mjs --comparar <base>    # móvil y escritorio, mediana de 3; <base> = ruta ABSOLUTA a .pm/landing-2026-11/lighthouse-base del monorepo
-node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + capturas + lighthouse (+ tactil)
+node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + pruebas python + capturas + lighthouse (+ tactil)
+python3 -I test_portada.py               # defectos sembrados de la portada (pasos, preguntas, FAQPage, promesas absolutas)
 ```
 
 Cada comando sale con código ≠ 0 si algo falla; `capturas` y `tactil` fallan ante `console.error`,

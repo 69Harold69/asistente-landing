@@ -16,7 +16,7 @@ import path from "node:path";
 import { iniciarServidor } from "./lib/servidor.mjs";
 import {
   leerArgs, lista, lanzarChromium, carpetaSalida, crearGuardia, scriptInicial, esperarCarga,
-  leerEstado, SECCIONES_PORTADA, ORDEN_ESCENAS, dormir, slug, salir,
+  leerEstado, SECCIONES_PORTADA, SECCIONES_FUERA_DEL_RECORRIDO, ORDEN_ESCENAS, dormir, slug, salir,
 } from "./lib/comun.mjs";
 import { ruedaHasta, reposo } from "./lib/scroll.mjs";
 
@@ -41,6 +41,7 @@ const caras = a.caras ? ["frente", "canto", "espalda"] : ["frente"];
 
 const srv = a.url ? { url: String(a.url).replace(/\/$/, ""), cerrar: async () => {} } : await iniciarServidor();
 const navegador = await lanzarChromium();
+const TODAS_LAS_SECCIONES = [...SECCIONES_PORTADA, ...SECCIONES_FUERA_DEL_RECORRIDO];
 const guardia = crearGuardia(srv.url);
 const informe = { generado: new Date().toISOString(), url: srv.url, combos: [], archivos: [] };
 
@@ -134,9 +135,9 @@ async function recorridoPortada(combo, dir, nombreCombo) {
   const info = await page.evaluate((ids) => ids.map((id) => {
     const el = document.getElementById(id);
     return el ? { id, top: Math.round(el.getBoundingClientRect().top + window.scrollY), alto: Math.round(el.offsetHeight) } : null;
-  }), SECCIONES_PORTADA.map((s) => s.id));
+  }), TODAS_LAS_SECCIONES.map((s) => s.id));
   const estados = [];
-  const permitidas = Object.fromEntries(SECCIONES_PORTADA.map((s) => [s.id, s.escenas]));
+  const permitidas = Object.fromEntries(TODAS_LAS_SECCIONES.map((s) => [s.id, s.escenas]));
   // Con el borde de la sección arriba y en reposo, el teléfono muestra SU escena y está de frente
   // (lo mismo que exige `tactil` en móvil; aquí se cubre la rueda en escritorio y tablet).
   const exigir = (e, seccion) => {
@@ -150,6 +151,14 @@ async function recorridoPortada(combo, dir, nombreCombo) {
     const e = await reposo(page, leerEstado);
     estados.push({ seccion: s.id, y: e.y, escena: e.escena, angulo: e.angulo });
     exigir(e, s.id);
+    if (SECCIONES_FUERA_DEL_RECORRIDO.some((x) => x.id === s.id)) {
+      // Después del recorrido el escenario del teléfono ya salió de pantalla (si no, taparía el contenido nuevo).
+      const visible = await page.evaluate(() => {
+        const r = document.getElementById("escenario-3d")?.getBoundingClientRect();
+        return !!r && r.bottom > 0 && r.top < window.innerHeight && r.width > 0;
+      });
+      if (visible) guardia.fallas.push({ tipo: "coreografia", detalle: `en "${s.id}" (y=${e.y}) el teléfono sigue a la vista; debería haber salido de escena`, contexto: nombreCombo });
+    }
     await foto(page, dir, `portada-seccion-${s.id}`);
     if (s.alto > alturaVista * 1.3) {
       await ruedaHasta(page, s.top + s.alto - alturaVista * 0.8);

@@ -336,6 +336,9 @@ if (activa("json-ld")) {
   aparezca IDÉNTICO en el texto visible de esa página.
 */
 const normaliza = (s) => String(s).replace(/\s+/g, " ").trim();
+// El texto visible se arma uniendo los nodos de texto con un espacio: «<a>política</a>.» queda «política .».
+// Para comparar con el JSON-LD se quitan los espacios antes de puntuación de cierre y después de la de apertura.
+const sinHuecosDePuntuacion = (s) => normaliza(s).replace(/\s+([,.;:!?)»])/g, "$1").replace(/([(«¿¡])\s+/g, "$1");
 const hrefsDe = (p) => etiquetas(p.arbol, "a").map((x) => attr(x, "href")).filter(Boolean);
 const enlazaA = (origen, destino) =>
   hrefsDe(origen).some((h) => {
@@ -348,12 +351,12 @@ const enlazaA = (origen, destino) =>
 if (activa("guias") || activa("faq-visible")) {
   for (const p of paginas) {
     const nodos = nodosDeLd(p);
-    const visible = normaliza(textoVisible(p.arbol));
+    const visible = sinHuecosDePuntuacion(textoVisible(p.arbol));
     if (activa("faq-visible")) {
       for (const f of nodos.filter((n) => [].concat(n?.["@type"] ?? []).includes("FAQPage"))) {
         for (const q of [].concat(f.mainEntity ?? [])) {
           for (const [que, texto] of [["pregunta", q?.name], ["respuesta", q?.acceptedAnswer?.text]]) {
-            if (texto && !visible.includes(normaliza(texto))) falla("faq-visible", p.r, `FAQPage: la ${que} «${normaliza(texto).slice(0, 60)}…» no aparece idéntica en el texto visible de la página`);
+            if (texto && !visible.includes(sinHuecosDePuntuacion(texto))) falla("faq-visible", p.r, `FAQPage: la ${que} «${normaliza(texto).slice(0, 60)}…» no aparece idéntica en el texto visible de la página`);
           }
         }
       }
