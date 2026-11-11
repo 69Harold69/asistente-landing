@@ -11,6 +11,7 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 export const RAIZ_SITIO = process.env.YARUKI_RAIZ ? path.resolve(process.env.YARUKI_RAIZ) : path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -48,6 +49,32 @@ const TIPOS = {
   ".ico": "image/vnd.microsoft.icon",
   ".woff2": "font/woff2",
 };
+
+/*
+  Compresión como la de producción (`encode gzip zstd` del bloque de Caddy): sin ella el laboratorio
+  (Lighthouse con red simulada) pesa 4× más bytes de CSS/JS bloqueantes de los que recibe un visitante
+  real y la medición representa mal al sitio. Caddy elige según `Accept-Encoding` (zstd antes que gzip),
+  solo para tipos de texto y desde 512 bytes, y marca `Vary: Accept-Encoding`. Se cachea por archivo.
+  `YARUKI_SIN_COMPRESION=1` la apaga (para comparar con la línea base vieja).
+*/
+const COMPRIMIBLES = new Set([".html", ".css", ".js", ".mjs", ".json", ".xml", ".txt", ".svg"]);
+const cacheCompresion = new Map();
+function elegirCodificacion(aceptadas) {
+  if (process.env.YARUKI_SIN_COMPRESION) return null;
+  const lista = String(aceptadas || "").split(",").map((x) => x.trim().split(";")[0]);
+  if (lista.includes("zstd") && typeof zlib.zstdCompressSync === "function") return "zstd";
+  if (lista.includes("gzip")) return "gzip";
+  return null;
+}
+function comprimir(cuerpo, codificacion, clave) {
+  const k = `${codificacion}:${clave}`;
+  let c = cacheCompresion.get(k);
+  if (!c) {
+    c = codificacion === "zstd" ? zlib.zstdCompressSync(cuerpo) : zlib.gzipSync(cuerpo, { level: 5 });
+    cacheCompresion.set(k, c);
+  }
+  return c;
+}
 
 export function archivoDe(raiz, rutaUrl) {
   let decodificada;
@@ -96,7 +123,15 @@ export function iniciarServidor({ raiz = RAIZ_SITIO, puerto = 0, host = "127.0.0
       res.writeHead(405, { ...cabeceras, Allow: "GET, HEAD" }).end();
       return;
     }
-    const cuerpo = fs.readFileSync(archivo);
+    let cuerpo = fs.readFileSync(archivo);
+    if (COMPRIMIBLES.has(path.extname(archivo))) {
+      cabeceras.Vary = "Accept-Encoding";
+      const codificacion = cuerpo.length >= 512 ? elegirCodificacion(req.headers["accept-encoding"]) : null;
+      if (codificacion) {
+        cuerpo = comprimir(cuerpo, codificacion, `${archivo}:${fs.statSync(archivo).mtimeMs}`);
+        cabeceras["Content-Encoding"] = codificacion;
+      }
+    }
     cabeceras["Content-Length"] = cuerpo.length;
     res.writeHead(estado, cabeceras);
     res.end(req.method === "HEAD" ? undefined : cuerpo);

@@ -16,6 +16,31 @@ import { inicializarMagneticos } from "./magnetico.js?v=7e55092f39";
 import { inicializarNavRecorrido } from "./nav-recorrido.js?v=7e55092f39";
 import { inicializarMalla } from "./malla.js?v=7e55092f39";
 
+/**
+ * GSAP y ScrollTrigger se inyectan desde aquí, en orden (`async = false`), y no van como `<script defer>`
+ * (ni `async`) en el <head>. Un script clásico cuyo código se ejecuta junto al primer pintado (el `defer`
+ * corre en la misma tarea que el final del análisis del HTML; un `async`, si llega en ese momento) se
+ * funde con ella en el modelo de Lighthouse (Lantern), que lo cuenta como bloqueante del primer pintado
+ * y le suma sus ~115 KB de transferencia: el LCP móvil saltaba de 1.65 s a 2.3 s según una carrera de
+ * milisegundos. Desde un módulo, que solo corre cuando termina su cascada de imports (después del primer
+ * pintado), no hay carrera. Cuesta ~0.2 s más (CPU ×4, 4G lenta) hasta que el teléfono monta su primera
+ * escena; el texto del hero no espera a nada de esto. Si uno falla, sigue: `inicializarEscenario` cae al
+ * cierre estático sin GSAP. La versión `?v=` es la de este módulo (la reescribe `versionar.py` en el HTML).
+ */
+function cargarVendor(archivos) {
+  const version = new URL(import.meta.url).search;
+  return new Promise((resolver) => {
+    archivos.forEach((archivo, i) => {
+      const script = document.createElement("script");
+      script.src = new URL(`./vendor/${archivo}`, import.meta.url).pathname + version;
+      script.async = false;
+      script.addEventListener("load", () => i === archivos.length - 1 && resolver(), { once: true });
+      script.addEventListener("error", resolver, { once: true });
+      document.head.append(script);
+    });
+  });
+}
+
 /*
   Yaruki — punto de entrada de `index.html`. Sin framework, sin bundler:
   este archivo se carga con `<script type="module" src="assets/js/main.js">`,
@@ -25,10 +50,6 @@ import { inicializarMalla } from "./malla.js?v=7e55092f39";
 */
 
 inicializarTema();
-const escenario = inicializarEscenario();
-inicializarTilt();
-// La malla del hero arranca sola tras `load` + idle: nunca retrasa el titular (LCP).
-inicializarMalla(document.getElementById("hero"));
 
 /*
   Toggle sol/luna: el mismo revelado circular que la demo. El primer clic
@@ -51,6 +72,12 @@ botonesTema.forEach((boton) => {
 });
 sincronizarToggle(botonesTema);
 mostrarDemoDeTemaSiCorresponde(botonesTema[0]);
+
+await cargarVendor(["gsap.min.js", "ScrollTrigger.min.js"]);
+const escenario = inicializarEscenario();
+inicializarTilt();
+// La malla del hero arranca sola tras `load` + idle: nunca retrasa el titular (LCP).
+inicializarMalla(document.getElementById("hero"));
 
 /*
   Botón "Únete a la beta": ya es un enlace real en el HTML (`href` al Google
