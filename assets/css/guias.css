@@ -1,0 +1,462 @@
+/*
+  Yaruki — páginas-guía (organizar-tareas-con-ia, recordatorios-por-voz).
+  Páginas de lectura: mismos tokens, fuentes y encabezado/pie que las legales, con más jerarquía:
+  titular grande, resumen destacado, pasos numerados, ejemplos de chat hechos en CSS y una tabla
+  comparativa accesible. Sin teléfono 3D ni GSAP; el único JS es el del toggle de tema (guias.js).
+*/
+
+.guia-header .container {
+  align-items: center;
+}
+
+.guia-header-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.guia {
+  padding: var(--space-3) 0 var(--space-5);
+}
+
+.guia-cabecera,
+.guia-cuerpo {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.guia-cabecera {
+  margin-bottom: var(--space-4);
+}
+
+.guia-etiqueta {
+  margin-bottom: var(--space-2);
+}
+
+.guia-cabecera h1 {
+  font-weight: 800;
+  font-size: clamp(1.95rem, 1.35rem + 2.4vw, 3.1rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin-bottom: var(--space-2);
+}
+
+.guia-autor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem var(--space-2);
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.guia-autor strong {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+/* Resumen ------------------------------------------------------------------ */
+
+.en-resumen {
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.en-resumen h2 {
+  font-size: var(--text-md);
+  margin-bottom: 0.4em;
+  color: var(--color-on-accent-soft);
+}
+
+.en-resumen p:last-child {
+  margin-bottom: 0;
+}
+
+.guia-cabecera .toc {
+  margin-top: var(--space-3);
+}
+
+.guia-cabecera .toc ol {
+  columns: 1;
+  margin-bottom: 0;
+}
+
+@media (min-width: 40rem) {
+  .guia-cabecera .toc ol {
+    columns: 2;
+  }
+}
+
+/* Cuerpo de lectura -------------------------------------------------------- */
+
+.guia-cuerpo {
+  line-height: 1.7;
+}
+
+.guia-cuerpo section {
+  margin-bottom: var(--space-5);
+  scroll-margin-top: var(--space-3);
+}
+
+.guia-cuerpo h2 {
+  font-size: clamp(1.45rem, 1.2rem + 0.9vw, 1.9rem);
+  line-height: 1.2;
+  margin: 0 0 var(--space-2);
+  text-wrap: balance;
+}
+
+.guia-cuerpo h3 {
+  font-size: var(--text-md);
+  margin: var(--space-3) 0 0.4em;
+}
+
+.guia-cuerpo li {
+  margin-bottom: 0.55em;
+}
+
+.guia-cuerpo blockquote {
+  margin: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-card);
+}
+
+.guia-cuerpo blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.guia-cuerpo blockquote footer {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.fuente-nota {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Pasos numerados ---------------------------------------------------------- */
+
+.pasos {
+  list-style: none;
+  margin: var(--space-3) 0;
+  padding: 0;
+  counter-reset: paso;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.pasos > li {
+  counter-increment: paso;
+  display: grid;
+  grid-template-columns: 2.6rem 1fr;
+  column-gap: var(--space-2);
+  margin: 0;
+}
+
+.pasos > li::before {
+  content: counter(paso);
+  grid-row: 1 / span 6;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-on-accent-ui);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-md);
+  line-height: 1;
+}
+
+.pasos > li > * {
+  grid-column: 2;
+}
+
+.pasos h3 {
+  margin: 0.3em 0 0.3em;
+}
+
+.pasos p {
+  margin-bottom: var(--space-1);
+}
+
+/* Ejemplos de chat (solo CSS) ---------------------------------------------- */
+
+.ejemplo-chat {
+  margin: var(--space-2) 0 var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-card);
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ejemplo-chat figcaption {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+}
+
+.burbuja {
+  margin: 0;
+  max-width: 88%;
+  padding: 0.6em 0.95em;
+  border-radius: 1.1rem;
+  line-height: 1.45;
+  font-size: 0.97rem;
+  overflow-wrap: anywhere;
+}
+
+.burbuja--usuario {
+  justify-self: end;
+  background: var(--color-accent);
+  color: var(--color-on-accent-ui);
+  border-bottom-right-radius: 0.3rem;
+}
+
+.burbuja--asistente {
+  justify-self: start;
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+  border-bottom-left-radius: 0.3rem;
+}
+
+.burbuja-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.burbuja-boton {
+  display: inline-block;
+  padding: 0.2em 0.85em;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-on-accent-soft);
+  color: var(--color-on-accent-soft);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+/* Listas de frases --------------------------------------------------------- */
+
+.frases {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.frases li {
+  margin: 0;
+  padding: 0.55em 0.9em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-card);
+  background: var(--color-bg-elevated);
+}
+
+/* Tabla comparativa -------------------------------------------------------- */
+
+.tabla-envoltura {
+  overflow-x: auto;
+  margin: var(--space-2) 0 var(--space-3);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+}
+
+.tabla-comparacion {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.tabla-comparacion caption {
+  text-align: left;
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.tabla-comparacion th,
+.tabla-comparacion td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.7em 0.9em;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabla-comparacion thead th {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--color-on-accent-soft);
+  background: var(--color-accent-soft);
+}
+
+.tabla-comparacion tbody th {
+  font-weight: 700;
+  color: var(--color-text);
+  width: 24%;
+}
+
+.tabla-comparacion tbody th {
+  position: sticky;
+  left: 0;
+  background: var(--color-bg-elevated);
+}
+
+.tabla-comparacion tbody tr:last-child th,
+.tabla-comparacion tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tabla-envoltura:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Límites y avisos --------------------------------------------------------- */
+
+.aviso {
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-warning-bg);
+  color: var(--color-text);
+  margin: var(--space-2) 0;
+}
+
+.aviso a {
+  color: inherit;
+  font-weight: 600;
+}
+
+.aviso strong:first-child {
+  display: block;
+  font-family: var(--font-display);
+}
+
+.aviso p:last-child,
+.aviso ul:last-child {
+  margin-bottom: 0;
+}
+
+/* Preguntas frecuentes (siempre visibles) ---------------------------------- */
+
+.preguntas h3 {
+  font-size: var(--text-base);
+  font-family: var(--font-body);
+  font-weight: 700;
+  margin: var(--space-3) 0 0.25em;
+}
+
+.preguntas p {
+  margin-bottom: 0;
+}
+
+/* Cierre: unirse a la beta y seguir leyendo -------------------------------- */
+
+.guia-cta {
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-3);
+}
+
+.guia-cta h2 {
+  color: var(--color-on-accent-soft);
+}
+
+.guia-cta .pasos-beta {
+  margin: var(--space-3) 0 0;
+  max-width: none;
+  color: var(--color-text);
+  font-size: var(--text-base);
+}
+
+.guia-cta .pasos-beta-numero {
+  background: var(--color-accent);
+  color: var(--color-on-accent-ui);
+}
+
+.guia-cta a:not(.button) {
+  color: var(--color-on-accent-soft);
+  font-weight: 600;
+}
+
+.guia-cta .cta-nota {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.sigue-leyendo {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.sigue-leyendo a {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-card);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.sigue-leyendo a:hover {
+  border-color: var(--color-accent);
+}
+
+.sigue-leyendo strong {
+  display: block;
+  font-family: var(--font-display);
+  color: var(--color-accent);
+}
+
+@media (max-width: 30rem) {
+  .pasos > li {
+    grid-template-columns: 2.2rem 1fr;
+    column-gap: var(--space-1);
+  }
+
+  .pasos > li::before {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: var(--text-base);
+  }
+
+  .burbuja {
+    max-width: 94%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sigue-leyendo a {
+    transition: border-color 160ms ease;
+  }
+}

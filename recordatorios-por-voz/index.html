@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recordatorios por voz en Android: 3 formas | Yaruki</title>
+  <meta
+    name="description"
+    content="Cómo crear recordatorios por voz en Android: con el asistente de Google, con un mensaje de voz a Yaruki o a mano. Pasos, límites y qué hacer si no suena."
+  />
+  <link rel="canonical" href="https://yaruki.hjgr.dev/recordatorios-por-voz/" />
+  <meta property="og:title" content="Recordatorios por voz en Android: 3 formas" />
+  <meta property="og:description" content="Cómo crear recordatorios por voz en Android: con el asistente de Google, con un mensaje de voz a Yaruki o a mano. Pasos, límites y qué hacer si no suena." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://yaruki.hjgr.dev/recordatorios-por-voz/" />
+  <meta property="og:site_name" content="Yaruki" />
+  <meta property="og:locale" content="es_MX" />
+  <meta property="og:image" content="https://yaruki.hjgr.dev/assets/img/og-yaruki.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Yaruki (やる気): las ganas de hacer algo. Dile lo que tienes que hacer. Yaruki se encarga de anotarlo." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Recordatorios por voz en Android: 3 formas" />
+  <meta name="twitter:description" content="Cómo crear recordatorios por voz en Android: con el asistente de Google, con un mensaje de voz a Yaruki o a mano. Pasos, límites y qué hacer si no suena." />
+  <meta name="twitter:image" content="https://yaruki.hjgr.dev/assets/img/og-yaruki.png" />
+  <meta name="twitter:image:alt" content="Yaruki (やる気): las ganas de hacer algo. Dile lo que tienes que hacer. Yaruki se encarga de anotarlo." />
+  <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#151322" media="(prefers-color-scheme: dark)" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "@id": "https://yaruki.hjgr.dev/recordatorios-por-voz/#articulo",
+        "headline": "Cómo crear recordatorios por voz en Android (y cuál forma te conviene)",
+        "description": "Cómo crear recordatorios por voz en Android: con el asistente de Google, con un mensaje de voz a Yaruki o a mano. Pasos, límites y qué hacer si no suena.",
+        "inLanguage": "es-MX",
+        "datePublished": "2026-11-10",
+        "dateModified": "2026-11-10",
+        "image": "https://yaruki.hjgr.dev/assets/img/og-yaruki.png",
+        "author": { "@id": "https://yaruki.hjgr.dev/#autor" },
+        "publisher": { "@id": "https://yaruki.hjgr.dev/#autor" },
+        "isPartOf": { "@id": "https://yaruki.hjgr.dev/#sitio" },
+        "about": { "@id": "https://yaruki.hjgr.dev/#app" },
+        "mainEntityOfPage": { "@id": "https://yaruki.hjgr.dev/recordatorios-por-voz/#pagina" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://yaruki.hjgr.dev/recordatorios-por-voz/#pagina",
+        "url": "https://yaruki.hjgr.dev/recordatorios-por-voz/",
+        "name": "Recordatorios por voz en Android: 3 formas | Yaruki",
+        "inLanguage": "es-MX",
+        "isPartOf": { "@id": "https://yaruki.hjgr.dev/#sitio" },
+        "breadcrumb": { "@id": "https://yaruki.hjgr.dev/recordatorios-por-voz/#migas" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://yaruki.hjgr.dev/#autor",
+        "name": "Harold de Jesús García Ramírez"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://yaruki.hjgr.dev/recordatorios-por-voz/#migas",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Yaruki", "item": "https://yaruki.hjgr.dev/" },
+          { "@type": "ListItem", "position": 2, "name": "Recordatorios por voz en Android" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://yaruki.hjgr.dev/recordatorios-por-voz/#preguntas",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Cómo pongo un recordatorio con mi voz en Android?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Puedes pedírselo al asistente de tu teléfono (el Asistente de Google o, en algunos equipos, Gemini), mandar un mensaje de voz a Yaruki o crearlo a mano. Esta guía explica las tres formas y sus límites." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Yaruki necesita internet para los mensajes de voz?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí. La grabación se envía a un servidor para transcribirla e interpretarla, así que sin conexión no se puede mandar el mensaje." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Yaruki funciona con «Ok Google» o con manos libres?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. Yaruki no tiene palabra de activación ni manos libres: abres la app, tocas el micrófono y hablas. No escucha en segundo plano ni cuando la app está cerrada." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Los mensajes de voz son gratis? ¿Hay límite diario?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Los mensajes de voz son parte del plan gratuito, hasta 5 al día. En la prueba cerrada no hay tope." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Mi audio se guarda?",
+            "acceptedAnswer": { "@type": "Answer", "text": "El audio no se guarda en Yaruki: en el servidor se procesa en memoria y se descarta al terminar la solicitud. Google (Vertex AI) lo procesa según sus propios términos y no se puede garantizar que no lo retenga temporalmente. Lo único que se guarda es el texto de la transcripción, que entra a la conversación como si lo hubieras escrito. En tu teléfono, la grabación queda en una carpeta privada de la app y se borra al cerrar sesión, al eliminar tu cuenta o a los 30 días." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Qué pasa si digo la hora sin aclarar si es de la mañana o de la noche?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yaruki te pregunta en lugar de adivinar, por ejemplo «¿A las 9 de la mañana o de la noche?», y respondes tocando una opción." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿El recordatorio suena si tengo la app cerrada?",
+            "acceptedAnswer": { "@type": "Answer", "text": "El aviso se programa en tu teléfono con una alarma de Android, así que no depende de tener la app abierta. Pero Android puede retrasarlo o retenerlo según los permisos y la batería, y Yaruki no puede garantizar la hora exacta en todos los teléfonos." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="icon" href="../assets/img/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
+  <link rel="stylesheet" href="../assets/css/tokens.css?v=7e55092f39" />
+  <link rel="stylesheet" href="../assets/css/fonts.css?v=7e55092f39" />
+  <link rel="stylesheet" href="../assets/css/base.css?v=7e55092f39" />
+  <link rel="stylesheet" href="../assets/css/guias.css?v=7e55092f39" />
+  <script type="module" src="../assets/js/guias.js?v=7e55092f39"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <header class="site-header guia-header">
+    <div class="container">
+      <a class="wordmark" href="/">
+        <span class="punto-vivo" aria-hidden="true"></span>
+        Yaruki
+      </a>
+      <div class="guia-header-acciones">
+        <a class="back-link" href="/">← Volver al inicio</a>
+        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Tema oscuro" aria-pressed="false">
+          <svg class="icono-sol" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.5" />
+            <path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8" />
+          </svg>
+          <svg class="icono-luna" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <article class="guia">
+      <div class="container">
+        <header class="guia-cabecera">
+          <span class="chip guia-etiqueta">Guía · Yaruki está en beta cerrada para Android</span>
+          <h1>Cómo crear recordatorios por voz en Android (y cuál forma te conviene)</h1>
+          <p class="guia-autor">
+            <span>Por <strong>Harold de Jesús García Ramírez</strong>, quien desarrolla Yaruki</span>
+            <span>Publicado el <time datetime="2026-11-10">10 de noviembre de 2026</time></span>
+          </p>
+
+          <div class="en-resumen">
+            <h2>En pocas palabras</h2>
+            <p>
+              Hay tres caminos: pedírselo al asistente de tu teléfono, mandar un mensaje de voz a
+              Yaruki o hacerlo a mano. El asistente del teléfono es lo más rápido si ya lo tienes
+              configurado. Yaruki te sirve si quieres que el recordatorio quede junto con tus demás
+              pendientes, aunque no es manos libres: abres la app, tocas el micrófono y hablas.
+            </p>
+          </div>
+
+          <nav class="toc" aria-label="En esta guía">
+            <h2>En esta guía</h2>
+            <ol>
+              <li><a href="#forma-1">Forma 1: el asistente de tu teléfono</a></li>
+              <li><a href="#forma-2">Forma 2: un mensaje de voz a Yaruki</a></li>
+              <li><a href="#forma-3">Forma 3: a mano</a></li>
+              <li><a href="#comparacion">Comparación de las tres</a></li>
+              <li><a href="#consejos">Cómo decirlo para que te entiendan</a></li>
+              <li><a href="#no-sono">Si el recordatorio no sonó</a></li>
+              <li><a href="#preguntas">Preguntas frecuentes</a></li>
+              <li><a href="#beta">Cómo probar Yaruki</a></li>
+            </ol>
+          </nav>
+        </header>
+
+        <div class="guia-cuerpo">
+          <section id="forma-1" aria-labelledby="forma-1-h">
+            <h2 id="forma-1-h">Forma 1: el asistente de tu teléfono</h2>
+            <p>
+              Es la opción que no requiere instalar nada. La ayuda oficial del Asistente de Google
+              incluye «Programar recordatorios» entre lo que puede hacer
+              (<a href="https://support.google.com/assistant/answer/7172657?hl=es-419">Cómo configurar Asistente de Google en tu teléfono o tablet</a>).
+            </p>
+            <ol>
+              <li>Activa tu asistente como lo tengas configurado en el teléfono.</li>
+              <li>Pídele el recordatorio con fecha y hora, por ejemplo: «Recuérdame llamar al banco mañana a las 9 de la mañana».</li>
+            </ol>
+            <p>
+              Hay algo que no puedo darte con certeza: qué asistente responde y qué hace con los
+              recordatorios depende de tu marca de teléfono y de tu versión de Android. Google ha
+              ido cambiando entre el Asistente y Gemini; cuando revisé el 10 de noviembre de 2026,
+              la página de ayuda de Gemini sobre
+              <a href="https://support.google.com/gemini/answer/15235441?hl=es-419">controlar apps y dispositivos Android con Asistencia para el dispositivo</a>
+              (antes llamada Utilidades) mencionaba alarmas, temporizadores y cronómetro, pero no
+              recordatorios. Pruébalo en tu equipo y
+              confirma dónde queda guardado lo que le pides.
+            </p>
+          </section>
+
+          <section id="forma-2" aria-labelledby="forma-2-h">
+            <h2 id="forma-2-h">Forma 2: un mensaje de voz a Yaruki</h2>
+            <p>
+              En Yaruki un recordatorio es una tarea con fecha y hora: la ves en tus tareas y en
+              Notificaciones, junto con todo lo demás que le has dicho.
+            </p>
+            <ol class="pasos">
+              <li>
+                <h3>Toca el micrófono</h3>
+                <p>
+                  Con el campo de texto vacío, el botón de la derecha del chat es un micrófono. La
+                  primera vez, Android te pide permiso para usarlo; es opcional y, sin él, puedes
+                  escribir igual. Si tu teléfono no tiene micrófono, el botón no aparece. Si ya
+                  usaste los mensajes de voz de hoy, se ve apagado y te avisa: «Mañana tienes más
+                  mensajes de voz».
+                </p>
+              </li>
+              <li>
+                <h3>Habla</h3>
+                <p>
+                  Puedes grabar hasta 2 minutos. Ves un contador y la onda de tu voz; la papelera
+                  descarta la grabación.
+                </p>
+              </li>
+              <li>
+                <h3>Toca otra vez para detener y enviar</h3>
+                <p>
+                  Al detener, el mensaje se envía en ese momento: no hay una vista previa antes.
+                  Por eso conviene hablar con la fecha y la hora completas.
+                </p>
+              </li>
+              <li>
+                <h3>Revisa lo que entendió</h3>
+                <p>
+                  La burbuja de tu mensaje muestra el texto transcrito, y puedes volver a
+                  reproducir tu grabación desde el chat. Luego Yaruki lo trata como si lo hubieras
+                  escrito.
+                </p>
+                <figure class="ejemplo-chat">
+                  <p class="burbuja burbuja--usuario"><span class="solo-lectores">Tú, por voz: </span>Recuérdame pagar la luz el jueves a las 10 de la mañana</p>
+                  <p class="burbuja burbuja--asistente"><span class="solo-lectores">Yaruki: </span>Listo, ya anoté tu tarea «Pagar la luz».</p>
+                  <figcaption>La frase es de las pruebas del asistente; la respuesta tiene el formato real de Yaruki al anotar una tarea.</figcaption>
+                </figure>
+              </li>
+            </ol>
+
+            <h3>Qué cambia frente al asistente del teléfono</h3>
+            <ul>
+              <li>El recordatorio queda organizado con tus tareas, notas, listas, eventos y hábitos, y puedes pedirle después que lo mueva o lo elimine (te pregunta antes de hacerlo).</li>
+              <li>Si dices una hora sin aclarar mañana o noche, te pregunta en vez de adivinar.</li>
+              <li>Tus conversaciones se guardan 30 días y puedes volver a ellas.</li>
+            </ul>
+
+            <div class="aviso">
+              <strong>Límites de los mensajes de voz en Yaruki</strong>
+              <ul>
+                <li>Es un mensaje, no una llamada. Llamarle a Yaruki aparece como «próximamente».</li>
+                <li>No hay manos libres ni palabra de activación.</li>
+                <li>Necesita internet.</li>
+                <li>Los mensajes de voz son parte del plan gratuito, hasta 5 al día. En la prueba cerrada no hay tope.</li>
+              </ul>
+            </div>
+
+            <h3>Qué pasa con tu voz</h3>
+            <p>Esto es lo que dice, completa, la sección 2.4 de la <a href="/privacidad/#datos">política de privacidad</a>:</p>
+            <blockquote>
+              <p>
+                Puedes hablarle al asistente en vez de escribirle. Para eso, Yaruki te pide permiso
+                para usar el micrófono del teléfono y lo usa sólo mientras estás grabando un mensaje;
+                no escucha en segundo plano ni cuando la app está cerrada. El permiso es opcional:
+                sin él, la app funciona igual por escrito.
+              </p>
+              <p>
+                Al enviar el mensaje, la grabación (un archivo de audio) se sube a nuestro
+                servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para
+                transcribirla a texto. Google lo procesa en sus servidores, que pueden estar fuera
+                de México, incluido Estados Unidos, sin una región fija garantizada. El audio no
+                se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al
+                terminar la solicitud. Google (Vertex AI) lo procesa según sus propios términos y
+                no podemos garantizar que no lo retenga temporalmente. Lo único que guardamos es el
+                texto de la transcripción, que entra a la conversación como si lo hubieras escrito
+                (cifrado, con la misma retención de la sección 7). Si la transcripción falla,
+                tampoco queda el audio.
+              </p>
+              <p>
+                En tu teléfono, la app guarda tus grabaciones y el audio generado al leerte en voz
+                alta las respuestas del asistente (con el motor de voz de tu teléfono) en una
+                carpeta privada de la app, a la que ninguna otra app puede entrar. Sirven para que
+                puedas volver a reproducirlos desde el chat. No se envían a ningún servidor
+                adicional, y se borran al cerrar sesión, al eliminar tu cuenta o cuando cumplen 30
+                días.
+              </p>
+            </blockquote>
+          </section>
+
+          <section id="forma-3" aria-labelledby="forma-3-h">
+            <h2 id="forma-3-h">Forma 3: a mano</h2>
+            <p>
+              Sigue siendo lo mejor cuando estás en un lugar en silencio o con gente, o cuando el
+              recordatorio es muy puntual y tarda menos escribirlo que explicarlo. Puedes usar el
+              reloj o el calendario de tu teléfono, cualquier app de recordatorios o, en Yaruki, el
+              formulario de tareas: ahí eliges la fecha y la hora, y si hace falta te pide activar el
+              permiso «Alarmas y recordatorios».
+            </p>
+          </section>
+
+          <section id="comparacion" aria-labelledby="comparacion-h">
+            <h2 id="comparacion-h">Comparación de las tres formas</h2>
+            <p>
+              La columna del asistente depende de tu teléfono y de tu versión de Android, así que ahí solo anoto lo que no cambia.
+            </p>
+            <div class="tabla-envoltura" role="region" aria-label="Tabla comparativa, desplazable horizontalmente" tabindex="0">
+              <table class="tabla-comparacion">
+                <caption>Recordatorios por voz en Android: tres formas y sus diferencias</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Qué comparas</th>
+                    <th scope="col">Asistente del teléfono</th>
+                    <th scope="col">Mensaje de voz a Yaruki</th>
+                    <th scope="col">A mano</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">Cómo lo pides</th>
+                    <td>Con la voz, según cómo tengas configurado tu asistente.</td>
+                    <td>Abres el chat, tocas el micrófono, hablas y tocas otra vez para enviar.</td>
+                    <td>Escribes o llenas un formulario.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">¿Manos libres?</th>
+                    <td>Depende de tu teléfono.</td>
+                    <td>No: no hay palabra de activación ni escucha en segundo plano.</td>
+                    <td>No.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">¿Necesita internet?</th>
+                    <td>Depende de tu teléfono.</td>
+                    <td>Sí.</td>
+                    <td>Depende de la herramienta.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Dónde queda</th>
+                    <td>Donde lo guarde tu asistente; confírmalo en tu equipo.</td>
+                    <td>Como tarea con fecha y hora, junto con tus demás pendientes.</td>
+                    <td>Donde lo escribas.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Si la hora es ambigua</th>
+                    <td>Depende de tu asistente.</td>
+                    <td>Te pregunta si es de la mañana o de la noche.</td>
+                    <td>Tú eliges la hora.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Disponibilidad</th>
+                    <td>Android con asistente de Google.</td>
+                    <td>Beta cerrada, solo Android.</td>
+                    <td>Cualquier teléfono.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="consejos" aria-labelledby="consejos-h">
+            <h2 id="consejos-h">Cómo decirlo para que te entiendan</h2>
+            <ul>
+              <li><strong>Di la fecha y la hora completas</strong>, y aclara mañana o noche. «Mañana a las 9» obliga a preguntarte; «mañana a las 9 de la mañana» no.</li>
+              <li><strong>Nombra la cosa.</strong> Primero qué, luego cuándo, o al revés, pero que se oigan las dos.</li>
+              <li><strong>Puedes usar tiempos relativos</strong> y fechas con nombre del mes.</li>
+            </ul>
+            <ul class="frases">
+              <li>«Recuérdame a las 8 pm tomar la pastilla»</li>
+              <li>«Recuérdame en 20 minutos sacar la ropa»</li>
+              <li>«Recuérdame el 15 de noviembre pagar la tarjeta»</li>
+              <li>«Crea una tarea pagar la luz mañana a las 9» (te preguntará si es de la mañana o de la noche)</li>
+            </ul>
+            <p class="fuente-nota">
+              Son frases de las pruebas del asistente. El resultado exacto depende de cómo las
+              interprete el modelo, por eso Yaruki te muestra lo que entendió.
+              <a href="/organizar-tareas-con-ia/">Más sobre cómo organizar tareas con IA</a>.
+            </p>
+          </section>
+
+          <section id="no-sono" aria-labelledby="no-sono-h">
+            <h2 id="no-sono-h">Si el recordatorio no sonó</h2>
+            <p>
+              Aplica a cualquier app de recordatorios en Android. Yaruki te avisa de los tres
+              primeros puntos en su pestaña Notificaciones cuando los detecta. Revisa en este orden:
+            </p>
+            <ol>
+              <li><strong>Notificaciones permitidas.</strong> Yaruki te pide el permiso cuando programas algo con fecha y hora; si lo negaste, no habrá aviso.</li>
+              <li><strong>«Alarmas y recordatorios».</strong> Sin ese permiso, como dice la propia app, Android puede retrasar el aviso varios minutos.</li>
+              <li><strong>Batería.</strong> Si la batería de Yaruki está en «Restringida», los avisos no llegan hasta que abras la app. En los ajustes de batería de la app elige «Sin restricciones».</li>
+              <li><strong>App detenida.</strong> En algunos teléfonos, cerrar la app desde recientes borra las alarmas pendientes. Yaruki las repone cuando la abres.</li>
+            </ol>
+            <p>
+              Aun así, no puedo prometerte la hora exacta en todos los teléfonos: depende de lo que
+              Android y la marca permitan.
+            </p>
+          </section>
+
+          <section id="preguntas" class="preguntas" aria-labelledby="preguntas-h">
+            <h2 id="preguntas-h">Preguntas frecuentes</h2>
+            <h3>¿Cómo pongo un recordatorio con mi voz en Android?</h3>
+            <p>Puedes pedírselo al asistente de tu teléfono (el Asistente de Google o, en algunos equipos, Gemini), mandar un mensaje de voz a Yaruki o crearlo a mano. Esta guía explica las tres formas y sus límites.</p>
+            <h3>¿Yaruki necesita internet para los mensajes de voz?</h3>
+            <p>Sí. La grabación se envía a un servidor para transcribirla e interpretarla, así que sin conexión no se puede mandar el mensaje.</p>
+            <h3>¿Yaruki funciona con «Ok Google» o con manos libres?</h3>
+            <p>No. Yaruki no tiene palabra de activación ni manos libres: abres la app, tocas el micrófono y hablas. No escucha en segundo plano ni cuando la app está cerrada.</p>
+            <h3>¿Los mensajes de voz son gratis? ¿Hay límite diario?</h3>
+            <p>Los mensajes de voz son parte del plan gratuito, hasta 5 al día. En la prueba cerrada no hay tope.</p>
+            <h3>¿Mi audio se guarda?</h3>
+            <p>El audio no se guarda en Yaruki: en el servidor se procesa en memoria y se descarta al terminar la solicitud. Google (Vertex AI) lo procesa según sus propios términos y no se puede garantizar que no lo retenga temporalmente. Lo único que se guarda es el texto de la transcripción, que entra a la conversación como si lo hubieras escrito. En tu teléfono, la grabación queda en una carpeta privada de la app y se borra al cerrar sesión, al eliminar tu cuenta o a los 30 días.</p>
+            <h3>¿Qué pasa si digo la hora sin aclarar si es de la mañana o de la noche?</h3>
+            <p>Yaruki te pregunta en lugar de adivinar, por ejemplo «¿A las 9 de la mañana o de la noche?», y respondes tocando una opción.</p>
+            <h3>¿El recordatorio suena si tengo la app cerrada?</h3>
+            <p>El aviso se programa en tu teléfono con una alarma de Android, así que no depende de tener la app abierta. Pero Android puede retrasarlo o retenerlo según los permisos y la batería, y Yaruki no puede garantizar la hora exacta en todos los teléfonos.</p>
+          </section>
+
+          <section id="beta" class="guia-cta" aria-labelledby="beta-h">
+            <h2 id="beta-h">Cómo probar Yaruki</h2>
+            <p>
+              Yaruki está en beta cerrada en Android. Entras en dos pasos, con tu cuenta de Google.
+            </p>
+            <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/">Únete a la beta</a>
+            <ol class="pasos-beta" aria-label="Cómo unirte a la beta">
+              <li>
+                <span class="pasos-beta-numero" aria-hidden="true">1</span>
+                <span>Únete al <a href="https://groups.google.com/g/yaruki-beta/">grupo de testers</a> con tu cuenta de Google.</span>
+              </li>
+              <li>
+                <span class="pasos-beta-numero" aria-hidden="true">2</span>
+                <span>Espera unos minutos y acepta la <a href="https://play.google.com/apps/testing/dev.hjgr.yaruki">invitación en Google Play</a> con la misma cuenta. Desde ahí la descargas.</span>
+              </li>
+            </ol>
+          </section>
+
+          <section aria-labelledby="mas-h">
+            <h2 id="mas-h">Sigue leyendo</h2>
+            <ul class="sigue-leyendo">
+              <li>
+                <a href="/organizar-tareas-con-ia/">
+                  <strong>Cómo organizar tus tareas con IA</strong>
+                  Qué puede hacer una IA con tus pendientes, paso a paso y con límites claros.
+                </a>
+              </li>
+              <li>
+                <a href="/">
+                  <strong>Qué es Yaruki</strong>
+                  La portada, con el recorrido completo por el chat, los elementos y los avisos.
+                </a>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Yaruki — Harold de Jesús García Ramírez, Guadalajara, Jalisco, México.</p>
+      <ul class="footer-links">
+        <li><a href="/">Inicio</a></li>
+        <li><a href="/organizar-tareas-con-ia/">Organizar tareas con IA</a></li>
+        <li><a href="/recordatorios-por-voz/" aria-current="page">Recordatorios por voz</a></li>
+        <li><a href="/privacidad/">Privacidad</a></li>
+        <li><a href="/terminos/">Términos</a></li>
+        <li><a href="/eliminar-cuenta/">Eliminar cuenta</a></li>
+      </ul>
+    </div>
+  </footer>
+</body>
+</html>
