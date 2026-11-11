@@ -2,7 +2,7 @@
   Fuentes autoalojadas (sin Google Fonts ni ningún otro origen externo).
   Archivos .woff2 convertidos de los .ttf que empaqueta asistente-android
   (app/src/main/res/font/), con woff2_compress. Licencia SIL OFL en
-  assets/fonts/OFL.txt.
+  assets/fonts/OFL-Baloo2.txt y OFL-Manrope.txt.
 */
 
 @font-face {
