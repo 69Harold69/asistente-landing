@@ -1,0 +1,8 @@
+{
+  "descripcion": "Fallos conocidos de la línea base (origin/main). Cada entrada lleva su issue. Cuando la PR que lo arregla deja la regla en verde, borra la entrada: validar reporta XPASS y falla si queda.",
+  "conocidos": [
+    { "regla": "cta-sin-href", "issue": 21, "motivo": "Los CTA «Únete a la beta» no tienen href en el HTML; solo main.js se lo pone." },
+    { "regla": "csp-js", "contiene": "scenes/chat.js", "issue": 22, "motivo": "chat.js arma style=\"--h:..\" inline con innerHTML; la CSP lo bloquea." },
+    { "regla": "html-validate", "contiene": "element-permitted-content", "issue": 23, "motivo": "<h3>/<p> dentro de <span> en la tarjeta «Exportar tus datos»." }
+  ]
+}
