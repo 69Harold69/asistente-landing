@@ -120,6 +120,17 @@ try {
         const v = t === "none" ? [0, 0] : t.split(" ").map(parseFloat);
         r.muestras.push({ enGiro: e.detail.enGiro, mascota: e.detail.mascota, x: v[0] || 0, y: v[1] || 0 });
       });
+      // Muestreo independiente en cada cuadro: nadie más que stage.js escribe el `transform` del envoltorio
+      // de la mascota (sólo "" o scale(n)) y la mascota no tiene `transform` en línea (la mirada va por `translate`).
+      r.pisadas = [];
+      const muestrear = () => {
+        const esc = document.querySelector(".ps-splash .ps-dot-escala");
+        const d = dot();
+        if (esc && !/^(|scale\([\d.]+\))$/.test(esc.style.transform)) r.pisadas.push("envoltorio: " + esc.style.transform);
+        if (d && d.style.transform) r.pisadas.push("mascota: " + d.style.transform);
+        if (window.__mira) requestAnimationFrame(muestrear);
+      };
+      requestAnimationFrame(muestrear);
       window.__mira = r;
       return true;
     });
@@ -146,7 +157,8 @@ try {
     ok(giro.length > 5 && enMovimiento / giro.length < 0.15, `durante los giros la mirada se apaga (${enMovimiento}/${giro.length} muestras con desplazamiento > 2.5 px)`);
     ok(e.angulo !== null && (e.angulo < 0.6 || e.angulo > 359.4) && e.escena === "splash", `al regresar arriba el teléfono queda de frente en splash (${e.angulo?.toFixed(2)}°, ${e.escena})`);
     const despues = await page.evaluate(() => document.querySelector(".ps-dot-escala")?.style.transform ?? "");
-    ok(antes === despues, "el `transform` de la coreografía sobre la mascota no fue pisado por la mirada");
+    const pisadas = await page.evaluate(() => window.__mira.pisadas);
+    ok(antes === despues && pisadas.length === 0, `el \`transform\` de la coreografía sobre la mascota no fue pisado por la mirada (${pisadas.length} cuadros pisados${pisadas.length ? ": " + pisadas[0] : ""})`);
     await ctx.close();
   }
 
