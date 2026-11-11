@@ -130,7 +130,7 @@ def main(argv):
         try:
             publicado = urllib.request.urlopen(cuerpo["keyLocation"], timeout=15).read().decode("utf-8")
         except (urllib.error.URLError, OSError) as e:
-            return error(f"No se pudo leer {cuerpo['keyLocation']} ({e}). Publica el sitio primero (git pull en el droplet).", 1)
+            return error(f"No se pudo leer {cuerpo['keyLocation']} ({e}). Publica el sitio primero (el tag en el droplet: git fetch --tags && git checkout <tag>).", 1)
         if publicado != clave:
             return error(f"{cuerpo['keyLocation']} no contiene exactamente la clave. No se envía.", 1)
     peticion = urllib.request.Request(endpoint, data=texto.encode("utf-8"), headers={"Content-Type": "application/json; charset=utf-8"}, method="POST")

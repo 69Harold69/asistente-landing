@@ -170,6 +170,13 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
   Si una página tiene un commit de contenido posterior a su `lastmod`, se
   actualiza en la misma PR (el `/` se quedó en 2026-10-29 con dos cambios de
   texto encima; se corrigió en #11).
+- **`TERMINOS_VERSION` (backend) y las páginas legales:** en `asistente-backend`, `TERMINOS_VERSION`
+  (`config/legal.php`) es un solo valor que versiona **juntos** los Términos y la Política de
+  privacidad: si difiere de la que aceptó una cuenta, `/auth/me` responde `terminos_pendientes: true`
+  y el backend contesta 403 a `/conversacion/*` hasta que la persona acepte otra vez. Por eso
+  **cambiar el texto o la fecha «Vigente desde» de `/privacidad/` o `/terminos/` en esta landing no la sube**
+  (cambios aclaratorios, como el de los registros de visitas del sitio, no lo justifican). Subirla
+  es una decisión de Harold al publicar, no un efecto automático de este repo.
 - **`robots.txt`:** permite todo y declara el sitemap.
 - **Open Graph y Twitter/X** en las 4 páginas públicas (`index.html`, privacidad,
   términos y eliminar cuenta), con la misma imagen `og-yaruki.png` 1200×630. La
@@ -504,10 +511,15 @@ referencia de `ofl/baloo2/upstream_info.md`). Manrope: `aaronbell/manrope` en
 6. ~~`gsap.matchMedia()` no reacomoda el teléfono al cruzar de rama~~ →
    **resuelto (M1):** al cruzar 1024 px o cambiar "reducir movimiento" se
    re-mide y se vuelve a la misma sección.
-7. **Vuelo probado por scroll programático (Puppeteer) y revisión visual
-   cuadro a cuadro, no por un dedo/mouse real** — el comportamiento con
-   gestos táctiles reales (momentum scroll de iOS/Android) no se validó en
-   este pase.
+7. **Gestos táctiles (parcialmente resuelto, 2026-11-11):** `scripts/pruebas/tactil.mjs` ya
+   recorre el sitio con eventos táctiles reales de Pixel 7 e iPhone 15 emulados sobre Chromium
+   (sin fallos de coreografía). **Sigue pendiente en teléfono real**, porque WebKit no corre en la
+   máquina de desarrollo: el *momentum* de Safari/iPhone (scroll con inercia y barra de URL
+   que se encoge) **no se probó**; Harold lo prueba al publicar. Igual con
+   (a) el respaldo de fuentes sobre Roboto en Android real (que el titular y el subtítulo del hero
+   no salten al cargar; Chrome de Android 12+ resuelve `local("Roboto Bold")` con la Roboto variable) y
+   (b) el silabeo (`hyphens`) de la tabla de `/privacidad/` en Android y Safari. El checklist está en el
+   runbook de publicación de `asistente-ia-ops`.
 
 ## Fuentes citadas (verificación, no en la página pública)
 
@@ -544,7 +556,7 @@ referencia de `ofl/baloo2/upstream_info.md`). Manrope: `aaronbell/manrope` en
 IndexNow avisa a Bing, Yandex, Seznam, Naver y otros de las URLs que cambiaron (Google no participa: para Google
 siguen valiendo Search Console y el sitemap). La clave vive en `72d573f4443baf5a20fc8627fb495555.txt`, en la raíz:
 el protocolo exige publicarla (no es un secreto) y su contenido es exactamente la clave. Caddy no la oculta
-(`hide` solo cubre `.git`, `README.md`, `scripts`, `package*.json`). Tras el primer `git pull` en el droplet:
+(el `hide` del bloque de Caddy solo cubre `.git*`, `README.md`, `scripts`, `package.json`, `package-lock.json` y `node_modules`). Tras publicar el tag en el droplet:
 
 ```bash
 curl -s https://yaruki.hjgr.dev/72d573f4443baf5a20fc8627fb495555.txt   # debe imprimir exactamente la clave
@@ -604,7 +616,7 @@ URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus
    `sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
 3. **En el repo** (PR normal): `python3 scripts/dominio.py --origen https://yaruki.app`, luego
    `cd scripts/pruebas && node validar.mjs` (debe dar 0), revisar `git diff` y, en `main`, `python3 scripts/versionar.py`.
-   Actualiza en el README el `yaruki.hjgr.dev` de los comandos de verificación. Despliega con `git pull`.
+   Actualiza en el README el `yaruki.hjgr.dev` de los comandos de verificación. Despliega con un tag (ver «Despliegue §5»).
 4. **Redirecciones 301 del dominio viejo, ruta por ruta.** Cambia el bloque de `yaruki.hjgr.dev` por:
 
    ```caddyfile
@@ -686,8 +698,9 @@ chmod -R a+rX /var/www/asistente-landing
 
 (El repo ya existe en GitHub, es **público a propósito** como estrategia de SEO
 (`69Harold69/asistente-landing`, rama `main`) y el droplet lo tiene clonado en
-`/var/www/asistente-landing`. Para actualizar: `git pull` ahí; no hace falta
-recargar Caddy. La última publicación es `cc51b60` del 2026-11-02.)
+`/var/www/asistente-landing`. Se actualiza **por tag** (ver «5. Publicar una versión»); no hace falta
+recargar Caddy salvo que cambie el Caddyfile. La última publicación es `cc51b60` del 2026-11-02, anterior
+a los tags.)
 
 ### 3. Bloque de Caddy
 
@@ -704,7 +717,7 @@ yaruki.hjgr.dev {
 	# El sitio se sirve desde el clon del repo: nunca exponer `.git` (todo el
 	# historial) ni los archivos que no son del sitio.
 	file_server {
-		hide .git README.md
+		hide .git* README.md scripts package.json package-lock.json node_modules
 	}
 
 	# Recursos estáticos: caché larga. Sin hash en los nombres, así que
@@ -736,19 +749,34 @@ Notas:
   desde el mismo origen, así que `script-src 'self'` y `font-src 'self'`
   alcanzan. No hay nada inline: los estilos que calcula JS van por CSSOM
   (`el.style.setProperty`), que la CSP permite.
-- **`hide .git README.md`:** el repo se clona tal cual en `/var/www`; sin esto,
+- **`hide`:** el repo se clona tal cual en `/var/www`; sin esto,
   `https://yaruki.hjgr.dev/.git/config` (y con él todo el historial) quedaba
   público.
-- **PENDIENTE de Harold (no ejecutado): ocultar también lo de pruebas.** El droplet
-  sirve el clon tal cual, así que `scripts/` (herramientas de prueba, no
-  sensibles pero sin razón para estar públicas), `package.json` y
-  `package-lock.json` serían descargables. Cambiar el `hide` del bloque a
-  `hide .git README.md scripts package.json package-lock.json` y recargar
-  Caddy (`sudo caddy validate ... && sudo systemctl reload caddy`); verificar
-  con `curl -sI https://yaruki.hjgr.dev/scripts/pruebas/package.json` (debe dar
-  404). `node_modules/` está en `.gitignore`, así que no llega al droplet con
-  `git pull`. El servidor local de las pruebas (`scripts/pruebas/lib/servidor.mjs`)
-  ya los oculta como lo haría Caddy con ese `hide`.
+- **`hide`: todo lo que está en el clon y no es del sitio.** El droplet sirve el clon
+  tal cual, así que cualquier archivo del repo que no sea del sitio sería descargable. Lista
+  (2026-11-11), con lo que cubre cada patrón:
+  - `.git*`: `.git` (todo el historial), `.gitignore` y, si algún día existen, `.github`/`.gitattributes`.
+  - `README.md`: este documento.
+  - `scripts`: la carpeta de herramientas completa. **Los únicos `package.json` y `package-lock.json`
+    del repo viven dentro de `scripts/pruebas/`**, así que `scripts` ya los cubre; se listan aparte
+    por si alguna vez aparecen en la raíz. `node_modules` igual (está en `.gitignore`).
+  - **Sí se sirve** (no se oculta): `google9633e8d6c904333e.html`, `72d573f4443baf5a20fc8627fb495555.txt`
+    (clave de IndexNow), `robots.txt`, `sitemap.xml`, `404.html`, `favicon.ico`, `assets/` completo
+    (incluidas las licencias `assets/**/OFL-*.txt` y `LICENSE-*.txt`), las páginas y `/.well-known/` si existiera.
+  - **Cómo lo interpreta Caddy** (documentación de `file_server`,
+    https://caddyserver.com/docs/caddyfile/directives/file_server): los patrones son rutas del
+    *sistema de archivos*, no de la URL; un patrón **sin separador de ruta es un nombre que se oculta
+    en cualquier profundidad** (archivo o carpeta, y con ella todo su contenido), admite comodines, la
+    comparación distingue mayúsculas, y la propia documentación advierte que no es una frontera de seguridad. Por lo mismo
+    **no debe existir bajo `assets/` ni en otro lugar del sitio un archivo o carpeta llamado `scripts`,
+    `README.md`, `package.json`, `package-lock.json`, `node_modules` ni que empiece con `.git`**: quedaría oculto. Hoy no hay ninguno
+    (lo comprueba la regla `hide-readme` de `validar`).
+  - Comprobado el 2026-11-11 con Caddy 2.11.9 oficial sirviendo una copia del repo: 404 en `/scripts/pruebas/package.json`,
+    `/scripts/dominio.py`, `/README.md`, `/.git/config`, `/.gitignore`, `/.github/…`; 200 en las páginas, la clave de IndexNow,
+    `sitemap.xml`, `robots.txt`, `404.html`, `favicon.ico`, `google9633e8d6c904333e.html`, `/.well-known/…` y las licencias bajo `assets/`.
+  - Para aplicarlo en el droplet y verificarlo, sigue el runbook de publicación de `asistente-ia-ops`
+    (`docs/runbook-publicacion-landing-2026-11.md`). El servidor de pruebas (`scripts/pruebas/lib/servidor.mjs`, `HIDE_CADDY`)
+    emula este mismo `hide` y `validar` falla si dejan de coincidir.
 - **Caché de `/assets/*`:** ver el comentario en el bloque. El HTML no lleva
   `Cache-Control` propio: Caddy manda `ETag`/`Last-Modified` y el navegador
   revalida en cada visita, así que un despliegue se ve al instante.
@@ -768,26 +796,61 @@ Notas:
 ### 4. Validar, recargar y verificar
 
 ```bash
-sudo caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl reload caddy
+# recarga SOLO si valida (el `&&` lo impide si falla); nunca `restart`, que cortaría también la API
+sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
 
 # Verificación: debe responder 200 con las cabeceras de seguridad de arriba.
 curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
 ```
 
 Validar primero es obligatorio: un error en el bloque nuevo no debe tumbar
-`asistente.hjgr.dev`. Si `curl` no devuelve `200` o faltan las cabeceras,
+`asistente.hjgr.dev`. **Siempre como el usuario del servicio** (`sudo -u caddy -H`): `caddy validate`
+abre (y crea si no existe) los archivos que el Caddyfile pide, p. ej. un archivo de `log`; si lo corres
+como root queda con dueño `root`, Caddy (usuario `caddy`) ya no puede abrirlo y la recarga o el próximo
+arranque fallan. Si `curl` no devuelve `200` o faltan las cabeceras,
 revisar el bloque antes de dar el despliegue por terminado.
 
-### 5. Actualizar
+### 5. Publicar una versión (por tag)
 
-```bash
-cd /var/www/asistente-landing && git pull
-# sólo si cambió el Caddyfile:
-sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
-# y volver a verificar, igual que en el paso 4:
-curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
-```
+El droplet **no** hace `git pull` a ciegas: publica un **tag** `publicable-AAAA-MM-DD<letra>` (por ejemplo
+`publicable-2026-11-11a`).
+
+- **Qué es un tag `publicable-*`:** una versión de `main` que el PM etiqueta (tag anotado, empujado a
+  GitHub) solo después de: (1) correr `python3 scripts/versionar.py` en `main` (reescribe los `?v=` de
+  cache busting; ver «Cache busting»), (2) comprobar que `python3 scripts/versionar.py --check` sale con
+  `0`, (3) `node scripts/pruebas/todo.mjs` en verde y (4) una auditoría de cierre. Un commit de `main`
+  sin tag **no** se considera publicable (puede tener `?v=` desactualizados).
+- **Publicar:**
+
+  ```bash
+  cd /var/www/asistente-landing
+  git fetch --tags
+  git checkout <tag>                      # p. ej. publicable-2026-11-11a
+  git describe --tags --exact-match       # debe imprimir ese mismo tag
+  git rev-parse --short HEAD              # debe ser el commit que el PM entregó junto con el tag
+  curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
+  ```
+
+- **Qué tag está publicado:** `cd /var/www/asistente-landing && git describe --tags --exact-match`
+  (si imprime `fatal: no tag exactly matches`, el clon está en un commit sin tag, como `cc51b60`).
+- **Rollback:** `git checkout <tag-anterior>` (o el commit anterior si no tenía tag) y volver a verificar.
+  Es instantáneo; no hay compilación.
+- **Un tag publicado nunca se mueve ni se reutiliza.** Si hace falta corregir algo, el PM crea otro con la
+  letra siguiente (`publicable-2026-11-11b`). Por eso `git fetch --tags` no lleva `--force`: si alguien
+  moviera un tag que el droplet ya tiene, git lo rechaza (`would clobber existing tag`) y el clon se
+  quedaría con el viejo; la comprobación de `git rev-parse --short HEAD` contra el commit entregado lo detecta.
+  Detente y avisa en vez de forzarlo.
+- **«detached HEAD» es lo esperado:** `git checkout <tag>` deja el clon sin rama. Git lo avisa y no es un
+  error; por eso `git pull` ya no aplica ahí.
+- **No se edita nada a mano en el droplet.** El clon debe quedar idéntico al tag (`git status` limpio). Todo
+  cambio pasa por una PR, `main`, `versionar.py` y un tag nuevo. Si hay cambios locales, `git checkout`
+  se negará o los arrastrará: no los guardes ni los descartes sin revisarlos.
+- **Solo si cambió el Caddyfile** (no las páginas):
+
+  ```bash
+  sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
+  curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5   # volver a verificar, igual que en el paso 4
+  ```
 
 No toca Sail ni el worker de colas del backend. Impacto en RAM: despreciable.
 
