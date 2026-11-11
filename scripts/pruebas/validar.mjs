@@ -207,7 +207,12 @@ if (activa("hide-readme")) {
       const r = path.posix.join(dir, e.name);
       return e.isDirectory() ? recorrerSitio(r) : [r];
     });
-  for (const f of [...servidos, ...recorrerSitio("assets")])
+  // Las paginas del sitemap (`/privacidad/` -> `privacidad/index.html`): un `hide` que tapara una
+  // pagina tambien la sacaria en silencio de las demas reglas (`htmls()` salta lo oculto).
+  const paginas = [...fs.readFileSync(path.join(RAIZ_SITIO, "sitemap.xml"), "utf8").matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map(
+    (m) => `${new URL(m[1]).pathname.replace(/^\//, "")}index.html`,
+  );
+  for (const f of [...servidos, ...paginas, ...recorrerSitio("assets")])
     if (estaOculto(f)) falla("hide-readme", f, "el \`hide\` de Caddy ocultaria un archivo que debe servirse");
   // Lo que NO debe servirse.
   for (const f of ["README.md", ".gitignore", ".git/config", ".github/workflows/x.yml", "scripts/pruebas/package.json", "scripts/pruebas/package-lock.json", "scripts/dominio.py", "node_modules/x.js"])

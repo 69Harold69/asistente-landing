@@ -796,8 +796,8 @@ Notas:
 ### 4. Validar, recargar y verificar
 
 ```bash
-sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl reload caddy
+# recarga SOLO si valida (el `&&` lo impide si falla); nunca `restart`, que cortaría también la API
+sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
 
 # Verificación: debe responder 200 con las cabeceras de seguridad de arriba.
 curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
@@ -827,6 +827,7 @@ El droplet **no** hace `git pull` a ciegas: publica un **tag** `publicable-AAAA-
   git fetch --tags
   git checkout <tag>                      # p. ej. publicable-2026-11-11a
   git describe --tags --exact-match       # debe imprimir ese mismo tag
+  git rev-parse --short HEAD              # debe ser el commit que el PM entregó junto con el tag
   curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
   ```
 
@@ -834,6 +835,11 @@ El droplet **no** hace `git pull` a ciegas: publica un **tag** `publicable-AAAA-
   (si imprime `fatal: no tag exactly matches`, el clon está en un commit sin tag, como `cc51b60`).
 - **Rollback:** `git checkout <tag-anterior>` (o el commit anterior si no tenía tag) y volver a verificar.
   Es instantáneo; no hay compilación.
+- **Un tag publicado nunca se mueve ni se reutiliza.** Si hace falta corregir algo, el PM crea otro con la
+  letra siguiente (`publicable-2026-11-11b`). Por eso `git fetch --tags` no lleva `--force`: si alguien
+  moviera un tag que el droplet ya tiene, git lo rechaza (`would clobber existing tag`) y el clon se
+  quedaría con el viejo; la comprobación de `git rev-parse --short HEAD` contra el commit entregado lo detecta.
+  Detente y avisa en vez de forzarlo.
 - **«detached HEAD» es lo esperado:** `git checkout <tag>` deja el clon sin rama. Git lo avisa y no es un
   error; por eso `git pull` ya no aplica ahí.
 - **No se edita nada a mano en el droplet.** El clon debe quedar idéntico al tag (`git status` limpio). Todo
