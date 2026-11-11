@@ -3,7 +3,7 @@
   validar: comprobaciones rapidas y SIN navegador. Sale con 1 si alguna regla falla.
 
   Reglas (id): html-validate, csp-estatica, csp-js, csp-readme, json-ld, sitemap, lastmod,
-  meta, enlaces, cta-sin-href, voseo, dominio. Cada falla se imprime como `FALLA [regla] archivo:linea mensaje`.
+  meta, guias, faq-visible, enlaces, cta-sin-href, voseo, dominio. Cada falla se imprime como `FALLA [regla] archivo:linea mensaje`.
 
   Fallos conocidos: `conocidos.json` lista reglas (opcionalmente acotadas con "contiene") que HOY
   fallan y tienen issue. Se imprimen como XFAIL y no rompen la salida. Si una regla conocida
@@ -202,6 +202,7 @@ const REQUERIDOS = {
   BreadcrumbList: ["itemListElement"],
   Organization: ["name"],
   WebPage: ["url", "name"],
+  Article: ["headline", "datePublished", "dateModified", "author", "inLanguage"],
 };
 function validarNodo(nodo, donde) {
   if (Array.isArray(nodo)) return nodo.forEach((x) => validarNodo(x, donde));
@@ -239,6 +240,23 @@ const NOMBRES_PUBLICOS = () => {
   const textos = paginas.map((q) => textoVisible(q.arbol));
   return (nombre) => textos.some((tx) => tx.includes(nombre));
 };
+/* Nodos con @id que define la portada (#sitio, #autor, #app...): las páginas internas los referencian por @id sin repetirlos. */
+const nodosDeLd = (p) =>
+  etiquetas(p.arbol, "script")
+    .filter((s) => attr(s, "type") === "application/ld+json")
+    .flatMap((n) => {
+      try {
+        const d = JSON.parse(hijos(n).map((h) => h.value ?? "").join(""));
+        return d["@graph"] ?? [d];
+      } catch {
+        return [];
+      }
+    });
+const DEFINIDOS_PORTADA = new Set(
+  nodosDeLd(paginas.find((x) => x.url === "/") ?? { arbol: { childNodes: [] } })
+    .filter((n) => typeof n?.["@id"] === "string" && Object.keys(n).length > 1)
+    .map((n) => n["@id"]),
+);
 function validarGrafo(nodos, donde, p) {
   const definidos = new Map(); // @id -> nodo con mas propiedades que solo @id
   const refs = [];
@@ -253,7 +271,7 @@ function validarGrafo(nodos, donde, p) {
     Object.values(n).forEach(visitar);
   };
   visitar(nodos);
-  for (const r of refs) if (!definidos.has(r)) falla("json-ld", donde, `referencia @id sin definir en el mismo bloque: ${r}`);
+  for (const r of refs) if (!definidos.has(r) && !(p.url !== "/" && DEFINIDOS_PORTADA.has(r))) falla("json-ld", donde, `referencia @id sin definir en el mismo bloque ni en la portada: ${r}`);
   const tipo = (t) => [...definidos.values()].filter((n) => [].concat(n["@type"] ?? []).includes(t));
   const publico = NOMBRES_PUBLICOS();
   for (const per of tipo("Person")) {
@@ -305,6 +323,62 @@ if (activa("json-ld")) {
       validarNodo(datos["@graph"] ?? datos, d);
       validarGrafo(datos["@graph"] ?? [datos], d, p);
     }
+  }
+}
+
+/* ---------- 3a. páginas-guía (Article) y FAQPage ---------- */
+/*
+  Una guía es una página con un Article en su JSON-LD. Reglas (todas con mensaje propio):
+  title <= 60 y description <= 155 (lo que Google muestra sin cortar), headline <= 110, un <h1>,
+  autor y fecha de publicación VISIBLES (<time datetime> igual a datePublished; si dateModified difiere,
+  otra <time>), dateModified >= datePublished y no futura, y que la portada la enlace (sin páginas huérfanas).
+  `faq-visible`: cada FAQPage (en cualquier página) solo puede tener preguntas y respuestas cuyo texto
+  aparezca IDÉNTICO en el texto visible de esa página.
+*/
+const normaliza = (s) => String(s).replace(/\s+/g, " ").trim();
+const hrefsDe = (p) => etiquetas(p.arbol, "a").map((x) => attr(x, "href")).filter(Boolean);
+const enlazaA = (origen, destino) =>
+  hrefsDe(origen).some((h) => {
+    try {
+      return new URL(h, ORIGEN + origen.url).pathname === destino.url;
+    } catch {
+      return false;
+    }
+  });
+if (activa("guias") || activa("faq-visible")) {
+  for (const p of paginas) {
+    const nodos = nodosDeLd(p);
+    const visible = normaliza(textoVisible(p.arbol));
+    if (activa("faq-visible")) {
+      for (const f of nodos.filter((n) => [].concat(n?.["@type"] ?? []).includes("FAQPage"))) {
+        for (const q of [].concat(f.mainEntity ?? [])) {
+          for (const [que, texto] of [["pregunta", q?.name], ["respuesta", q?.acceptedAnswer?.text]]) {
+            if (texto && !visible.includes(normaliza(texto))) falla("faq-visible", p.r, `FAQPage: la ${que} «${normaliza(texto).slice(0, 60)}…» no aparece idéntica en el texto visible de la página`);
+          }
+        }
+      }
+    }
+    const art = nodos.find((n) => [].concat(n?.["@type"] ?? []).includes("Article"));
+    if (!activa("guias") || !art) continue;
+    const titulo = etiquetas(p.arbol, "title")[0];
+    const t = titulo ? hijos(titulo).map((h) => h.value).join("").trim() : "";
+    if (t.length > 60) falla("guias", p.r, `<title> de ${t.length} caracteres en una guía (máximo 60)`);
+    const desc = attr(etiquetas(p.arbol, "meta").find((m) => attr(m, "name") === "description") ?? { attrs: [] }, "content")?.trim() ?? "";
+    if (desc.length > 155) falla("guias", p.r, `meta description de ${desc.length} caracteres en una guía (máximo 155)`);
+    if (String(art.headline ?? "").length > 110) falla("guias", p.r, `Article.headline de ${art.headline.length} caracteres (máximo 110)`);
+    const autorId = art.author?.["@id"];
+    const autor = nodos.find((n) => n?.["@id"] === autorId && n.name) ?? nodosDeLd(paginas.find((x) => x.url === "/") ?? { arbol: { childNodes: [] } }).find((n) => n?.["@id"] === autorId && n.name);
+    if (!autor) falla("guias", p.r, "no se pudo resolver el nombre del autor del Article");
+    else if (!visible.includes(autor.name)) falla("guias", p.r, `el autor «${autor.name}» no aparece en el texto visible de la guía`);
+    const tiempos = etiquetas(p.arbol, "time").map((x) => attr(x, "datetime"));
+    for (const [campo, valor] of [["datePublished", art.datePublished], ["dateModified", art.dateModified]]) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(valor ?? ""))) falla("guias", p.r, `Article.${campo} debe ser YYYY-MM-DD`);
+      else if (!tiempos.includes(valor)) falla("guias", p.r, `Article.${campo} (${valor}) no tiene su <time datetime="${valor}"> visible en la página`);
+    }
+    if (art.datePublished && art.dateModified && art.dateModified < art.datePublished) falla("guias", p.r, `dateModified (${art.dateModified}) es anterior a datePublished (${art.datePublished})`);
+    if (art.dateModified > new Date(Date.now() + 864e5).toLocaleDateString("sv-SE", { timeZone: "America/Mexico_City" })) falla("guias", p.r, `dateModified (${art.dateModified}) está en el futuro`);
+    const portada = paginas.find((x) => x.url === "/");
+    if (portada && !enlazaA(portada, p)) falla("guias", p.r, "la portada no enlaza esta guía (página huérfana)");
   }
 }
 
@@ -595,7 +669,7 @@ else {
         ? `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ahora hay ${c.encontrados} de ${c.cuantos}: baja "cuantos" en scripts/pruebas/conocidos.json (issue #${c.issue})`
         : `XPASS  [${c.regla}] ${c.archivo ?? ""} ${c.contiene ?? ""} ya no falla: borra su entrada de scripts/pruebas/conocidos.json (issue #${c.issue})`,
     );
-  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "cta-sin-href", "voseo", "dominio"].filter(activa))];
+  const reglas = [...new Set(["html-validate", "csp-estatica", "csp-js", "csp-readme", "json-ld", "sitemap", "lastmod", "meta", "enlaces", "guias", "faq-visible", "cta-sin-href", "voseo", "dominio"].filter(activa))];
   console.log("\nResumen por regla:");
   for (const r of reglas) {
     const e = errores.filter((h) => h.regla === r).length;
