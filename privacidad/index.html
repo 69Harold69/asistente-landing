@@ -71,7 +71,7 @@
               <li><a href="#derechos">Tus derechos (ARCO) y cómo ejercerlos</a></li>
               <li><a href="#revocacion">Revocar tu consentimiento</a></li>
               <li><a href="#limitacion">Limitar el uso de tus datos</a></li>
-              <li><a href="#cookies">Cookies</a></li>
+              <li><a href="#cookies">Cookies y registro de visitas del sitio</a></li>
               <li><a href="#menores">Menores de edad</a></li>
               <li><a href="#cambios">Cambios a esta política</a></li>
               <li><a href="#contacto">Contacto</a></li>
@@ -449,7 +449,7 @@
               </li>
               <li><strong>Audio de tus mensajes de voz:</strong> en nuestro servidor, no se conserva: se descarta al terminar de transcribirlo. En tu teléfono, hasta que cierres sesión, elimines tu cuenta o pasen 30 días, lo que ocurra primero.</li>
               <li><strong>Claves de idempotencia:</strong> 24 horas (sección 2.5).</li>
-              <li><strong>Registro de visitas de este sitio web:</strong> hasta 30 días (sección 12).</li>
+              <li><strong>Registro de visitas de este sitio web:</strong> 30 días como máximo (sección 12).</li>
               <li>
                 <strong>Copias de seguridad del servidor:</strong> las copias de
                 seguridad del servidor se conservan por un máximo de
@@ -535,20 +535,34 @@
           </section>
 
           <section id="cookies" aria-labelledby="cookies-h">
-            <h2 id="cookies-h">12. Cookies</h2>
+            <h2 id="cookies-h">12. Cookies y registro de visitas del sitio</h2>
             <p>
-              La app de Yaruki no usa cookies. Este sitio web tampoco usa
-              cookies, analítica de terceros ni ningún otro recurso de
-              terceros.
+              La app de Yaruki no usa cookies. En este sitio web no usamos
+              cookies, herramientas de analítica de terceros ni ningún otro
+              recurso de terceros. Contamos las visitas al sitio con los
+              registros de nuestro propio servidor, con la dirección IP
+              recortada, y los borramos a los 30 días.
             </p>
             <p>
-              El servidor que aloja este sitio guarda un registro de cada
-              visita: fecha y hora, página pedida, página de origen, los datos
-              técnicos que tu navegador manda en cada visita (como su tipo y
-              versión, tu sistema operativo y tu idioma) y una dirección IP
-              truncada (descartamos la parte final de la dirección antes de
-              guardarla, así que no apunta a un equipo concreto). Lo
-              conservamos <strong>hasta 30 días</strong> y lo usamos sólo para
+              Por cada página que visitas, ese registro guarda: la fecha y la
+              hora; la página que pediste; la página de la que vienes
+              (referencia), si tu navegador la manda; los datos técnicos que
+              tu navegador manda con cada visita (como su tipo y versión, tu
+              sistema operativo y tu idioma); la respuesta del servidor
+              (código, tamaño y tiempo); y tu dirección IP recortada antes de
+              guardarla: de una dirección IPv4 sólo conservamos los primeros
+              24 bits (/24; por ejemplo, 203.0.113.0) y de una IPv6, los
+              primeros 48 (/48). Así no identifica a un equipo concreto,
+              aunque sí puede indicar la red o el proveedor de internet desde
+              el que visitas. No se guardan cookies ni datos de inicio de
+              sesión, y las peticiones de los archivos que están bajo /assets/
+              (los estilos, scripts, fuentes e imágenes del sitio) no se
+              registran.
+            </p>
+            <p>
+              El registro cambia de archivo una vez al día, a medianoche (hora
+              UTC), y los archivos viejos se borran solos: ninguna visita queda
+              guardada más de <strong>30 días</strong>. Lo usamos sólo para
               contar cuántas personas visitan el sitio y detectar errores. Se
               guarda únicamente en nuestro servidor, alojado en DigitalOcean
               (sección 5); no lo compartimos con nadie más ni lo usamos para
