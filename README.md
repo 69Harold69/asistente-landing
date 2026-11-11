@@ -155,16 +155,28 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 - **Open Graph y Twitter/X** en las 4 páginas públicas (`index.html`, privacidad,
   términos y eliminar cuenta), con la misma imagen `og-yaruki.png` 1200×630. La
   página 404 lleva `noindex` a propósito.
-- **JSON-LD** en el `<head>` de `index.html` (`WebSite` + `SoftwareApplication`):
-  - `applicationCategory` es `BusinessApplication`, el valor más cercano a
-    productividad en la lista que acepta Google; `applicationSubCategory`
-    dice "Productividad".
-  - No lleva `aggregateRating` ni `review` porque todavía no existen. Sin eso
-    Google no muestra la ficha enriquecida de app, pero el bloque sigue
-    describiendo la app.
-  - Cuando haya ficha en Google Play, agrega `downloadUrl` y las calificaciones reales.
-  - Es un bloque de datos (`type="application/ld+json"`), no se ejecuta: la CSP
-    `script-src 'self'` no lo bloquea.
+- **JSON-LD** (`type="application/ld+json"`, un bloque de datos que la CSP `script-src 'self'` no ejecuta ni bloquea),
+  revisado el 2026-11-10 contra la documentación de Google (software-app, breadcrumb, organization) y schema.org:
+  - **Portada:** un `@graph` con `WebSite`, `WebPage`, `Person` (el autor/publicador, `#autor`) y `SoftwareApplication`,
+    enlazados por `@id` (`publisher`, `author`, `isPartOf`, `about`).
+  - **Nombre en `Person`:** `Harold de Jesús García Ramírez`, exactamente como ya lo publican la política de privacidad,
+    los Términos y el pie del sitio (`validar` exige que cualquier nombre de `Person` aparezca en el texto visible).
+  - **Páginas legales:** `WebPage` + `BreadcrumbList` (Yaruki > página; el último elemento omite `item`, como permite Google).
+  - `offers` con `price: "0"` y `isAccessibleForFree: true`: es veraz (los Términos dicen «Hoy no cobramos nada» y la
+    portada habla del plan gratuito). No se inventa precio de premium.
+  - `applicationCategory` es `BusinessApplication`, el valor más cercano a productividad en la lista que acepta Google;
+    `applicationSubCategory` dice "Productividad".
+  - **Prohibido** `aggregateRating`, `review` y `downloadUrl` (no existen todavía). Google exige `aggregateRating` o `review`
+    para la ficha enriquecida de app, así que esa ficha no saldrá hasta que haya reseñas reales; el bloque sigue
+    describiendo la app. Cuando haya ficha en Google Play, se agregan `downloadUrl` y las calificaciones reales.
+  - **`FAQPage`** lo agrega quien escriba las preguntas visibles (el JSON-LD debe reflejar texto visible).
+  - **Validación:** `validar` (estructura mínima por tipo, referencias `@id` resueltas, prohibidas) y
+    `scripts/pruebas/test_jsonld.py` (defectos sembrados). No existe un validador offline mantenido y de licencia limpia
+    (`structured-data-testing-tool` no se actualiza desde 2022), así que además pega la URL publicada, o el bloque, en el
+    [Rich Results Test](https://search.google.com/test/rich-results) y en el [validador de schema.org](https://validator.schema.org/).
+- **`hreflang`: no se usa.** Google lo define para sitios con varias versiones de idioma o región; esta landing tiene una
+  sola (es-MX), y `<html lang="es-MX">`, `og:locale` `es_MX` e `inLanguage` ya lo declaran. Se agrega solo si aparece otra versión.
+- **`theme-color`** claro y oscuro y `og:image:alt`/`twitter:image:alt` en las 4 páginas públicas (`validar` los exige).
 - **Páginas legales:** cada una tiene su `<title>`, meta description y `<link rel="canonical">`.
 
 ## BRAND_NAME y BETA_URL

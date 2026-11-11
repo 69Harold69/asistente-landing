@@ -201,6 +201,7 @@ const REQUERIDOS = {
   Person: ["name"],
   BreadcrumbList: ["itemListElement"],
   Organization: ["name"],
+  WebPage: ["url", "name"],
 };
 function validarNodo(nodo, donde) {
   if (Array.isArray(nodo)) return nodo.forEach((x) => validarNodo(x, donde));
@@ -212,6 +213,7 @@ function validarNodo(nodo, donde) {
     if (t === "SoftwareApplication" && nodo.offers) {
       const o = [].concat(nodo.offers)[0];
       if (o["@type"] !== "Offer" || o.price === undefined || !o.priceCurrency) falla("json-ld", donde, "SoftwareApplication.offers debe ser Offer con price y priceCurrency");
+      else if (!/^\d+(\.\d+)?$/.test(String(o.price)) || !/^[A-Z]{3}$/.test(o.priceCurrency)) falla("json-ld", donde, `Offer: price debe ser numérico y priceCurrency ISO 4217 (hay ${o.price} ${o.priceCurrency})`);
     }
     if (t === "FAQPage") {
       const q = [].concat(nodo.mainEntity ?? []);
@@ -222,14 +224,73 @@ function validarNodo(nodo, donde) {
       const it = [].concat(nodo.itemListElement ?? []);
       it.forEach((x, i) => {
         if (x["@type"] !== "ListItem" || x.position !== i + 1 || !x.name) falla("json-ld", donde, `BreadcrumbList: ListItem ${i + 1} sin @type/position consecutivo/name`);
+        const item = typeof x.item === "string" ? x.item : x.item?.["@id"];
+        if (x.item !== undefined && !(typeof item === "string" && item.startsWith(ORIGEN + "/"))) falla("json-ld", donde, `BreadcrumbList: ListItem ${i + 1} "item" debe ser una URL absoluta de ${ORIGEN}`);
       });
     }
     for (const campo of ["url", "@id", "image"]) if (typeof nodo[campo] === "string" && /^https?:\/\//.test(nodo[campo]) && !nodo[campo].startsWith(ORIGEN)) falla("json-ld", donde, `${t}.${campo} apunta a otro origen: ${nodo[campo]}`, "aviso");
   }
   for (const v of Object.values(nodo)) if (v && typeof v === "object") validarNodo(v, donde);
 }
+
+/* Estructura del grafo: referencias @id resueltas, autor publico, WebPage/BreadcrumbList en cada pagina. */
+const NOMBRES_PUBLICOS = () => {
+  // Texto visible de todo el sitio: un nombre de persona solo se publica en JSON-LD si YA es publico en la pagina.
+  const textos = paginas.map((q) => textoVisible(q.arbol));
+  return (nombre) => textos.some((tx) => tx.includes(nombre));
+};
+function validarGrafo(nodos, donde, p) {
+  const definidos = new Map(); // @id -> nodo con mas propiedades que solo @id
+  const refs = [];
+  const visitar = (n) => {
+    if (Array.isArray(n)) return n.forEach(visitar);
+    if (!n || typeof n !== "object") return;
+    const claves = Object.keys(n);
+    if (typeof n["@id"] === "string") {
+      if (claves.length === 1) refs.push(n["@id"]);
+      else definidos.set(n["@id"], n);
+    }
+    Object.values(n).forEach(visitar);
+  };
+  visitar(nodos);
+  for (const r of refs) if (!definidos.has(r)) falla("json-ld", donde, `referencia @id sin definir en el mismo bloque: ${r}`);
+  const tipo = (t) => [...definidos.values()].filter((n) => [].concat(n["@type"] ?? []).includes(t));
+  const publico = NOMBRES_PUBLICOS();
+  for (const per of tipo("Person")) {
+    if (per.name && !publico(per.name)) falla("json-ld", donde, `Person "${per.name}" no es un nombre publicado en el texto visible del sitio`);
+    // Ningún dato personal que el sitio no publique ya (correo, ciudad, redes, URL...): solo @id, @type y name, o valores visibles.
+    for (const [k, v] of Object.entries(per)) if (!["@id", "@type", "name"].includes(k) && !(typeof v === "string" && publico(v))) falla("json-ld", donde, `Person.${k}: dato personal que el texto visible del sitio no publica`);
+  }
+  const esInicio = p.url === "/";
+  if (esInicio) {
+    const app = tipo("SoftwareApplication")[0];
+    const sitio = tipo("WebSite")[0];
+    const autor = tipo("Person")[0] ?? tipo("Organization")[0];
+    if (!autor?.["@id"]) falla("json-ld", donde, "falta Person/Organization con @id (autor y publicador)");
+    else {
+      for (const [nom, n, campo] of [["SoftwareApplication", app, "author"], ["SoftwareApplication", app, "publisher"], ["WebSite", sitio, "publisher"]]) {
+        if (n?.[campo]?.["@id"] !== autor["@id"]) falla("json-ld", donde, `${nom}.${campo} debe referenciar ${autor["@id"]} por @id`);
+      }
+    }
+    if (app && app.isAccessibleForFree !== true) falla("json-ld", donde, "SoftwareApplication.isAccessibleForFree debe ser true (hay plan gratuito)", "aviso");
+  }
+  const wp = tipo("WebPage")[0];
+  if (!wp) falla("json-ld", donde, "falta un WebPage de esta página");
+  else if (wp.url !== ORIGEN + p.url) falla("json-ld", donde, `WebPage.url (${wp.url}) debe ser ${ORIGEN + p.url}`);
+  if (!esInicio) {
+    const bc = tipo("BreadcrumbList")[0];
+    if (!bc) falla("json-ld", donde, "las páginas internas llevan BreadcrumbList (Inicio > página)");
+    else {
+      const it = [].concat(bc.itemListElement ?? []);
+      if (it.length < 2) falla("json-ld", donde, "BreadcrumbList necesita al menos dos ListItem");
+      it.forEach((x, i) => { if (i < it.length - 1 && !x.item) falla("json-ld", donde, `BreadcrumbList: ListItem ${i + 1} sin "item" (solo el último puede omitirlo)`); });
+      if (wp && wp.breadcrumb?.["@id"] !== bc["@id"]) falla("json-ld", donde, "WebPage.breadcrumb debe referenciar el BreadcrumbList por @id");
+    }
+  }
+}
 if (activa("json-ld")) {
   for (const p of paginas) {
+    if (p.indexable && !etiquetas(p.arbol, "script").some((s) => attr(s, "type") === "application/ld+json")) falla("json-ld", p.r, "la página indexable no tiene JSON-LD");
     for (const n of etiquetas(p.arbol, "script").filter((s) => attr(s, "type") === "application/ld+json")) {
       const d = `${p.r}:${linea(n)}`;
       const cuerpo = hijos(n).map((h) => h.value ?? "").join("");
@@ -242,6 +303,7 @@ if (activa("json-ld")) {
       }
       if (datos["@context"] !== "https://schema.org") falla("json-ld", d, '@context debe ser "https://schema.org"');
       validarNodo(datos["@graph"] ?? datos, d);
+      validarGrafo(datos["@graph"] ?? [datos], d, p);
     }
   }
 }
@@ -360,8 +422,9 @@ if (activa("meta")) {
     if (!canon || attr(canon, "href") !== ORIGEN + p.url) falla("meta", p.r, `canonical debe ser ${ORIGEN + p.url} (hay ${canon ? attr(canon, "href") : "ninguno"})`);
     for (const k of ["og:title", "og:description", "og:type", "og:url", "og:image", "og:site_name", "og:locale"]) if (!contenido("property", k)) falla("meta", p.r, `falta ${k}`);
     for (const k of ["twitter:card", "twitter:title", "twitter:description", "twitter:image"]) if (!contenido("name", k)) falla("meta", p.r, `falta ${k}`);
-    for (const k of ["og:image:alt"]) if (!contenido("property", k)) falla("meta", p.r, `falta ${k}`, "aviso");
-    if (!contenido("name", "twitter:image:alt")) falla("meta", p.r, "falta twitter:image:alt", "aviso");
+    for (const k of ["og:image:alt"]) if (!contenido("property", k)) falla("meta", p.r, `falta ${k}`);
+    if (!contenido("name", "twitter:image:alt")) falla("meta", p.r, "falta twitter:image:alt");
+    for (const esquema of ["light", "dark"]) if (!metas.some((m) => attr(m, "name") === "theme-color" && attr(m, "media") === `(prefers-color-scheme: ${esquema})`)) falla("meta", p.r, `falta <meta name="theme-color"> para ${esquema}`);
     if (contenido("property", "og:url") && contenido("property", "og:url") !== ORIGEN + p.url) falla("meta", p.r, `og:url (${contenido("property", "og:url")}) no coincide con la URL canónica`);
     if (contenido("property", "og:locale") && contenido("property", "og:locale") !== IDIOMA.replace("-", "_")) falla("meta", p.r, `og:locale ${contenido("property", "og:locale")} no corresponde a ${IDIOMA}`);
     const h1 = etiquetas(p.arbol, "h1");

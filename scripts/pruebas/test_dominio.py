@@ -18,7 +18,7 @@ DOMINIO = RAIZ / "scripts" / "dominio.py"
 VIEJO = "yaruki.hjgr.dev"
 NUEVO = "https://yaruki.app"
 # Unicos sitios donde el dominio viejo PUEDE seguir apareciendo tras mudarse (ver README, «Mudanza a dominio propio»):
-EXCEPCIONES = {"README.md", "scripts/pruebas/test_dominio.py"}  # el README documenta la mudanza; esta prueba usa el dominio como dato
+EXCEPCIONES = {"README.md", "scripts/pruebas/test_dominio.py", "scripts/pruebas/test_jsonld.py"}  # el README documenta la mudanza; esta prueba usa el dominio como dato
 IGNORAR = shutil.ignore_patterns(".git", "node_modules")
 
 
@@ -89,7 +89,7 @@ class Check(Base):
         # El JSON-LD puede apuntar a sitios externos (Play, GitHub, schema.org): ni se reescriben ni fallan.
         p = self.raiz / "index.html"
         t = p.read_text(encoding="utf-8")
-        t = t.replace('"inLanguage": "es-MX"\n      },\n      {', '"inLanguage": "es-MX",\n        "sameAs": ["https://github.com/69Harold69"]\n      },\n      {', 1)
+        t = t.replace('"name": "Harold de Jesús García Ramírez"\n', '"name": "Harold de Jesús García Ramírez",\n        "sameAs": ["https://github.com/69Harold69"]\n', 1)
         self.assertIn("github.com/69Harold69", t)
         p.write_text(t, encoding="utf-8")
         self.assertEqual(correr(self.raiz, "--check").returncode, 0)
