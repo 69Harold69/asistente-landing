@@ -1,4 +1,4 @@
-import { iconoTrazo, barraDeNavegacion } from "../icons.js?v=d7ff6de592";
+import { iconoTrazo, barraDeNavegacion } from "../icons.js?v=aa71b9d321";
 
 /**
  * Avisos — la pestaña Notificaciones de la app, 1:1 de
