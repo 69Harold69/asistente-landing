@@ -252,6 +252,20 @@
                 procese dos veces si tu conexión falla a mitad de camino. Se
                 borran automáticamente a las 24 horas.
               </li>
+              <li>
+                Tu plan (gratuito o premium) y el uso de la voz asociado a él:
+                cuántos mensajes de voz mandas cada día (un contador por día,
+                para aplicar el límite diario de tu plan) y cuántas veces, ese
+                día, la transcripción de un mensaje falló por un error del
+                proveedor o salió vacía (otro contador por día, para no
+                gastarte cupo por esos fallos). Si tu plan cambia, guardamos el plan anterior y
+                el nuevo, la fecha, el origen del cambio (hoy, el equipo de
+                Yaruki desde la consola del servidor) y, si lo hay, un motivo
+                escrito. Ninguno de estos registros contiene audio ni el texto
+                de tus mensajes. Las llamadas de voz en tiempo real todavía no
+                están disponibles en Yaruki, así que hoy no se genera ningún
+                registro de llamadas.
+              </li>
             </ul>
 
             <h3>2.6 Lo que no recopilamos</h3>
@@ -487,7 +501,14 @@
               </li>
               <li><strong>Audio de tus mensajes de voz:</strong> en nuestro servidor, no se conserva: se descarta al terminar de transcribirlo. En tu teléfono, hasta que cierres sesión, elimines tu cuenta o pasen 30 días, lo que ocurra primero.</li>
               <li><strong>Claves de idempotencia:</strong> 24 horas (sección 2.5).</li>
-              <li><strong>Registro de visitas de este sitio web:</strong> 30 días como máximo (sección 12).</li>
+              <li>
+                <strong>Plan y uso de la voz:</strong> los contadores diarios
+                de mensajes de voz y de fallos de transcripción, y el
+                historial de cambios de tu plan (sección 2.5), se conservan
+                mientras tu cuenta exista y se borran junto con ella al
+                eliminarla.
+              </li>
+              <li><strong>Registro de visitas de este sitio web:</strong> 29 días como máximo (sección 12).</li>
               <li>
                 <strong>Copias de seguridad del servidor:</strong> las copias de
                 seguridad del servidor se conservan por un máximo de
@@ -501,7 +522,7 @@
           <section id="eliminacion" aria-labelledby="eliminacion-h">
             <h2 id="eliminacion-h">8. Eliminar tu cuenta</h2>
             <p>
-              Puedes pedir la eliminación de tu cuenta y de todos sus datos en
+              Puedes pedir la eliminación de tu cuenta y de sus datos en
               cualquier momento, desde la app (Perfil → Eliminar cuenta) o por correo. También puedes hacerlo
               sin tener la app instalada. El detalle completo
               —qué se borra, el plazo de 30 días y cómo recuperarla— está en
@@ -515,6 +536,20 @@
               tus datos caducan en un máximo de 30 días más (sección 7). Desactivar o congelar tu cuenta no es lo mismo que
               eliminarla: tus datos sólo se consideran eliminados cuando se
               borran de verdad.
+            </p>
+            <p>
+              <strong>Lo único que conservamos después de eliminar tu cuenta</strong> (aparte de las copias de seguridad) es esto: si te enviamos un aviso de
+              seguridad por correo (hasta hoy, sólo el aviso del incidente del
+              2 de noviembre de 2026, a un grupo de personas que probaban la
+              app), guardamos una constancia de que te lo enviamos: qué aviso
+              fue, cuándo y el identificador del envío, junto con una huella
+              (un hash) de tu correo, no el correo en claro. Esa huella no
+              es anónima: aunque no se lee como un correo, quien ya conozca tu
+              correo puede calcularla y compararla. Esta constancia no se
+              borra al eliminar tu cuenta y por ahora no tiene un plazo de
+              borrado definido; la conservamos sólo para acreditar que dimos el
+              aviso. Si quieres que la borremos, pídelo por correo (sección
+              9).
             </p>
           </section>
 
@@ -579,12 +614,14 @@
               cookies, herramientas de analítica de terceros ni ningún otro
               recurso de terceros. Contamos las visitas al sitio con los
               registros de nuestro propio servidor, con la dirección IP
-              recortada, y los borramos a los 30 días.
+              recortada, y los borramos en un máximo de 29 días.
             </p>
             <p>
               Por cada página que visitas, ese registro guarda: la fecha y la
-              hora; la página que pediste; la página de la que vienes
-              (referencia), si tu navegador la manda; los datos técnicos que
+              hora; la página que pediste y la página de la que vienes
+              (referencia), si tu navegador la manda, en ambos casos sólo la
+              dirección sin lo que vaya después del signo «?» (los
+              parámetros, si los hubiera); los datos técnicos que
               tu navegador manda con cada visita (como su tipo y versión, tu
               sistema operativo y tu idioma); la respuesta del servidor
               (código, tamaño y tiempo); y tu dirección IP recortada antes de
@@ -599,8 +636,9 @@
             </p>
             <p>
               El registro cambia de archivo una vez al día, a medianoche (hora
-              UTC), y los archivos viejos se borran solos: ninguna visita queda
-              guardada más de <strong>30 días</strong>. Lo usamos sólo para
+              UTC), y los archivos viejos se borran solos: cada archivo diario
+              se borra cuando tiene 28 días de cerrado, así que ninguna visita
+              queda guardada más de <strong>29 días</strong>. Lo usamos sólo para
               contar cuántas personas visitan el sitio y detectar errores. Se
               guarda únicamente en nuestro servidor, alojado en DigitalOcean
               (sección 5); no lo compartimos con nadie más ni lo usamos para
