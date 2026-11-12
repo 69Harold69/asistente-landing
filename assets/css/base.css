@@ -1125,6 +1125,21 @@ strong {
   padding-top: 0.75rem;
 }
 
+/*
+  Android angosto (320×568): con 36 px bajo el subtítulo y 36 px sobre el titular, el pie de «Únete a la beta»
+  caía en ~570 px y se cortaba en el primer pantallazo. Por debajo de 360 px el hero respira 12 px menos
+  arriba y entre subtítulo y botón; de 360 px para arriba no cambia nada.
+*/
+@media (max-width: 359.98px) {
+  .seccion-hero {
+    padding-top: var(--space-3);
+  }
+
+  .seccion-hero .subtitulo-hero {
+    margin-bottom: var(--space-3);
+  }
+}
+
 .cta-item {
   position: relative;
   display: inline-flex;

@@ -274,6 +274,11 @@ async function medicionAngosta() {
       };
       await medir(ruta);
       if (ruta === "/") {
+        // El botón «Únete a la beta» del hero entra completo en el primer pantallazo a 320×568 (con ≥ 8 px de margen).
+        const pie = await page.evaluate(() => document.querySelector(".seccion-hero [data-cta-beta]")?.getBoundingClientRect().bottom ?? Infinity);
+        if (pie > ANGOSTO.viewport.height - 8) guardia.fallas.push({ tipo: "hero-320", detalle: `el pie del botón de la beta queda en ${pie.toFixed(0)} px (alto ${ANGOSTO.viewport.height}; máximo ${ANGOSTO.viewport.height - 8})`, contexto: nombreCombo });
+      }
+      if (ruta === "/") {
         for (const { id } of SECCIONES_PORTADA.slice(1)) {
           await page.evaluate((s) => document.getElementById(s)?.scrollIntoView({ block: "start", behavior: "instant" }), id);
           await dormir(350);
