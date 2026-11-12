@@ -5,7 +5,7 @@ según `asistente-ia-ops/docs/plan-landing-yaruki.md`. Incluye el teléfono 3D
 con la coreografía de scroll (`assets/js/stage.js`), la demo de tema al
 cargar con revelado circular (`theme-demo.js`) y los detalles de la ronda del
 dueño: escritorio lado a lado, textos escalonados, titular palabra por
-palabra, barra de progreso, navegación con puntos, CTAs magnéticos, tilt y
+palabra, navegación con puntos y riel de avance, CTAs magnéticos, tilt y
 contadores (ver "Detalles de la portada").
 
 ## Estructura
@@ -38,7 +38,7 @@ asistente-landing/
 │   │   ├── theme-demo.js  Demo de tema al cargar, una vez por visita, con la pista junto al toggle
 │   │   ├── stage.js     Coreografía de scroll y modo de inspección `?escena=&cara=&angulo=`
 │   │   ├── revelar.js   Aparición escalonada de los textos (atada al vuelo en escritorio)
-│   │   ├── progreso.js  Barra de avance (respaldo JS) y "Desliza para descubrir"
+│   │   ├── progreso.js  Pista "Desliza para descubrir"
 │   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
 │   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
 │   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto) y mirada de la mascota
@@ -276,11 +276,16 @@ al primer clic en el toggle).
   (7.877em = 13ch de Baloo 2 ExtraBold), no en `ch`: el `ch` es el avance del «0» de la fuente que esté
   pintando y con el respaldo el titular cambiaba de renglones al llegar Baloo 2 (#53). `cls.mjs` lo vigila
   también en 820, 1024 y 1440 px con las fuentes 1.5 s tarde.
-- **Barra de progreso:** `animation-timeline: scroll()` cuando existe;
-  si no, `progreso.js`.
+- **Sin barra de progreso superior (#60):** se quitó la línea de 3 px (en móvil
+  era un trazo suelto sobre el teléfono y medía la página entera, no el
+  recorrido). Bajo 1024 px no hay indicador: el teléfono y el scroll orientan.
 - **Navegación con puntos (`nav-recorrido.js`):** `nav` con `aria-label`,
   `aria-current="location"` y salto a la posición en la que cada sección
-  queda en lectura.
+  queda en lectura. Un riel de 2 px une los puntos y su relleno (`--avance`
+  por CSSOM) llega a cada punto justo cuando su sección pasa a leerse: 0 antes
+  de «Chat», 100 % en «Tu día». Los puntos ya recorridos (`data-pasado`) toman
+  el acento. Decorativo (sin texto ni rol); se va con los puntos
+  (`data-fuera`); sin JS queda el conector tenue.
 - **Mascota del header:** respira y se infla con el hover de un CTA de la beta o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
 - **Malla de fondo (`malla.js`, #26):** `<canvas class="malla-hero">` creado por el
   módulo como primer hijo de `#hero`, decorativo (`aria-hidden`, `pointer-events:

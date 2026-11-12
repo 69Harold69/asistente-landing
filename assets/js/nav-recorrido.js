@@ -33,24 +33,43 @@ export function inicializarNavRecorrido(escenario) {
   const fuera = () => !!recorrido && recorrido.getBoundingClientRect().bottom <= window.innerHeight * 0.5;
   let pendiente = 0;
   let actual = null;
+  /*
+    Riel entre los puntos (#60): el relleno llega a cada punto justo cuando su sección pasa a leerse
+    (la misma línea que usa `seccionLeida`: la mitad de la ventana), con tramos iguales porque los
+    puntos están a la misma distancia. Antes del primer punto vale 0 y en el último, 1.
+  */
+  const lista = nav.querySelector("ol");
+  function avance(y) {
+    const anclas = enlaces.map((a) => escenario.destinoDe(a.getAttribute("href").slice(1)) - window.innerHeight * 0.5);
+    const n = anclas.length - 1;
+    if (n < 1 || y <= anclas[0]) return 0;
+    if (y >= anclas[n]) return 1;
+    let i = 0;
+    while (y >= anclas[i + 1]) i++;
+    return (i + (y - anclas[i]) / Math.max(anclas[i + 1] - anclas[i], 1)) / n;
+  }
+
   function marcar() {
     pendiente = 0;
     const sinRecorrido = fuera();
     nav.toggleAttribute("data-fuera", sinRecorrido);
+    if (lista) lista.style.setProperty("--avance", avance(window.scrollY).toFixed(4));
     const id = sinRecorrido ? null : escenario.seccionLeida();
     if (id === actual) return;
     actual = id;
-    enlaces.forEach((a) => {
-      if (a.getAttribute("href") === `#${id}`) a.setAttribute("aria-current", "location");
+    const en = enlaces.findIndex((a) => a.getAttribute("href") === `#${id}`);
+    enlaces.forEach((a, i) => {
+      if (i === en) a.setAttribute("aria-current", "location");
       else a.removeAttribute("aria-current");
+      // Los puntos ya recorridos (antes del actual); al salir del recorrido, todos.
+      a.toggleAttribute("data-pasado", id === null ? sinRecorrido : i < en);
     });
   }
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (!pendiente) pendiente = requestAnimationFrame(marcar);
-    },
-    { passive: true }
-  );
+  const programar = () => {
+    if (!pendiente) pendiente = requestAnimationFrame(marcar);
+  };
+  window.addEventListener("scroll", programar, { passive: true });
+  // El alto del recorrido cambia con el tamaño de la ventana: las posiciones de los puntos también.
+  window.addEventListener("resize", programar);
   marcar();
 }

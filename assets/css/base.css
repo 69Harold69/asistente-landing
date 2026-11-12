@@ -1333,35 +1333,6 @@ strong {
    navegación con puntos. Sólo `index.html` usa estas clases.
    ====================================================================== */
 
-/* Barra de avance del recorrido: una línea fina arriba del todo. Con
-   animaciones ligadas al scroll (CSS) corre fuera del hilo principal;
-   sin soporte, progreso.js la mueve con `scaleX`. */
-.progreso-recorrido {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  height: 3px;
-  background: var(--color-accent);
-  transform: scaleX(0);
-  transform-origin: left center;
-  pointer-events: none;
-}
-
-@supports (animation-timeline: scroll()) {
-  .progreso-recorrido {
-    animation: progreso-recorrido linear both;
-    animation-timeline: scroll(root block);
-  }
-}
-
-@keyframes progreso-recorrido {
-  to {
-    transform: scaleX(1);
-  }
-}
-
 /* "Desliza para descubrir": al pie del primer pantallazo en escritorio,
    debajo de la nota en móvil. Se desvanece al primer scroll (progreso.js). */
 .pista-scroll {
@@ -1459,12 +1430,41 @@ strong {
   }
 
   .nav-recorrido ol {
+    position: relative;
+    isolation: isolate;
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  /* Riel del avance (#60): une el centro del primer punto con el del último.
+     ::before es la pista tenue; ::after, el relleno, que nav-recorrido.js
+     lleva hasta el punto de la sección que se lee (--avance, por CSSOM). Es
+     decorativo: sin texto, detrás de los puntos, y se va con la navegación
+     (data-fuera). Sustituye a la barra de 3 px de arriba. */
+  .nav-recorrido ol::before,
+  .nav-recorrido ol::after {
+    content: "";
+    position: absolute;
+    left: calc(50% - 1px);
+    top: 0.875rem;
+    bottom: 0.875rem;
+    width: 2px;
+    border-radius: 1px;
+    z-index: -1;
+  }
+
+  .nav-recorrido ol::before {
+    background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+
+  .nav-recorrido ol::after {
+    background: var(--color-accent);
+    transform: scaleY(var(--avance, 0));
+    transform-origin: top center;
   }
 
   .nav-recorrido li {
@@ -1495,6 +1495,17 @@ strong {
 
   .nav-recorrido a:hover::before {
     opacity: 0.9;
+  }
+
+  /* Los puntos ya recorridos toman el acento: el riel pasa "por dentro" de ellos. */
+  .nav-recorrido a[data-pasado]::before {
+    background: var(--color-accent);
+    opacity: 0.7;
+  }
+
+  /* Sin esto, la regla de arriba (misma especificidad, después) anulaba el hover en los puntos recorridos. */
+  .nav-recorrido a[data-pasado]:hover::before {
+    opacity: 1;
   }
 
   .nav-recorrido a[aria-current="location"]::before {
