@@ -1,29 +1,37 @@
-import { barraDeNavegacion } from "../icons.js?v=aa71b9d321";
+import { barraDeNavegacion, logotipo } from "../icons.js?v=aa71b9d321";
 import { contar, detener } from "./contar.js?v=aa71b9d321";
 
 /**
- * Dashboard (cierre) — real de `ui/dashboard/DashboardScreen.kt` (plan,
- * 4.6): "Tu día", mensaje "glass", tarjeta Racha, "Tareas hoy"/"Hábitos" y
- * "Pendientes" con sus pastillas (rótulos EXACTOS de `PastillaEstadoTarea`:
- * "Hecha"/"Pendiente"/"Vencida" — no "Hecho"/"Vencido" del mockup viejo).
- * Barra inferior de 5 íconos con el FAB central, igual a `BottomNavBar.kt`.
+ * Dashboard (cierre) — copia de `ui/dashboard/DashboardScreen.kt` (0.1.6a, `ContenidoDashboard` :186-279):
+ * logotipo «Yaruki» (:204) y «Tu día» (:205-209), mensaje «glass» (`mensajeResumenDia`, :361-377), tarjeta
+ * Racha de ancho completo (:218, :392-411), fila «Tareas hoy» + «Hábitos» (:219-228, :413-455), «Proyectos
+ * activos» (:232-239, :466-518) y las tareas pendientes **por secciones** «Vencidas» (con «Pasar todo a hoy»),
+ * «Hoy» y «Próximas» (:241-278, `EstadoTareaDashboard` solo VENCIDA/PENDIENTE/POSPUESTA: una tarea hecha no
+ * aparece, y «Pendiente»/«Vencida» ya no llevan pastilla, :539-543). Barra de 4 y botón «Pídeselo a Yaruki».
+ *
+ * La pantalla real se desplaza; aquí el contenido va en el orden real y lo que no cabe queda bajo el botón y la
+ * barra, igual que en la app al abrirla. Datos de ejemplo coherentes entre sí: «Llevas 2 de 4 tareas de hoy»
+ * (2/4), racha de 6 días, 1 proyecto activo, 1 tarea vencida y 2 de hoy sin hacer.
  */
 export const id = "dashboard";
 
 let conteos = [];
 let raiz = null;
 
+const fila = (titulo) => `<div class="ps-fila-tarea"><span>${titulo}</span></div>`;
+
 export function mount(contenedor) {
   raiz = contenedor;
   contenedor.innerHTML = `
     <div class="escena ps-dash">
+      ${logotipo()}
       <h2 class="ps-titulo">Tu día</h2>
-      <div class="ps-glass">Llevas 2 de 4 tareas de hoy. Tu racha activa: 6 días en Meditar 10 minutos.</div>
-      <div class="ps-bento">
-        <div class="ps-bento-card ps-bento-card--racha">
-          <div class="ps-bento-etiqueta">Racha activa</div>
-          <div class="ps-bento-valor"><span data-contar="6">6</span> días — Meditar 10 minutos</div>
-        </div>
+      <div class="ps-glass">Llevas 2 de 4 tareas de hoy. Tu racha activa: 6 días en Leer 20 minutos.</div>
+      <div class="ps-bento-card ps-bento-card--racha">
+        <div class="ps-bento-etiqueta">Racha activa</div>
+        <div class="ps-bento-valor"><span data-contar="6">6</span> días — Leer 20 minutos</div>
+      </div>
+      <div class="ps-dash-fila">
         <div class="ps-bento-card">
           <div class="ps-bento-etiqueta">Tareas hoy</div>
           <div class="ps-bento-valor"><span data-contar="2">2</span>/4</div>
@@ -34,21 +42,20 @@ export function mount(contenedor) {
           <div class="ps-bento-valor"><span data-contar="2">2</span>/3 hoy</div>
         </div>
       </div>
-      <div class="ps-pendientes-titulo">Pendientes</div>
-      <div class="ps-pendientes">
-        <div class="ps-fila-tarea">
-          <span>Enviar el reporte de ventas</span>
-          <span class="ps-pastilla ps-pastilla--hecha">Hecha</span>
-        </div>
-        <div class="ps-fila-tarea">
-          <span>Llamar al doctor</span>
-          <span class="ps-pastilla ps-pastilla--pendiente">Pendiente</span>
-        </div>
-        <div class="ps-fila-tarea">
-          <span>Pagar el recibo de luz</span>
-          <span class="ps-pastilla ps-pastilla--vencida">Vencida</span>
+      <div class="ps-bento-card ps-proyectos">
+        <div class="ps-bento-etiqueta ps-proyectos-titulo">Proyectos activos</div>
+        <div class="ps-proyecto">
+          <div class="ps-proyecto-linea"><span class="ps-proyecto-nombre">Mudanza</span><span class="ps-proyecto-conteo">3 de 8 hechos</span></div>
+          <div class="ps-barra"><div class="ps-barra-relleno" data-progreso="0.375"></div></div>
         </div>
       </div>
+      <div class="ps-seccion">
+        <span class="ps-seccion-titulo">Vencidas</span>
+        <span class="ps-seccion-accion">Pasar todo a hoy</span>
+      </div>
+      <div class="ps-pendientes">${fila("Cobrar")}</div>
+      <div class="ps-seccion"><span class="ps-seccion-titulo">Hoy</span></div>
+      <div class="ps-pendientes">${fila("Llamar al doctor")}${fila("Enviar el reporte de ventas")}</div>
       ${barraDeNavegacion("inicio")}
     </div>
   `;
