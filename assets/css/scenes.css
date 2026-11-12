@@ -268,33 +268,44 @@
   }
 }
 
-/* Login (LoginScreen.kt: columna centrada, padding 24dp) --------------------- */
+/* Login (LoginScreen.kt:104-193: columna centrada en vertical, alineada al inicio, padding 24dp; separaciones
+   16 · 16 · 8 · 16 · 8 · 8 · 8 · 16 dp). `Button`/`OutlinedButton` a todo el ancho; `TextButton` ajustado a su
+   texto (padding horizontal 12dp), alineado al inicio. */
 
 .ps-login {
   justify-content: center;
   padding-left: calc(24 * var(--dp));
   padding-right: calc(24 * var(--dp));
-  gap: calc(8 * var(--dp));
+  gap: 0;
 }
 
-.ps-login .ps-dot {
-  width: calc(44 * var(--dp));
-  height: calc(44 * var(--dp));
-  align-self: center;
-  margin-bottom: calc(8 * var(--dp));
+.ps-login .ps-logotipo {
+  margin-bottom: calc(16 * var(--dp));
 }
 
 .ps-login .ps-titulo {
-  text-align: center;
-  margin-bottom: calc(8 * var(--dp));
+  margin-bottom: calc(16 * var(--dp));
 }
 
-.ps-login .ps-btn--primario {
+.ps-login .ps-campo + .ps-campo {
   margin-top: calc(8 * var(--dp));
 }
 
+.ps-login .ps-btn--primario {
+  margin-top: calc(16 * var(--dp));
+}
+
 .ps-login .ps-btn--texto {
-  align-self: center;
+  align-self: flex-start;
+  margin-top: calc(8 * var(--dp));
+}
+
+.ps-login .ps-btn--contorno {
+  margin-top: calc(8 * var(--dp));
+}
+
+.ps-login .ps-btn--contorno + .ps-btn--texto {
+  margin-top: calc(16 * var(--dp));
 }
 
 /* Chat (ChatScreen.kt / TarjetaElementoChat.kt) ------------------------------ */
