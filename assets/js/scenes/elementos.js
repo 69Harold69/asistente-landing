@@ -3,15 +3,17 @@ import { contar, detener } from "./contar.js?v=aa71b9d321";
 
 /**
  * Elementos — pedido explícito del dueño (corrección 2026-10-04 a la
- * sección 2 del plan): esta pantalla está MÁS actualizada en la app que en
- * el mockup (grid Bento con 5 tarjetas, íconos de trazo, barra y KPI), así
- * que sale 1:1 de `ui/InicioScreen.kt` (`EncabezadoElementos`/`GridElementos`/
- * `ElementoTile`), no del mockup. Sin coreografía todavía — ver KDoc del
- * plan, 5.3.
+ * sección 2 del plan): sale 1:1 de `ui/InicioScreen.kt` (0.1.6a:
+ * `EncabezadoElementos` :254-264 con el botón «Métricas», `GridElementos`
+ * :277-344 con 6 tarjetas y `ElementoTile` :379-441), no del mockup.
+ * Tarjetas en el orden real: Tareas, Hábitos, Listas, Notas, **Proyectos**
+ * (ancha, :322-329, sin barra) y Próximos eventos (ancha). Además, la barra
+ * de 4 y el botón «Pídeselo a Yaruki» de `BottomNavBar.kt`.
  *
  * Datos de ejemplo representativos (no vienen de ninguna cuenta real):
  * Tareas 2/5 hoy (40%), Hábitos 2/3 hoy (67%), 3 listas activas, 4 notas,
- * 2 próximos eventos — mismos rótulos y redondeo de progreso que
+ * 2 proyectos activos (`textoProyectosActivos`, :347-352; sin `data-contar`: contar de 0 a 2 pasaría por «1 activos»), 2 próximos
+ * eventos — mismos rótulos y redondeo de progreso que
  * `ElementosViewModel`/`InicioScreen.kt`.
  */
 export const id = "elementos";
@@ -31,6 +33,14 @@ let raiz = null;
 
 export function mount(contenedor) {
   raiz = contenedor;
+  const ancha = (titulo, icono, kpi) => `
+    <div class="ps-tile ps-tile--ancha">
+      <div class="ps-tile-icono">${iconoTrazo(icono)}</div>
+      <div>
+        <div class="ps-tile-titulo">${titulo}</div>
+        <div class="ps-tile-kpi">${kpi}</div>
+      </div>
+    </div>`;
   const tile = (titulo, icono, kpi, progreso) => `
     <div class="ps-tile">
       <div class="ps-tile-titulo">${titulo}</div>
@@ -44,19 +54,15 @@ export function mount(contenedor) {
     <div class="escena ps-elementos">
       <div class="ps-elementos-head">
         <h2 class="ps-titulo">Elementos</h2>
+        <span class="ps-elementos-accion">Métricas</span>
       </div>
       <div class="ps-elementos-grid">
         ${tile("TAREAS", "tareas", `${n(2)}/5 hoy`, 0.4)}
         ${tile("HÁBITOS", "habitos", `${n(2)}/3 hoy`, 0.67)}
         ${tile("LISTAS", "listas", `${n(3)} activas`, null)}
         ${tile("NOTAS", "notas", `${n(4)} notas`, null)}
-        <div class="ps-tile ps-tile--ancha">
-          <div class="ps-tile-icono">${iconoTrazo("eventos")}</div>
-          <div>
-            <div class="ps-tile-titulo">PRÓXIMOS EVENTOS</div>
-            <div class="ps-tile-kpi">${n(2)} en puerta</div>
-          </div>
-        </div>
+        ${ancha("PROYECTOS", "proyectos", "2 activos")}
+        ${ancha("PRÓXIMOS EVENTOS", "eventos", `${n(2)} en puerta`)}
       </div>
       ${barraDeNavegacion("elementos")}
     </div>

@@ -689,8 +689,23 @@
   background: var(--color-bg-elevated);
 }
 
+/* Encabezado (InicioScreen.kt:254-264): título a la izquierda y `TextButton` «Métricas» (labelLarge, color
+   `primary`, padding horizontal 12dp) a la derecha; padding start 22dp, end 10dp, top 24dp. */
 .ps-elementos-head {
-  padding: calc(24 * var(--dp)) calc(22 * var(--dp)) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(24 * var(--dp)) calc(10 * var(--dp)) 0 calc(22 * var(--dp));
+}
+
+.ps-elementos-accion {
+  display: flex;
+  align-items: center;
+  min-height: calc(40 * var(--dp));
+  padding: 0 calc(12 * var(--dp));
+  font-weight: 600;
+  font-size: calc(14 * var(--dp));
+  color: var(--color-accent);
 }
 
 .ps-elementos-grid {

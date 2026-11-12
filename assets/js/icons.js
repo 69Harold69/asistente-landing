@@ -1,6 +1,6 @@
 /*
   Yaruki — íconos para las escenas del teléfono.
-  Los 5 tipos de Elemento (de trazo) son los paths LITERALES de
+  Los 6 tipos de Elemento (de trazo; Proyecto es la carpeta de Lucide, `IconosBento.proyectos`) son los paths LITERALES de
   `asistente-android/app/.../ui/common/IconosBento.kt` (viewBox 24, trazo
   1.5/2, extremos y uniones redondeadas) — misma fuente que usa la app para
   la pantalla Elementos y las tarjetas ricas del chat. Los de la barra de
@@ -12,6 +12,7 @@ const PATHS = {
   habitos: ["M17 2l4 4-4 4", "M3 11v-1a4 4 0 0 1 4-4h14", "M7 22l-4-4 4-4", "M21 13v1a4 4 0 0 1-4 4H3"],
   listas: ["M4 7h16", "M4 12h11", "M4 17h14"],
   notas: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6"],
+  proyectos: ["M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"],
   eventos: ["M7 4h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4z", "M16 2v4", "M8 2v4", "M3 10h18"],
 };
 
