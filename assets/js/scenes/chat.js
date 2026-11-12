@@ -1,11 +1,12 @@
 import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js?v=aa71b9d321";
 
 /**
- * Chat vivo (etapa 5, plan 4.3 y sección 2) — pool de 6 escenarios, uno al
+ * Chat vivo (etapa 5, plan 4.3 y sección 2) — pool de 7 escenarios, uno al
  * azar por entrada a la sección, sin repetir el anterior inmediato.
- * Visual idéntico a `ChatScreen.kt`/`TarjetaElementoChat.kt`: tecleo en el
+ * Visual idéntico a `ChatScreen.kt`/`TarjetaElementoChat.kt` (0.1.6a: barra
+ * «Chat» + «Nuevo chat», :327-335; sin chip de voz, que la app no tiene): tecleo en el
  * input → burbuja del usuario → "Pensando..." → tarjeta rica animada (o
- * Confirmar/Rechazar → se "toca" Confirmar → "Confirmado ✓"). Uno de los 6
+ * Confirmar/Rechazar → se "toca" Confirmar → "Confirmado ✓"). Uno de los 7
  * es un mensaje de voz, como en la app: barra de grabación (papelera,
  * punto rojo, contador, onda) → burbuja de audio con "Transcribiendo…" →
  * transcripción → "Pensando..." → respuesta con su propio reproductor (sólo
@@ -78,6 +79,15 @@ const ESCENARIOS = [
     texto: "Anota la idea del regalo para mamá",
     respuesta: "Guardé la idea en tus notas.",
     tarjeta: { icono: "notas", tipo: "NOTA", titulo: "Idea: regalo para mamá", detalle: null, accion: "Ver nota" },
+  },
+  {
+    id: "proyecto",
+    texto: "Crea un proyecto llamado Mudanza",
+    // `describirCrearElementoCreado` (ServicioConversacional.php): «Listo, ya anoté tu proyecto «Mudanza».»
+    // Tarjeta `is Proyecto` de `resumenTarjeta` (TarjetaElementoChat.kt:133-138): sin descripción ni
+    // categoría no hay detalle (el avance no va en la tarjeta).
+    respuesta: "Listo, ya anoté tu proyecto «Mudanza».",
+    tarjeta: { icono: "proyectos", tipo: "PROYECTO", titulo: "Mudanza", detalle: null, accion: "Ver proyecto" },
   },
   {
     id: "confirmar",
@@ -165,7 +175,7 @@ export function mount(contenedor) {
     <div class="escena ps-chat">
       <div class="ps-topbar">
         <span class="ps-topbar-titulo">Chat</span>
-        <span class="ps-topbar-accion">Nueva conversación</span>
+        <span class="ps-topbar-accion">Nuevo chat</span>
       </div>
       <div class="ps-chat-cuerpo"></div>
       <div class="ps-chat-entrada">
@@ -181,7 +191,6 @@ export function mount(contenedor) {
         </div>
         <span class="ps-boton-icono" aria-hidden="true">${iconoMic().replace("<svg ", '<svg class="ps-icono-mic" ')}${iconoEnviar()}</span>
       </div>
-      <span class="ps-chip-voz">Voz · Disponible</span>
     </div>
   `;
   refs = {
@@ -191,14 +200,30 @@ export function mount(contenedor) {
     inputCaja: contenedor.querySelector(".ps-campo"),
     placeholder: contenedor.querySelector(".ps-placeholder"),
     cursor: contenedor.querySelector(".ps-cursor"),
-    chipVoz: contenedor.querySelector(".ps-chip-voz"),
     tiempo: contenedor.querySelector(".ps-grabacion-tiempo"),
     barrasGrabacion: contenedor.querySelectorAll(".ps-grabacion-onda i"),
   };
   escribirEnEntrada("");
+  if (escenarioForzado()) play();
+}
+
+/**
+ * Solo desarrollo: `?escena=chat&escenario=<id>` fuerza un escenario del pool (y, con él, el bucle repite siempre
+ * ese) y arranca solo, porque el modo de inspección no llama a `play()`. Sirve para revisar a mano cada
+ * escenario, que las pruebas automáticas no recorren (ver README, «Modo de inspección»).
+ */
+function escenarioForzado() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("escena") !== "chat") return null;
+  return ESCENARIOS.find((e) => e.id === params.get("escenario")) ?? null;
 }
 
 function elegirEscenario() {
+  const forzado = escenarioForzado();
+  if (forzado) {
+    idEscenarioAnterior = forzado.id;
+    return forzado;
+  }
   // Excluye el último elegido y el último que de verdad quedó en pantalla:
   // si una pausa interrumpió el escenario anterior, no hay que repetir el
   // que ya está en el historial (p. ej. «Leer 20 minutos» dos veces seguidas).
@@ -430,7 +455,6 @@ function construirTimelineVoz(tl, escenario) {
     pintarGrabacion(0);
     refs.entrada.classList.add("ps-chat-entrada--grabando");
   });
-  tl.to(refs.chipVoz, { opacity: 1, duration: 0.2 }, "<");
   const reloj = { t: 0 };
   tl.to(reloj, { t: DURACION_VOZ + 0.4, duration: DURACION_VOZ + 0.4, ease: "none", onUpdate: () => pintarGrabacion(reloj.t) });
   tl.to({}, { duration: 0.15 });
@@ -443,7 +467,6 @@ function construirTimelineVoz(tl, escenario) {
     agregarAlHistorial(burbuja);
     entrar(burbuja);
   });
-  tl.to(refs.chipVoz, { opacity: 0, duration: 0.2 }, "<");
   tl.to({}, { duration: 1.1 });
   tl.call(() => {
     burbuja.querySelector(".ps-burbuja-pie").textContent = escenario.texto;
@@ -492,7 +515,6 @@ function mostrarEstadoEstatico() {
   refs.cuerpo.innerHTML = "";
   escribirEnEntrada("");
   refs.entrada.classList.remove("ps-chat-entrada--grabando");
-  gsap.set(refs.chipVoz, { opacity: 0 });
   sembrarIntercambio();
 }
 
