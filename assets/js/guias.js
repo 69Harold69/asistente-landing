@@ -6,7 +6,7 @@ import {
   fijarTema,
   guardarTema,
   transicionarTema,
-} from "./theme.js?v=d7ff6de592";
+} from "./theme.js?v=aa71b9d321";
 
 /*
   Yaruki — páginas-guía. Lo único que hace JS aquí es el toggle de tema (mejora progresiva: sin JS la

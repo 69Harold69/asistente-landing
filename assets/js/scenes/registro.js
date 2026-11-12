@@ -4,15 +4,15 @@
  * son no-ops documentados en cada escena: la coreografía ligada al scroll
  * (ScrollTrigger, cruce con giro 360°) es la etapa 4, fuera de esta corrida.
  */
-import * as splash from "./splash.js?v=d7ff6de592";
-import * as login from "./login.js?v=d7ff6de592";
-import * as chat from "./chat.js?v=d7ff6de592";
-import * as elementos from "./elementos.js?v=d7ff6de592";
-import * as habitos from "./habitos.js?v=d7ff6de592";
-import * as logro from "./logro.js?v=d7ff6de592";
-import * as avisos from "./avisos.js?v=d7ff6de592";
-import * as llamada from "./llamada.js?v=d7ff6de592";
-import * as dashboard from "./dashboard.js?v=d7ff6de592";
+import * as splash from "./splash.js?v=aa71b9d321";
+import * as login from "./login.js?v=aa71b9d321";
+import * as chat from "./chat.js?v=aa71b9d321";
+import * as elementos from "./elementos.js?v=aa71b9d321";
+import * as habitos from "./habitos.js?v=aa71b9d321";
+import * as logro from "./logro.js?v=aa71b9d321";
+import * as avisos from "./avisos.js?v=aa71b9d321";
+import * as llamada from "./llamada.js?v=aa71b9d321";
+import * as dashboard from "./dashboard.js?v=aa71b9d321";
 
 export const ESCENAS = {
   splash,
