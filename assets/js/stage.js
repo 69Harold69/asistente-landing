@@ -300,6 +300,8 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   const escenario = document.getElementById("escenario-3d") ?? telefono;
   const mqReducido = window.matchMedia("(prefers-reduced-motion: reduce)");
   const mqEscritorio = window.matchMedia("(min-width: 1024px)");
+  // Tablet vertical: la franja del teléfono mide 50vh (base.css), no 44vh: la zona de texto sigue su alto real.
+  const mqTabletVertical = window.matchMedia("(min-width: 768px) and (max-width: 1023px) and (orientation: portrait)");
 
   let modo = null; // "escritorio" | "movil" | "reducido"
   let geo = null;
@@ -355,7 +357,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     });
     // Sin giro, el frente se ve siempre: el fundido tiene que caer justo
     // donde el texto que se lee pasa de una sección a la otra.
-    const zonaTexto = mqEscritorio.matches ? 0 : 0.44 * vh;
+    const zonaTexto = mqEscritorio.matches ? 0 : mqTabletVertical.matches && stageEl ? stageEl.offsetHeight : 0.44 * vh;
     FASES.forEach((f, i) => {
       const s = segmentos.find((x) => x.tipo === "giro" && x.despues === f.despues);
       const previa = i === 0 ? "hero" : FASES[i - 1].seccion;

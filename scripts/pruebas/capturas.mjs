@@ -8,7 +8,7 @@
   conocidos.json (`navegador`) salen como XFAIL; `--estricto` los ignora.
 
   Uso: node capturas.mjs [--salida DIR] [--paginas /,/privacidad/] [--temas claro,oscuro]
-         [--tamanos escritorio,tablet,movil] [--sin-reducido] [--sin-video]
+         [--tamanos escritorio,tablet,tablet768,tabletapaisada,movil] [--sin-reducido] [--sin-video]
          [--sin-inspeccion] [--caras] [--demo-tema] [--sin-320] [--estricto] [--url http://...]
 
   Además, una pasada LIGERA a 320×568 (el Android más angosto común; #48): solo mide el scroll
@@ -31,6 +31,9 @@ if (a.ayuda || a.help) salir(0, fs.readFileSync(new URL(import.meta.url), "utf8"
 export const TAMANOS = {
   escritorio: { viewport: { width: 1440, height: 900 }, movil: false },
   tablet: { viewport: { width: 820, height: 1180 }, movil: true },
+  // Otras tablets (decisión del layout de tablet): iPad mini vertical y iPad apaisado (este último ya cae en la rama de escritorio).
+  tablet768: { viewport: { width: 768, height: 1024 }, movil: true },
+  tabletapaisada: { viewport: { width: 1024, height: 768 }, movil: true },
   movil: { viewport: { width: 390, height: 844 }, movil: true },
 };
 // Solo para la pasada ligera de medición (no genera capturas): ver `medicionAngosta()`.

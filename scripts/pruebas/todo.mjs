@@ -57,7 +57,7 @@ const pasos = [
   ["mirada", process.execPath, ["mirada.mjs", "--salida", path.join(salida, "mirada")]],
   // Avance de la portada (#60, opción B): sin barra superior; riel entre los puntos, 0-100 %, desvanecido, reduced-motion y sin JS.
   ["progreso", process.execPath, ["progreso.mjs"]],
-  ["capturas", process.execPath, ["capturas.mjs", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
+  ["capturas", process.execPath, ["capturas.mjs", "--tamanos", "escritorio,tablet,tablet768,tabletapaisada,movil", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
   ["lighthouse", process.execPath, ["lighthouse.mjs", "--salida", path.join(salida, "lighthouse"), ...paginas, ...(a.corridas ? ["--corridas", String(a.corridas)] : []), ...(a.comparar ? ["--comparar", path.resolve(String(a.comparar).replace(/^~(?=$|\/)/, os.homedir()))] : [])]],
 ];
 // Se registra siempre, aunque solo corra con --con-tactil.
