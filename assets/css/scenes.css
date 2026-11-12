@@ -439,6 +439,41 @@
   color: var(--color-accent);
 }
 
+/* Pregunta con botones (PreguntaChatUi.kt:94-133): `FlowRow` con separación 8dp; cada opción es un
+   `OutlinedButton` de 48dp de alto mínimo. La elegida es un `Button` lleno con un check de 18dp y 6dp de
+   separación; las demás, deshabilitadas (contenido `onSurface` al 38 %, borde al 12 %). */
+.ps-burbuja--ancha {
+  align-self: stretch;
+  max-width: 100%;
+}
+
+.ps-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(8 * var(--dp));
+  margin-top: calc(8 * var(--dp));
+}
+
+.ps-opciones .ps-btn {
+  min-height: calc(48 * var(--dp));
+}
+
+.ps-opcion--elegida {
+  gap: calc(6 * var(--dp));
+}
+
+.ps-opcion-check {
+  width: calc(18 * var(--dp));
+  height: calc(18 * var(--dp));
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.ps-opcion--deshabilitada {
+  color: color-mix(in srgb, var(--color-text) 38%, transparent);
+  border-color: color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
 /* Confirmar / Rechazar (ChatScreen.kt:1003-1014): `Row` con separación 8dp y botones de 48dp de alto mínimo. */
 .ps-confirmar-fila {
   display: flex;

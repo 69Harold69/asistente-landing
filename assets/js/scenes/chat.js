@@ -1,12 +1,12 @@
 import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js?v=aa71b9d321";
 
 /**
- * Chat vivo (etapa 5, plan 4.3 y sección 2) — pool de 7 escenarios, uno al
+ * Chat vivo (etapa 5, plan 4.3 y sección 2) — pool de 8 escenarios, uno al
  * azar por entrada a la sección, sin repetir el anterior inmediato.
  * Visual idéntico a `ChatScreen.kt`/`TarjetaElementoChat.kt` (0.1.6a: barra
  * «Chat» + «Nuevo chat», :327-335; sin chip de voz, que la app no tiene): tecleo en el
  * input → burbuja del usuario → "Pensando..." → tarjeta rica animada (o
- * Confirmar/Rechazar → se "toca" Confirmar → "Confirmado ✓"). Uno de los 7
+ * Confirmar/Rechazar → se "toca" Confirmar → "Confirmado ✓"). Uno de los 8
  * es un mensaje de voz, como en la app: barra de grabación (papelera,
  * punto rojo, contador, onda) → burbuja de audio con "Transcribiendo…" →
  * transcripción → "Pensando..." → respuesta con su propio reproductor (sólo
@@ -88,6 +88,18 @@ const ESCENARIOS = [
     // categoría no hay detalle (el avance no va en la tarjeta).
     respuesta: "Listo, ya anoté tu proyecto «Mudanza».",
     tarjeta: { icono: "proyectos", tipo: "PROYECTO", titulo: "Mudanza", detalle: null, accion: "Ver proyecto" },
+  },
+  {
+    id: "pregunta",
+    // Flujo real (captura de la app «05-pregunta-manana-o-noche»): hora sin aclarar → pregunta cerrada → tocas →
+    // sin LLM. Pregunta: `ServicioConversacional.php:4943` («¿A las %d de la mañana o de la noche?»); botones:
+    // `PreguntasCerradas::itemsHora()` (etiquetas «De la mañana» / «De la noche»). Al tocar, la burbuja del
+    // usuario dice la etiqueta. Respuesta: `describirCrearElementoCreado` (título entre «»); tarjeta de tarea con
+    // `formatearFechaObjetivoRelativa` («Mañana · 20:00»), `TarjetaElementoChat.kt:93-99`.
+    texto: "Recuérdame llamar a mi mamá mañana a las 8",
+    pregunta: { texto: "¿A las 8 de la mañana o de la noche?", opciones: ["De la mañana", "De la noche"], elegida: 1 },
+    respuesta: "Listo, ya anoté tu tarea «Llamar a mi mamá».",
+    tarjeta: { icono: "tareas", tipo: "TAREA", titulo: "Llamar a mi mamá", detalle: "Mañana · 20:00", accion: "Ver tarea" },
   },
   {
     id: "confirmar",
@@ -290,6 +302,42 @@ function crearTarjeta(escenario) {
   return el;
 }
 
+const ICONO_CHECK =
+  '<svg class="ps-opcion-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
+
+/**
+ * Pregunta cerrada del asistente (`PreguntaDelAsistente`, `PreguntaChatUi.kt:94-102`): el texto y, debajo
+ * (`ChatScreen.kt:965-976`), un `FlowRow` de `OutlinedButton` de 48dp con separación de 8dp. La burbuja ocupa
+ * todo el ancho, como la `Card` de la app cuando lleva un `FlowRow` de ancho completo.
+ */
+function crearPregunta(pregunta) {
+  const el = document.createElement("div");
+  el.className = "ps-burbuja ps-burbuja--asistente ps-burbuja--ancha";
+  el.innerHTML = `
+    ${pregunta.texto}
+    <div class="ps-opciones">
+      ${pregunta.opciones.map((o) => `<span class="ps-btn ps-btn--contorno ps-opcion">${o}</span>`).join("")}
+    </div>
+  `;
+  return el;
+}
+
+/**
+ * La opción tocada pasa a botón lleno con un check de 18dp y las demás quedan deshabilitadas
+ * (`BotonOpcion`, `PreguntaChatUi.kt:116-133`, R305); no aparece «Confirmado ✓».
+ */
+function marcarOpcionElegida(el, indice) {
+  el.querySelectorAll(".ps-opcion").forEach((boton, i) => {
+    if (i === indice) {
+      boton.classList.remove("ps-btn--contorno");
+      boton.classList.add("ps-btn--primario", "ps-opcion--elegida");
+      boton.insertAdjacentHTML("afterbegin", ICONO_CHECK);
+    } else {
+      boton.classList.add("ps-opcion--deshabilitada");
+    }
+  });
+}
+
 /** Respuesta de texto del asistente tras confirmar ("Listo, pospuse…"). */
 function crearBurbujaTexto(texto) {
   const el = document.createElement("div");
@@ -393,7 +441,41 @@ function construirTimeline(espera = 0.9) {
   });
   tl.to({}, { duration: 0.9 });
 
-  if (escenario.confirmar) {
+  if (escenario.pregunta) {
+    const { pregunta } = escenario;
+    let burbujaPregunta;
+    tl.call(() => {
+      burbujaPregunta = crearPregunta(pregunta);
+      reemplazarEnHistorial(pensando, burbujaPregunta);
+      entrar(burbujaPregunta, { y: 4 });
+    });
+    tl.to({}, { duration: 1.3 });
+    // Se "toca" la opción — mismo feedback táctil que Confirmar (achica/vuelve).
+    tl.call(() => {
+      const boton = burbujaPregunta.querySelectorAll(".ps-opcion")[pregunta.elegida];
+      gsap.to(boton, { scale: 0.92, duration: 0.1, yoyo: true, repeat: 1 });
+    });
+    tl.to({}, { duration: 0.35 });
+    tl.call(() => {
+      marcarOpcionElegida(burbujaPregunta, pregunta.elegida);
+      const burbujaUsuario = crearBurbujaUsuario();
+      burbujaUsuario.textContent = pregunta.opciones[pregunta.elegida];
+      entrar(agregarAlHistorial(burbujaUsuario));
+    });
+    tl.to({}, { duration: 0.5 });
+    let pensando2;
+    tl.call(() => {
+      pensando2 = agregarAlHistorial(crearBurbujaPensando());
+      entrar(pensando2, { y: 6 });
+    });
+    tl.to({}, { duration: 0.7 });
+    tl.call(() => {
+      const tarjeta = reemplazarEnHistorial(pensando2, crearTarjeta(escenario));
+      gsap.set(tarjeta, { opacity: 0, y: 10, scale: 0.98, transformOrigin: "left bottom" });
+      gsap.to(tarjeta, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power3.out" });
+    });
+    tl.to({}, { duration: 2.8 });
+  } else if (escenario.confirmar) {
     let burbujaConfirmar;
     tl.call(() => {
       burbujaConfirmar = crearConfirmacion(escenario.confirmar.pregunta);
@@ -524,6 +606,15 @@ function sembrarIntercambio() {
   const burbuja = escenario.dictado ? crearBurbujaVozUsuario(escenario.texto, DURACION_VOZ) : crearBurbujaUsuario();
   if (!escenario.dictado) burbuja.textContent = escenario.texto;
   let respuesta;
+  if (escenario.pregunta) {
+    const pregunta = crearPregunta(escenario.pregunta);
+    marcarOpcionElegida(pregunta, escenario.pregunta.elegida);
+    const eleccion = crearBurbujaUsuario();
+    eleccion.textContent = escenario.pregunta.opciones[escenario.pregunta.elegida];
+    idUltimoEnHistorial = escenario.id;
+    refs.cuerpo.append(burbuja, pregunta, eleccion, crearTarjeta(escenario));
+    return;
+  }
   if (escenario.confirmar) {
     respuesta = crearConfirmacion(escenario.confirmar.pregunta);
     respuesta.querySelector(".ps-confirmar-fila").outerHTML = '<div class="ps-confirmado">Confirmado ✓</div>';

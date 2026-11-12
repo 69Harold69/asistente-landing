@@ -87,7 +87,7 @@ pedida una sola vez y fija la cara, estático, igual que en la etapa 2:
 - `cara`: `frente` (por defecto, 0°) · `canto` (80°, ver nota abajo) ·
   `espalda` (180°).
 - `escenario` (solo con `escena=chat`): fuerza un escenario del pool del chat (`lista`, `evento`, `habito`, `nota`,
-  `proyecto`, `confirmar`, `dictado`; `pregunta` desde #71) y lo arranca solo, repitiéndolo en bucle (con
+  `proyecto`, `pregunta`, `confirmar`, `dictado`) y lo arranca solo, repitiéndolo en bucle (con
   `prefers-reduced-motion`, su estado final estático). El pool elige al azar y las pruebas automáticas solo ven un
   escenario, así que esta es la forma de revisar cada uno a mano en los 10 combos.
 - `angulo`: cualquier ángulo en grados (p. ej. `?angulo=120`), gana sobre
