@@ -252,6 +252,20 @@
                 procese dos veces si tu conexión falla a mitad de camino. Se
                 borran automáticamente a las 24 horas.
               </li>
+              <li>
+                Tu plan (gratuito o premium) y el uso de la voz asociado a él:
+                cuántos mensajes de voz mandas cada día (un contador por día,
+                para aplicar el límite diario de tu plan) y cuántas veces, ese
+                día, la transcripción de un mensaje falló por un error del
+                proveedor o salió vacía (otro contador por día, para no
+                gastarte cupo por esos fallos). Si tu plan cambia, guardamos el plan anterior y
+                el nuevo, la fecha, el origen del cambio (hoy, el equipo de
+                Yaruki desde la consola del servidor) y, si lo hay, un motivo
+                escrito. Ninguno de estos registros contiene audio ni el texto
+                de tus mensajes. Las llamadas de voz en tiempo real todavía no
+                están disponibles en Yaruki, así que hoy no se genera ningún
+                registro de llamadas.
+              </li>
             </ul>
 
             <h3>2.6 Lo que no recopilamos</h3>
@@ -487,6 +501,13 @@
               </li>
               <li><strong>Audio de tus mensajes de voz:</strong> en nuestro servidor, no se conserva: se descarta al terminar de transcribirlo. En tu teléfono, hasta que cierres sesión, elimines tu cuenta o pasen 30 días, lo que ocurra primero.</li>
               <li><strong>Claves de idempotencia:</strong> 24 horas (sección 2.5).</li>
+              <li>
+                <strong>Plan y uso de la voz:</strong> los contadores diarios
+                de mensajes de voz y de fallos de transcripción, y el
+                historial de cambios de tu plan (sección 2.5), se conservan
+                mientras tu cuenta exista y se borran junto con ella al
+                eliminarla.
+              </li>
               <li><strong>Registro de visitas de este sitio web:</strong> 30 días como máximo (sección 12).</li>
               <li>
                 <strong>Copias de seguridad del servidor:</strong> las copias de
@@ -515,6 +536,20 @@
               tus datos caducan en un máximo de 30 días más (sección 7). Desactivar o congelar tu cuenta no es lo mismo que
               eliminarla: tus datos sólo se consideran eliminados cuando se
               borran de verdad.
+            </p>
+            <p>
+              <strong>Una excepción:</strong> si te enviamos un aviso de
+              seguridad por correo (hasta hoy, sólo el aviso del incidente del
+              2 de noviembre de 2026, a un grupo de personas que probaban la
+              app), guardamos una constancia de que te lo enviamos: qué aviso
+              fue, cuándo y el identificador del envío, junto con una huella
+              (un hash) de tu correo, no el correo en claro. Esa huella no
+              es anónima: aunque no se lee como un correo, quien ya conozca tu
+              correo puede calcularla y compararla. Esta constancia no se
+              borra al eliminar tu cuenta y por ahora no tiene un plazo de
+              borrado definido; la conservamos sólo para acreditar que dimos el
+              aviso. Si quieres que la borremos, pídelo por correo (sección
+              9).
             </p>
           </section>
 
