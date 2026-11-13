@@ -264,6 +264,14 @@
     calc(-2 * var(--dp)) color-mix(in oklab, var(--color-on-accent) calc(var(--mira-r, 0) * 70%), transparent);
 }
 
+/* Con colores forzados (alto contraste) el navegador pinta el contorno transparente con el color del sistema: sería
+   un aro blanco que el diseño no tiene. Ahí no hay movimiento subpíxel que cuidar (auditoría de #99). */
+@media (forced-colors: active) {
+  .ps-splash .ps-dot {
+    outline: none;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .ps-splash .ps-dot {
     animation: ps-respirar 3s ease-in-out infinite;

@@ -460,6 +460,13 @@
     color-mix(in oklab, var(--color-accent) calc(var(--mira-r, 0) * 75%), transparent);
 }
 
+/* Colores forzados: sin el contorno transparente (se pintaría como un aro; ver scenes.css). */
+@media (forced-colors: active) {
+  .phone-mascota-halo {
+    outline: none;
+  }
+}
+
 .phone-mascota-halo::before {
   content: "";
   position: absolute;
