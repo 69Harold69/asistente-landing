@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  vidrio-contraste (#100): contraste AA del texto de la portada con `?vidrio=1` (malla encendida SIN huecos + vidrio),
+  vidrio-contraste (#100): contraste AA del texto de la portada con el vidrio, que es el defecto (malla encendida SIN huecos + vidrio),
   medido en PÍXELES RENDERIZADOS con la malla en movimiento y el cursor real en el peor caso.
     - títulos grandes (titular y títulos de sección; >= 24 px, o >= 18.66 px en negrita) contra 3:1, con la malla debajo;
     - todo el texto pequeño (kicker, párrafos, enlaces, FAQ, notas, píldoras) contra 4.5:1, sobre el vidrio;
@@ -9,10 +9,9 @@
   en escritorio, con el cursor sobre 3 elementos del bloque (la malla se enciende al acento a su máxima intensidad).
   El mínimo de todos los cuadros es el contraste de cada elemento.
 
-  Uso: node vidrio-contraste.mjs [--url URL] [--query "vidrio=1"] [--temas claro,oscuro] [--tams escritorio,movil]
-         [--solo fase-chat,preguntas] [--barrido 0.2,0.25,...] [--salida DIR]
-    --barrido  repite con `?vidrio-relleno=<v>` y resume el mínimo por grupo (párrafo, kicker, enlace, título…)
-  Sale con 1 si algún elemento baja de su mínimo (sin --barrido).
+  Uso: node vidrio-contraste.mjs [--url URL] [--query "malla-forzar=normal"] [--temas claro,oscuro] [--tams escritorio,movil]
+         [--solo fase-chat,preguntas] [--salida DIR]
+  Sale con 1 si algún elemento baja de su mínimo.
 */
 import fs from "node:fs";
 import path from "node:path";
@@ -83,12 +82,12 @@ async function analizar(limpia, png, items) {
   }, { b64: png.toString("base64"), items: items.map((i) => ({ rgb: i.rgb, rects: i.rects })) });
 }
 
-export async function medir(nav, limpia, url, { tema, tam, query = "vidrio=1", solo = SECCIONES }) {
+export async function medir(nav, limpia, url, { tema, tam, query = "", solo = SECCIONES }) {
   const t = TAM[tam];
   const ctx = await nav.newContext({ viewport: { width: t.w, height: t.h }, deviceScaleFactor: 1, isMobile: t.movil, hasTouch: t.movil, colorScheme: TEMA[tema], locale: "es-MX", timezoneId: "America/Mexico_City" });
   await ctx.addInitScript(scriptInicial({ tema: TEMA[tema] }));
   const page = await ctx.newPage();
-  await page.goto(`${url}/?${query}`, { waitUntil: "load" });
+  await page.goto(`${url}/${query ? "?" + query : ""}`, { waitUntil: "load" });
   await esperarCarga(page, { portada: true });
   await page.waitForSelector("canvas.malla-fondo", { state: "attached", timeout: 8000 }).catch(() => {});
   await dormir(600);
@@ -150,14 +149,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const temas = lista(a.temas, ["claro", "oscuro"]);
   const tams = lista(a.tams, ["escritorio", "movil"]);
   const solo = lista(a.solo, SECCIONES);
-  const rellenos = a.barrido ? lista(a.barrido, []) : [null];
   const todo = [];
   let fallas = 0;
-  for (const rel of rellenos) for (const tema of temas) for (const tam of tams) {
-    const query = (a.query && a.query !== true ? String(a.query) : "vidrio=1") + (rel ? `&vidrio-relleno=${rel}` : "");
+  for (const tema of temas) for (const tam of tams) {
+    const query = a.query && a.query !== true ? String(a.query) : "";
     const filas = await medir(nav, limpia, srv.url, { tema, tam, query, solo });
-    todo.push({ relleno: rel, tema, tam, filas });
-    if (rel) { console.log(`relleno ${rel} ${tema} ${tam}: ${JSON.stringify(Object.fromEntries(Object.entries(resumen(filas)).map(([k, v]) => [k, +v.toFixed(2)])))}`); continue; }
+    todo.push({ tema, tam, filas });
     console.log(`\n== ${tema} ${tam}: ${filas.length} elementos`);
     for (const f of filas.sort((x, y) => x.min - y.min)) {
       const mal = f.min < f.req && !f.inactivo;
@@ -169,9 +166,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const sueltos = filas.filter((f) => f.grupo === "otro" && !f.grande);
     if (sueltos.length) console.log(`  texto pequeño fuera de los grupos conocidos (revisar si va en tarjeta): ${sueltos.map((s) => `${s.seccion}:«${s.texto}»`).join(" | ")}`);
   }
-  fs.writeFileSync(path.join(salida, a.barrido ? "barrido.json" : "contraste.json"), JSON.stringify(todo, null, 2));
+  fs.writeFileSync(path.join(salida, "contraste.json"), JSON.stringify(todo, null, 2));
   await nav.close();
   await srv.cerrar();
-  if (!a.barrido) console.log(fallas ? `\n${fallas} elementos bajo su mínimo` : "\ncontraste AA en todos los elementos medidos");
-  process.exit(fallas && !a.barrido ? 1 : 0);
+  console.log(fallas ? `\n${fallas} elementos bajo su mínimo` : "\ncontraste AA en todos los elementos medidos");
+  process.exit(fallas ? 1 : 0);
 }

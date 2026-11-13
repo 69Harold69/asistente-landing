@@ -35,3 +35,12 @@
     padding-top: var(--space-6);
   }
 }
+
+/* Vidrio sin malla: sin JS no hay canvas, así que las tarjetas quedan sobre el fondo liso. Un relleno translúcido
+   apenas se vería: aquí las tarjetas llevan el respaldo sólido (el mismo de «reducir transparencia») y todo se lee igual. */
+html[data-vidrio] :is(#hero, .secciones > .seccion)::after,
+html[data-vidrio] :is(.fase-kicker, .hero-significado, .pista-scroll, .bloque-intro, .pasos-lista > li, .tarjeta-viene, .pregunta) {
+  background: var(--vidrio-fondo-solido);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
