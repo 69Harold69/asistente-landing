@@ -47,17 +47,23 @@ function fechaDeManana() {
   }
 }
 
+/*
+  Las respuestas son las de `construirRespuesta` del backend (`ServicioConversacional.php`, `origin/main`): una
+  creación dice «Listo, ya anoté tu <tipo> «<título>».» (`describirCrearElementoCreado` + `objetoDeParametros`).
+*/
 const ESCENARIOS = [
   {
     id: "lista",
-    texto: "Agrega leche, pan y huevos a mi lista del súper",
-    respuesta: "Listo, armé tu lista del súper.",
+    // Lista nueva (crear_elemento): `describirCrearElementoCreado` → «Listo, ya anoté tu lista «X».». «Agrega … a
+    // mi lista» sobre una lista que ya existe sería `agregar_item_lista`, que exige confirmación: no se muestra así.
+    texto: "Haz mi lista del súper: leche, pan y huevos",
+    respuesta: "Listo, ya anoté tu lista «Súper».",
     tarjeta: { icono: "listas", tipo: "LISTA", titulo: "Súper", detalle: "0 de 3 hechos", accion: "Ver lista" },
   },
   {
     id: "evento",
     texto: "Reunión de diseño mañana a las 10",
-    respuesta: "Agendé la reunión para mañana.",
+    respuesta: "Listo, ya anoté tu evento «Reunión de diseño».",
     tarjeta: {
       icono: "eventos",
       tipo: "EVENTO",
@@ -71,13 +77,13 @@ const ESCENARIOS = [
   {
     id: "habito",
     texto: "Quiero leer 20 minutos diarios",
-    respuesta: "Va, empiezo a seguir tu hábito.",
+    respuesta: "Listo, ya anoté tu hábito «Leer 20 minutos».",
     tarjeta: { icono: "habitos", tipo: "HÁBITO", titulo: "Leer 20 minutos", detalle: "Diario", accion: "Ver hábito" },
   },
   {
     id: "nota",
     texto: "Anota la idea del regalo para mamá",
-    respuesta: "Guardé la idea en tus notas.",
+    respuesta: "Listo, ya anoté tu nota «Idea: regalo para mamá».",
     tarjeta: { icono: "notas", tipo: "NOTA", titulo: "Idea: regalo para mamá", detalle: null, accion: "Ver nota" },
   },
   {
@@ -273,13 +279,35 @@ function crearBurbujaPensando() {
   return el;
 }
 
+/**
+ * Botón «escuchar» de las respuestas de TEXTO (`ChatScreen.kt:921-938`, issue #79): `IconButton` de 48dp a la derecha
+ * del texto, 4dp después, con `IconoEscuchar` de 18dp (`:1259-1297`, dibujado en un `Canvas`: cuerpo, cono y dos
+ * arcos, color `LocalContentColor`). Aquí, la misma figura con las proporciones del `Canvas` en un viewBox de 24.
+ * Las respuestas por voz no lo llevan: muestran su reproductor.
+ */
+const ICONO_ESCUCHAR =
+  '<span class="ps-escuchar" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="ps-escuchar-cuerpo" ' +
+  'd="M1.44 7.92h6.24v8.16H1.44zM7.68 7.92l5.28-3.84v15.84l-5.28-3.84z"/><path class="ps-escuchar-ondas" ' +
+  'd="M15.336 9.624a3.36 3.36 0 0 1 0 4.752M17.372 7.588a6.24 6.24 0 0 1 0 8.824"/></svg></span>';
+
+/** Fila «texto + escuchar» de `BurbujaAsistente` (`Row(verticalAlignment = Top)`, texto con `weight(1f)`). */
+function filaTexto(texto) {
+  const fila = document.createElement("div");
+  fila.className = "ps-burbuja-fila";
+  const span = document.createElement("span");
+  span.className = "ps-burbuja-texto";
+  span.textContent = texto;
+  fila.append(span);
+  fila.insertAdjacentHTML("beforeend", ICONO_ESCUCHAR);
+  return fila;
+}
+
 /** Respuesta del asistente con su tarjeta rica adentro, como `BurbujaAsistente`. */
 function crearTarjeta(escenario) {
   const { tarjeta } = escenario;
   const el = document.createElement("div");
   el.className = "ps-burbuja ps-burbuja--asistente";
   el.innerHTML = `
-    ${escenario.dictado ? "" : escenario.respuesta}
     <div class="ps-tarjeta">
       ${iconoTrazo(tarjeta.icono)}
       <div class="ps-tarjeta-texto">
@@ -298,27 +326,30 @@ function crearTarjeta(escenario) {
     texto.className = "ps-burbuja-pie ps-burbuja-pie--asistente";
     texto.textContent = escenario.respuesta;
     el.prepend(audio, texto);
+  } else {
+    el.prepend(filaTexto(escenario.respuesta));
   }
   return el;
 }
 
+/** `Icons.Filled.Check` de material-icons-core 1.6.8, literal (licencia en `assets/js/LICENSE-iconos.txt`). */
 const ICONO_CHECK =
-  '<svg class="ps-opcion-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
+  '<svg class="ps-opcion-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
 
 /**
  * Pregunta cerrada del asistente (`PreguntaDelAsistente`, `PreguntaChatUi.kt:94-102`): el texto y, debajo
  * (`ChatScreen.kt:965-976`), un `FlowRow` de `OutlinedButton` de 48dp con separación de 8dp. La burbuja ocupa
- * todo el ancho, como la `Card` de la app cuando lleva un `FlowRow` de ancho completo.
+ * todo el ancho, como toda `BurbujaAsistente` (su `Row` interno lleva el texto con `weight(1f)`).
  */
 function crearPregunta(pregunta) {
   const el = document.createElement("div");
-  el.className = "ps-burbuja ps-burbuja--asistente ps-burbuja--ancha";
+  el.className = "ps-burbuja ps-burbuja--asistente";
   el.innerHTML = `
-    ${pregunta.texto}
     <div class="ps-opciones">
       ${pregunta.opciones.map((o) => `<span class="ps-btn ps-btn--contorno ps-opcion">${o}</span>`).join("")}
     </div>
   `;
+  el.prepend(filaTexto(pregunta.texto));
   return el;
 }
 
@@ -342,7 +373,7 @@ function marcarOpcionElegida(el, indice) {
 function crearBurbujaTexto(texto) {
   const el = document.createElement("div");
   el.className = "ps-burbuja ps-burbuja--asistente";
-  el.textContent = texto;
+  el.append(filaTexto(texto));
   return el;
 }
 
@@ -350,12 +381,12 @@ function crearConfirmacion(pregunta) {
   const el = document.createElement("div");
   el.className = "ps-burbuja ps-burbuja--asistente";
   el.innerHTML = `
-    ${pregunta}
     <div class="ps-confirmar-fila">
       <span class="ps-btn ps-btn--primario">Confirmar</span>
       <span class="ps-btn ps-btn--contorno">Rechazar</span>
     </div>
   `;
+  el.prepend(filaTexto(pregunta));
   return el;
 }
 

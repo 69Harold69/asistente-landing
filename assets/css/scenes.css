@@ -325,9 +325,10 @@
   overflow: hidden;
 }
 
-/* Card de M3 (radio 12dp) con padding 12dp y texto bodyLarge. */
+/* Card de M3 (radio 12dp) con padding 12dp y texto bodyLarge. Ni `BurbujaUsuario` ni `BurbujaAsistente` tienen
+   ancho máximo (ChatScreen.kt:600-642, 849-1040): la del usuario se ajusta a su texto hasta el ancho completo. */
 .ps-burbuja {
-  max-width: 86%;
+  max-width: 100%;
   padding: calc(12 * var(--dp));
   border-radius: calc(12 * var(--dp));
   font-size: calc(16 * var(--dp));
@@ -345,13 +346,17 @@
   color: var(--ps-acento-texto);
 }
 
+/* BurbujaAsistente: su `Row` interno lleva el texto (o el reproductor) con `weight(1f)`, así que la `Card` ocupa
+   todo el ancho disponible, también con tarjetas, preguntas y Confirmar/Rechazar. */
 .ps-burbuja--asistente {
-  align-self: flex-start;
+  align-self: stretch;
   background: var(--color-bg-elevated);
   color: var(--color-text);
 }
 
+/* BurbujaPensando (:1150-1170): `Card` ajustada a su contenido. */
 .ps-burbuja--pensando {
+  align-self: flex-start;
   display: flex;
   align-items: center;
   gap: calc(8 * var(--dp));
@@ -379,6 +384,44 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Fila «texto + escuchar» (ChatScreen.kt:917-939): el texto con `weight(1f)`, 4dp y un `IconButton` de 48dp
+   (ícono de 18dp, `LocalContentColor` = `onSurfaceVariant`), alineados arriba. */
+.ps-burbuja-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(4 * var(--dp));
+}
+
+.ps-burbuja-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.ps-escuchar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: calc(48 * var(--dp));
+  height: calc(48 * var(--dp));
+}
+
+.ps-escuchar svg {
+  width: calc(18 * var(--dp));
+  height: calc(18 * var(--dp));
+}
+
+.ps-escuchar-cuerpo {
+  fill: currentColor;
+}
+
+.ps-escuchar-ondas {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.64;
+  stroke-linecap: round;
 }
 
 /* Tarjeta rica: radio 20dp, fondo `background`, borde de tarjeta, padding
@@ -442,11 +485,6 @@
 /* Pregunta con botones (PreguntaChatUi.kt:94-133): `FlowRow` con separación 8dp; cada opción es un
    `OutlinedButton` de 48dp de alto mínimo. La elegida es un `Button` lleno con un check de 18dp y 6dp de
    separación; las demás, deshabilitadas (contenido `onSurface` al 38 %, borde al 12 %). */
-.ps-burbuja--ancha {
-  align-self: stretch;
-  max-width: 100%;
-}
-
 .ps-opciones {
   display: flex;
   flex-wrap: wrap;
@@ -692,23 +730,25 @@
   flex-shrink: 0;
 }
 
+/* Pie de la burbuja de audio del usuario (ChatScreen.kt:630-634): bodyMedium, 14sp / 20sp. */
 .ps-burbuja-pie {
   margin-top: calc(4 * var(--dp));
-  font-size: calc(13 * var(--dp));
-  line-height: 1.4;
+  font-size: calc(14 * var(--dp));
+  line-height: calc(20 / 14);
 }
 
+/* Respuesta por voz (ChatScreen.kt:902-948): el reproductor con `weight(1f)` (todo el ancho) y, 4dp abajo, el texto
+   en bodyMedium (14sp / 20sp) `onSurface`. */
 .ps-burbuja-pie--asistente {
-  margin: calc(6 * var(--dp)) 0 0;
-  font-size: calc(16 * var(--dp));
+  margin: calc(4 * var(--dp)) 0 0;
+  font-size: calc(14 * var(--dp));
+  line-height: calc(20 / 14);
 }
 
 .ps-burbuja--asistente > .ps-audio {
-  width: calc(190 * var(--dp));
-  max-width: 100%;
+  width: 100%;
 }
 
-/* Chip "Voz · Disponible" mientras se graba. */
 /* Elementos (InicioScreen.kt: superficie, padding 22dp, grid 14dp) ---------- */
 
 .ps-elementos {
@@ -1585,6 +1625,14 @@
 
 .ps-nav-item--activo {
   color: var(--color-accent);
+}
+
+/* DESVIACIÓN DELIBERADA de la app (auditoría de la Fase 2): la etiqueta del destino activo usa `acentoTexto` en vez
+   de `primary`. Con `primary` sobre la barra (surface + 8.2 % de primary) mide 4.46:1 en claro y 4.45:1 en oscuro,
+   bajo AA para texto de 11sp; con `acentoTexto` mide 4.85:1 y 5.27:1. El ícono sigue en `primary` (3:1 basta).
+   Ver README, «Desviaciones deliberadas de la app». */
+.ps-nav-item--activo span {
+  color: var(--ps-acento-texto);
 }
 
 /* BotonAsistente (BottomNavBar.kt:243-281): FAB extendido en el slot `floatingActionButton` con
