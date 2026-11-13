@@ -368,6 +368,15 @@ al primer clic en el toggle).
     píxeles reales, con la mascota en movimiento, las esquinas de su caja lejos del brillo (claro y oscuro,
     ×1 y ×2). En Chromium sin pantalla el artefacto no se reproduce (ni con GPU). Con colores forzados (alto
     contraste) el contorno se quita: el navegador lo pintaría como un aro.
+  - **Rendijas en la pantalla (#99, revisión de Harold en dev):** con 20° y la perspectiva de 900 px vio una línea
+    horizontal fina que cruza la pantalla (bajo la mascota del Splash y bajo «Escuchando…» en la llamada) y un corte en
+    la orilla izquierda. No se reprodujo en Chromium automatizado (sin pantalla y con ventana y GPU, DPR 1–2), así que
+    el arreglo es de defensa en las tres capas posibles: (1) un **respaldo** (`.phone::before`) del color de la escena,
+    1 px detrás del frente y del tamaño de la pantalla: una costura entre trozos del compositor deja ver ese color y no
+    la página; (2) el **fondo propio de la pantalla** es el de la escena (`data-fondo` en `#telefono`, stage.js), no el
+    crema de la página; (3) las escenas se **enciman 1 px** sobre la orilla de la pantalla y el bisel va en **px
+    enteros**. `scripts/pruebas/rendijas.mjs` lo cuida en las 8 escenas, claro y oscuro, en reposo, en los extremos y
+    en ángulos intermedios, a DPR 1, 1.25, 1.5 y 2.
   - **Pendiente (opcional del Notion):** el punto del logo del header también mirando al cursor.
   - **Prueba:** `scripts/pruebas/mirada.mjs` espera por estado (rAF dentro de la página), no por tiempo
     (#88); verifica los ángulos en las cuatro esquinas, lateral mayor que vertical en píxeles proyectados, el
