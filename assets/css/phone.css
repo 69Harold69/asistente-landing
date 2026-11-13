@@ -65,6 +65,25 @@
     pointer-events: none;
   }
 
+  /* Vidrio (#100, `?vidrio=1`): la franja es opaca (tapa el texto que sube) y malla.js repinta encima de ese fondo el
+     trozo de malla que le toca, para que la malla se vea también ahí. Va debajo del teléfono y del degradado. */
+  .malla-franja {
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: calc(100% + 2.5rem); /* también cubre el degradado de abajo */
+    pointer-events: none;
+    opacity: var(--malla-intensidad, 1);
+    transition: opacity 700ms ease;
+  }
+
+  /* El degradado queda por debajo del canvas de la malla (los dos son hijos con z-index negativo de `.stage`). */
+  html[data-vidrio] .stage::after {
+    z-index: -2;
+  }
+
   /* Foco no tapado (WCAG 2.4.11): al subir con Shift+Tab el navegador deja
      el enlace en el borde de arriba, detrás de la franja. Con este margen lo
      deja debajo de la franja y de su difuminado (prueba `foco-visible.mjs`). */
@@ -74,6 +93,10 @@
 }
 
 @media (min-width: 1024px) {
+  .malla-franja {
+    display: none;
+  }
+
   .stage {
     top: var(--space-3);
     height: calc(100vh - var(--space-4));

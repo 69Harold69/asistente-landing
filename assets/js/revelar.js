@@ -37,18 +37,22 @@ const limitar01 = (v) => Math.min(Math.max(v, 0), 1);
 // Scroll propio (px) a partir del cual el bloque con foco deja de forzarse visible.
 const SOLTAR_FOCO_PX = 32;
 
+/*
+  Vidrio (#100, `?vidrio=1`): la tarjeta de la sección (su `::after`/`::before`, base.css) no es una pieza, así que
+  su opacidad es la variable `--vidrio-op` de la sección; se anima con la primera pieza para que no aparezca una
+  tarjeta vacía antes que el texto. La salida (escritorio) sí desvanece la sección entera: mientras su opacidad es
+  < 1 la sección es raíz de fondo y el `backdrop-filter` de la tarjeta deja de ver la malla (la tarjeta queda como
+  un relleno translúcido sin desenfoque durante ese medio segundo; se mide en el reporte).
+*/
+const hayVidrio = () => document.documentElement.hasAttribute("data-vidrio");
+
 function revelarAlEntrar(seccion) {
   const piezas = [...seccion.children];
   if (!piezas.length) return;
   gsap.set(piezas, { opacity: 0, y: 24 });
-  const entrada = gsap.to(piezas, {
-    opacity: 1,
-    y: 0,
-    duration: 0.8,
-    ease: "power3.out",
-    stagger: 0.08,
-    paused: true,
-  });
+  const entrada = gsap.timeline({ paused: true });
+  entrada.to(piezas, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", stagger: 0.08 }, 0);
+  if (hayVidrio()) entrada.fromTo(seccion, { "--vidrio-op": 0 }, { "--vidrio-op": 1, duration: 0.8, ease: "power3.out" }, 0);
   // Foco visible: si el teclado llega antes que el umbral de scroll, la sección se muestra entera ya.
   seccion.addEventListener("focusin", (ev) => {
     if (ev.target.matches(":focus-visible")) entrada.progress(1);
@@ -84,14 +88,10 @@ export function inicializarReveals(escenario) {
     for (const seccion of secciones) {
       const piezas = [...seccion.children];
       if (!piezas.length) continue;
-      entradas.set(
-        seccion.id,
-        gsap.fromTo(
-          piezas,
-          { opacity: 0, y: 24 },
-          { opacity: 1, y: 0, duration: 1, ease: "power3.out", stagger: 0.35, paused: true }
-        )
-      );
+      const entrada = gsap.timeline({ paused: true });
+      entrada.fromTo(piezas, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 1, ease: "power3.out", stagger: 0.35 }, 0);
+      if (hayVidrio()) entrada.fromTo(seccion, { "--vidrio-op": 0 }, { "--vidrio-op": 1, duration: 1, ease: "power3.out" }, 0);
+      entradas.set(seccion.id, entrada);
     }
     const salidas = new Map(
       [hero, ...fases].filter(Boolean).map((seccion) => [

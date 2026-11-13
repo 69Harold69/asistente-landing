@@ -127,7 +127,15 @@ function aplicarParametro() {
     return;
   }
   try {
-    vidrio = new URLSearchParams(location.search).get("vidrio") === "1";
+    const q = new URLSearchParams(location.search);
+    const forma = q.get("vidrio-forma");
+    vidrio = q.get("vidrio") === "1" || forma === "unica" || forma === "separada";
+    // Solo para comparar en el punto de control: la otra composición y el relleno del vidrio (0..1).
+    if (vidrio && forma === "unica") raiz.setAttribute("data-vidrio-forma", "unica");
+    const relleno = Number(q.get("vidrio-relleno"));
+    if (vidrio && q.has("vidrio-relleno") && Number.isFinite(relleno)) raiz.style.setProperty("--vidrio-relleno", String(Math.min(1, Math.max(0, relleno))));
+    const desenfoque = Number(q.get("vidrio-desenfoque"));
+    if (vidrio && q.has("vidrio-desenfoque") && Number.isFinite(desenfoque)) raiz.style.setProperty("--vidrio-desenfoque", `${Math.min(40, Math.max(0, desenfoque))}px`);
   } catch {}
   raiz.toggleAttribute("data-vidrio", vidrio);
   if (vidrio && !p) p = "referencia";
@@ -158,6 +166,27 @@ function montar(fasesRecorrido) {
   if (!ctx) {
     canvas.remove();
     return;
+  }
+
+  /*
+    Franja del teléfono en móvil (#100): `.stage` es opaca (tapa el texto que sube por detrás) y por eso tapaba también
+    la malla. Con `?vidrio=1` lleva un segundo canvas que repinta ahí el trozo de la malla que le toca (un
+    `drawImage` del canvas principal, sin recalcular nada): el texto sigue tapado y la malla se ve también en la
+    franja. Solo existe en móvil/tablet (en escritorio `.stage` no tiene fondo).
+  */
+  const stage = vidrio ? document.getElementById("stage") : null;
+  let franja = null;
+  let franjaCtx = null;
+  if (stage) {
+    franja = document.createElement("canvas");
+    franja.className = "malla-franja";
+    franja.setAttribute("aria-hidden", "true");
+    stage.prepend(franja);
+    franjaCtx = franja.getContext("2d");
+    if (!franjaCtx) {
+      franja.remove();
+      franja = null;
+    }
   }
 
   const mqFino = window.matchMedia(MQ_FINO);
@@ -352,6 +381,25 @@ function montar(fasesRecorrido) {
       }
       ctx.fill();
     }
+    copiarFranja();
+  }
+
+  /* Repinta en la franja del teléfono el trozo de malla que queda debajo de ella (coordenadas del viewport). */
+  function copiarFranja() {
+    if (!franja || !ancho) return;
+    const w = franja.clientWidth;
+    const h = franja.clientHeight;
+    if (!w || !h) return; // escritorio: oculta
+    const r = stage.getBoundingClientRect();
+    if (r.bottom < -80 || r.top > alto) return; // fuera de pantalla
+    const pw = Math.max(1, Math.round(w * dpr));
+    const ph = Math.max(1, Math.round(h * dpr));
+    if (franja.width !== pw || franja.height !== ph) {
+      franja.width = pw;
+      franja.height = ph;
+    }
+    franjaCtx.clearRect(0, 0, pw, ph);
+    franjaCtx.drawImage(canvas, r.left * dpr, r.top * dpr, w * dpr, h * dpr, 0, 0, pw, ph);
   }
 
   const reduce = () => mqReducido.matches;
@@ -439,6 +487,21 @@ function montar(fasesRecorrido) {
     raton = null;
     agendar();
   });
+  // La franja se mueve con la página mientras el teléfono no se ha pegado (y el dibujo es a 30 fps): sigue el scroll.
+  if (franja) {
+    let scrollPendiente = 0;
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (scrollPendiente) return;
+        scrollPendiente = requestAnimationFrame(() => {
+          scrollPendiente = 0;
+          copiarFranja();
+        });
+      },
+      { passive: true },
+    );
+  }
   mqReducido.addEventListener?.("change", aplicarModo);
   mqFino.addEventListener?.("change", () => {
     medir(); // la variante ligera cambia la resolución del canvas
