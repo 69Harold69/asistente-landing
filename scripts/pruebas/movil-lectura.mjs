@@ -35,7 +35,7 @@
   Ojo: Playwright no emula las barras que se esconden al hacer scroll; el alto «con barras» es otro viewport.
 
   Uso: node movil-lectura.mjs [--tamanos 360x740,390x844,407x904] [--barras 128] [--temas light,dark]
-       [--fases hero,...] [--q "vidrio=1&..."] [--json salida.json] [--base-json base.json] [--solo-medir]
+       [--fases hero,...] [--q "malla-forzar=normal"] [--json salida.json] [--base-json base.json] [--solo-medir]
   `YARUKI_RAIZ=/ruta/a/otra/copia` mide otra versión del sitio (producción, main…).
 */
 import fs from "node:fs";
@@ -49,7 +49,7 @@ const BASE = [[360, 740], [390, 844], [407, 904]];
 const tamanos = (a.tamanos && a.tamanos !== true ? String(a.tamanos).split(",").map((s) => s.split("x").map(Number)) : BASE);
 const barras = a.barras && a.barras !== true ? Number(a.barras) : 128;
 const temas = a.temas && a.temas !== true ? String(a.temas).split(",") : ["light", "dark"];
-const consulta = a.q && a.q !== true ? String(a.q) : "vidrio=1&vidrio-desenfoque=2&vidrio-relleno=0.10";
+const consulta = a.q && a.q !== true ? String(a.q) : "";
 const maxCrece = a["max-crece"] && a["max-crece"] !== true ? Number(a["max-crece"]) : 1.35;
 const soloMedir = !!a["solo-medir"];
 const DWELL = 0.25;
@@ -130,7 +130,7 @@ for (const [w, h0] of tamanos) {
       await page.goto(srv.url + "/", { waitUntil: "load" });
       if (!(await page.evaluate(() => document.documentElement.hasAttribute("data-vidrio")))) {
         // Sin el vidrio como defecto (esta base), se mide con los valores aprobados; no importa si la versión ni lo conoce.
-        await page.goto(srv.url + "/?" + consulta, { waitUntil: "load" });
+        await page.goto(srv.url + "/" + (consulta ? "?" + consulta : ""), { waitUntil: "load" });
       }
       await esperarCarga(page, { portada: true });
       await dormir(600);
