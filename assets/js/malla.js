@@ -50,7 +50,6 @@ const NIVELES = 8; // niveles de opacidad con los que se agrupan los trazos
 const AMP_A = 9;
 const AMP_B = 6;
 const MS_REDUCIDO = 4200; // instante de la onda con el que se pinta la versión estática
-const FRAME_REPOSO = 1000 / 30; // en reposo y en táctil se dibuja a 30 fps
 const MOVIMIENTO_RECIENTE = 900; // ms desde el último movimiento del cursor que cuentan como «interactuando»
 
 /*
@@ -61,12 +60,35 @@ const MOVIMIENTO_RECIENTE = 900; // ms desde el último movimiento del cursor qu
   - pausa-scroll: como normal, pero no dibuja mientras el dedo hace scroll (la malla es fija: se queda quieta
     y vuelve a ondular PAUSA_SCROLL ms después del último evento de scroll);
   - ligera-pausa: las dos cosas (DPR 1 y pausa durante el scroll).
-  En escritorio no aplica. La que va por defecto se eligió midiendo con CPU ×4 (README).
+  En escritorio no aplica. Por defecto va «normal» (decisión de Harold tras medir en su teléfono real: 59–61 fps de pantalla y más nítida);
+  «ligera» es el respaldo AUTOMÁTICO: la degradación nivel 1 (más abajo) hace lo mismo (DPR 1) cuando el costo sostenido es alto.
 */
 const VARIANTES_MOVIL = ["normal", "ligera", "pausa-scroll", "ligera-pausa"];
-const MOVIL_POR_DEFECTO = "ligera";
+const MOVIL_POR_DEFECTO = "normal";
 const DPR_MAX_LIGERA = 1;
 const PAUSA_SCROLL = 180;
+
+/*
+  Degradación automática (#98, render por software y equipos lentos). Medir solo el JS de `dibujar` engaña: el canvas 2D
+  rasteriza al final del cuadro (en software, en el hilo principal), así que el JS tarda ~0.4 ms y el cuadro ~13 ms. Por
+  eso se mide el cuadro COMPLETO: del inicio del callback de rAF hasta la primera tarea posterior (un mensaje de
+  MessageChannel, que corre justo después de estilo/layout/pintado/commit). El costo de la malla es la mediana de los
+  cuadros en que dibujó MENOS la de los cuadros en que no (a 30 fps se alternan, así que la página misma queda restada).
+  Si ese costo pasa de UMBRAL_COSTO_MS, la malla baja un nivel: 0 = normal; 1 = 20 fps, canvas a DPR 1 y 30 fps máx. con el cursor;
+  2 = 15 fps, además cuadrícula de 192 px (la mitad de puntos) y 20 fps máx. con el cursor. La onda dura ~9 s por ciclo,
+  así que 15 fps no se ve congelada. No se guarda nada ni se consulta la GPU: solo se mide el propio costo. Para volver
+  a un nivel mejor se vuelve a probar cada ESPERA_PRUEBA_MS (que se duplica, hasta el tope, cada vez que la prueba
+  falla). Pruebas: `?malla-forzar=software` fija el nivel 2; `?malla-forzar=normal` (o elegir a mano `?malla-movil=`) desactiva la degradación.
+*/
+const UMBRAL_COSTO_MS = 8;
+const VENTANA_COSTO = 60; // dibujos que se miran para decidir
+const ESPERA_PRUEBA_MS = 30000;
+const ESPERA_PRUEBA_MAX = 240000;
+const NIVELES_DEGRADACION = [
+  { fps: 30, enCursor: 0, dprMax: DPR_MAX, sep: SEPARACION },
+  { fps: 20, enCursor: 30, dprMax: 1, sep: SEPARACION },
+  { fps: 15, enCursor: 20, dprMax: 1, sep: 192 },
+];
 
 /*
   PROTOTIPO `?malla=referencia` (y `?vidrio=1`, que la incluye): la malla más encendida, cerca de la referencia (del
@@ -110,6 +132,14 @@ export function fijarIntensidadRecorrido(valor) {
 }
 
 /** `?malla=pleno|medio|0.35`: solo para comparar niveles en el punto de control. */
+function parametro(nombre) {
+  try {
+    return new URLSearchParams(location.search).get(nombre);
+  } catch {
+    return null;
+  }
+}
+
 function varianteMovilDeUrl() {
   try {
     const v = new URLSearchParams(location.search).get("malla-movil");
@@ -152,6 +182,8 @@ function aplicarParametro() {
 export function inicializarMalla(fasesRecorrido = []) {
   if (typeof HTMLCanvasElement === "undefined") return;
   aplicarParametro();
+  // `?malla=apagada`: la página sola, sin canvas ni bucle (para saber si el costo del scroll es de la malla o de la página).
+  if (parametro("malla") === "apagada") return;
   const arrancar = () => (window.requestIdleCallback ? window.requestIdleCallback(() => montar(fasesRecorrido), { timeout: 1500 }) : setTimeout(() => montar(fasesRecorrido), 200));
   if (document.readyState === "complete") arrancar();
   else window.addEventListener("load", arrancar, { once: true });
@@ -203,13 +235,62 @@ function montar(fasesRecorrido) {
   const tactil = () => !mqFino.matches;
   let enScroll = false; // pausa-scroll: el dedo está haciendo scroll
   let finScroll = 0;
+  // Costo de hilo principal de cada dibujo (anillo) y degradación automática.
+  const costos = new Float32Array(VENTANA_COSTO * 2); // duración del cuadro completo en los cuadros que dibujaron
+  const costosSin = new Float32Array(VENTANA_COSTO * 2); // ... y en los que no dibujaron (la página sola)
+  const costosJs = new Float32Array(VENTANA_COSTO * 2); // solo el JS de dibujar() (lo que NO incluye la rasterización)
+  const orden = new Float32Array(VENTANA_COSTO);
+  let nCostos = 0;
+  let nSin = 0;
+  const canal = new MessageChannel();
+  let marca = 0;
+  let marcaDibujo = false;
+  let marcaJs = 0;
+  let nivelDeg = 0;
+  let motivoDeg = "";
+  let esperaPrueba = ESPERA_PRUEBA_MS;
+  let proximaPrueba = 0;
+  let probando = false;
+  // Con `?malla-forzar=` o con una variante de móvil elegida a mano (`?malla-movil=`, para comparar) la degradación no se mueve sola.
+  const forzar = parametro("malla-forzar") || (parametro("malla-movil") !== null ? "normal" : null);
+  const cuantil = (arr, n, q) => {
+    const k = Math.min(n, VENTANA_COSTO);
+    for (let i = 0; i < k; i++) orden[i] = arr[(n - 1 - i) % arr.length];
+    orden.subarray(0, k).sort();
+    return k ? orden[Math.min(k - 1, Math.floor(k * q))] : 0;
+  };
+  // Costo de la malla en ms por dibujo = cuadro con dibujo − cuadro sin dibujo (mediana), nunca negativo.
+  const costoMalla = (q) => (nCostos >= 8 && nSin >= 8 ? Math.max(0, cuantil(costos, nCostos, q) - cuantil(costosSin, nSin, 0.5)) : 0);
+  canal.port1.onmessage = () => {
+    const d = performance.now() - marca;
+    if (marcaDibujo) {
+      costosJs[nCostos % costosJs.length] = marcaJs;
+      costos[nCostos++ % costos.length] = d;
+      if (nCostos % 30 === 0) evaluarCosto(marca);
+    } else costosSin[nSin++ % costosSin.length] = d;
+  };
   // Estado para el modo de diagnóstico (`?malla-diagnostico=1`, malla-diagnostico.js) y las pruebas.
   Object.defineProperty(canvas, "mallaInfo", {
-    get: () => ({ variante: tactil() ? varianteMovil : "escritorio", dpr, ancho, alto, cuadros: dibujados, pausadaPorScroll: enScroll }),
+    get: () => ({
+      variante: tactil() ? varianteMovil : "escritorio",
+      dpr,
+      ancho,
+      alto,
+      cuadros: dibujados,
+      pausadaPorScroll: enScroll,
+      nivel: nivelDeg,
+      motivo: motivoDeg,
+      fpsTope: NIVELES_DEGRADACION[nivelDeg].fps,
+      costoP50: costoMalla(0.5),
+      costoP95: costoMalla(0.95),
+      costoJsP50: nCostos ? cuantil(costosJs, nCostos, 0.5) : 0,
+      sep,
+    }),
   });
   let ancho = 0;
   let alto = 0;
   let dpr = 1;
+  let sep = SEPARACION; // px entre puntos (la degradación nivel 2 la agranda)
   let c = null; // colores y opacidades leídos de los tokens
   let estilos = null; // estilos de trazo y relleno por nivel (colores opacos precalculados al leer los tokens)
   let visible = true; // <main> a la vista
@@ -273,16 +354,18 @@ function montar(fasesRecorrido) {
     const nuevoAncho = canvas.clientWidth;
     const nuevoAlto = canvas.clientHeight;
     if (nuevoAncho < 1 || nuevoAlto < 1) return;
-    const dprMax = tactil() && varianteMovil.startsWith("ligera") ? DPR_MAX_LIGERA : DPR_MAX;
+    const niv = NIVELES_DEGRADACION[nivelDeg];
+    const dprMax = Math.min(niv.dprMax, tactil() && varianteMovil.startsWith("ligera") ? DPR_MAX_LIGERA : DPR_MAX);
     const nuevoDpr = Math.min(window.devicePixelRatio || 1, dprMax, Math.sqrt(PIXELES_MAX / (nuevoAncho * nuevoAlto)));
-    if (nuevoAncho === ancho && nuevoAlto === alto && nuevoDpr === dpr) return;
+    if (nuevoAncho === ancho && nuevoAlto === alto && nuevoDpr === dpr && niv.sep === sep) return;
     ancho = nuevoAncho;
     alto = nuevoAlto;
     dpr = nuevoDpr;
+    sep = niv.sep;
     canvas.width = Math.max(1, Math.round(ancho * dpr));
     canvas.height = Math.max(1, Math.round(alto * dpr));
-    cols = Math.ceil(ancho / SEPARACION) + 3;
-    filas = Math.ceil(alto / SEPARACION) + 3;
+    cols = Math.ceil(ancho / sep) + 3;
+    filas = Math.ceil(alto / sep) + 3;
     const n = cols * filas;
     px = new Float32Array(n);
     py = new Float32Array(n);
@@ -303,7 +386,7 @@ function montar(fasesRecorrido) {
     const activo = e.fuerza > 0.002;
     // Centrada: sin un borde más ancho de un lado. Los puntos de la fila/columna -1 quedan fuera para que la onda
     // y el empuje no dejen huecos en los bordes.
-    const ox = (ancho - (cols - 4) * SEPARACION) / 2;
+    const ox = (ancho - (cols - 4) * sep) / 2;
     const oy = 0;
     const f1 = t * 0.00070;
     const f2 = t * 0.00052;
@@ -311,10 +394,10 @@ function montar(fasesRecorrido) {
     const f4 = t * 0.00047;
     let usados = 1; // bit n = el nivel n tiene algo que trazar (el 0 siempre)
     for (let j = 0; j < filas; j++) {
-      const y0 = oy + (j - 1) * SEPARACION;
+      const y0 = oy + (j - 1) * sep;
       for (let i = 0; i < cols; i++) {
         const k = j * cols + i;
-        const x0 = ox + (i - 1) * SEPARACION;
+        const x0 = ox + (i - 1) * sep;
         let x = x0 + AMP_A * Math.sin(f1 + y0 * 0.0105 + x0 * 0.0042) + AMP_B * Math.cos(f2 + x0 * 0.0087 - y0 * 0.0031);
         let y = y0 + AMP_A * Math.cos(f3 + x0 * 0.0095 + y0 * 0.0036) + AMP_B * Math.sin(f4 + y0 * 0.0081 - x0 * 0.0027);
         let nivel = 0;
@@ -424,10 +507,16 @@ function montar(fasesRecorrido) {
     if (!puedeAnimar()) return;
     const objetivo = raton && reacciona() ? 1 : 0;
     const interactuando = t - tMovimiento < MOVIMIENTO_RECIENTE || Math.abs(objetivo - e.fuerza) > 0.002;
-    if (!interactuando && ultimoDibujo && t - ultimoDibujo < FRAME_REPOSO - 2) {
+    const niv = NIVELES_DEGRADACION[nivelDeg];
+    const intervalo = interactuando ? (niv.enCursor ? 1000 / niv.enCursor : 0) : 1000 / niv.fps;
+    marca = performance.now();
+    if (ultimoDibujo && t - ultimoDibujo < intervalo - 2) {
+      marcaDibujo = false;
+      canal.port2.postMessage(0);
       agendar(); // medio cuadro de espera a 30 fps: no se dibuja
       return;
     }
+    marcaDibujo = true;
     const dt = Math.min(ultimoT ? t - ultimoT : 16, 50);
     ultimoT = t;
     ultimoDibujo = t;
@@ -443,9 +532,44 @@ function montar(fasesRecorrido) {
     const aFuerza = 1 - Math.exp(-dt / TAU_FUERZA);
     e.fuerza += (objetivo - e.fuerza) * aFuerza;
     if (Math.abs(objetivo - e.fuerza) < 0.003) e.fuerza = objetivo;
+    const t0 = performance.now();
     dibujar(t);
     dibujados++;
+    marcaJs = performance.now() - t0;
+    canal.port2.postMessage(0);
     agendar();
+  }
+
+  /* Cada 30 dibujos: baja un nivel si la mediana reciente es cara; cada tanto prueba volver al nivel anterior. */
+  function evaluarCosto(ahora) {
+    if (forzar) return; // `?malla-forzar=software|normal`: el nivel no se mueve solo
+    const p50 = costoMalla(0.5);
+    if (nCostos >= VENTANA_COSTO / 2 && p50 > UMBRAL_COSTO_MS && nivelDeg < NIVELES_DEGRADACION.length - 1) {
+      if (probando) esperaPrueba = Math.min(esperaPrueba * 2, ESPERA_PRUEBA_MAX); // la prueba de recuperación falló
+      probando = false;
+      fijarNivel(nivelDeg + 1, `costo ${p50.toFixed(1)} ms por dibujo`);
+      proximaPrueba = ahora + esperaPrueba;
+    } else if (probando && p50 <= UMBRAL_COSTO_MS && nCostos >= VENTANA_COSTO) {
+      probando = false; // la prueba salió bien: se queda en el nivel mejor y vuelve a la espera inicial
+      esperaPrueba = ESPERA_PRUEBA_MS;
+    } else if (nivelDeg > 0 && !probando && ahora > proximaPrueba && p50 <= UMBRAL_COSTO_MS) {
+      probando = true;
+      fijarNivel(nivelDeg - 1, "prueba de recuperación");
+      proximaPrueba = ahora + esperaPrueba;
+    }
+  }
+
+  function fijarNivel(n, motivo) {
+    nivelDeg = n;
+    if (!n) motivoDeg = "";
+    else if (!motivo.startsWith("prueba")) motivoDeg = motivo;
+    nCostos = 0; // la ventana empieza de cero con el nivel nuevo
+    nSin = 0;
+    medir();
+  }
+  if (forzar === "software") {
+    nivelDeg = NIVELES_DEGRADACION.length - 1;
+    motivoDeg = "forzado (?malla-forzar=software)";
   }
 
   function alCursor(ev) {

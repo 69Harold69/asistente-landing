@@ -334,17 +334,30 @@ al primer clic en el toggle).
   cubre todo; `IntersectionObserver`). La malla queda **fija** respecto al viewport (sin parallax con el scroll: lo
   más barato; no repinta la página al hacer scroll). **Movimiento reducido:** con `prefers-reduced-motion` se
   dibuja una vez, estática (un instante fijo de la onda) y sin reaccionar; el cambio en vivo se atiende.
-  **Táctil** (sin `hover`/puntero fino): ondula a 30 fps pero **no reacciona** al dedo. Cuatro variantes para
-  el teléfono, elegibles con `?malla-movil=normal|ligera|pausa-scroll|ligera-pausa` (normal: DPR ≤ 2; ligera: canvas
-  a DPR 1; pausa-scroll: no dibuja mientras el dedo hace scroll y vuelve 180 ms después; ligera-pausa: las dos). Por
-  defecto **ligera**: en gama media emulada sin GPU (CPU ×4 / ×6) bajó el hilo principal en reposo de ~510 / ~760 a
-  ~340 / ~300 ms/s y subió el scroll de ~35 / ~27 a ~48 / ~44 fps, sin más cambio visible que líneas un poco más
-  suaves; con GPU las cuatro quedan casi igual que sin malla y la pausa en el scroll no ayudó de forma consistente
-  (auditoría del punto de control 1). **Diagnóstico en un teléfono real:**
-  `?malla-diagnostico=1` muestra un medidor (variante, DPR del canvas, fps de la página promedio y mínimo de 5 s,
-  cuadros de la malla por segundo, cuadros > 50 ms y tareas largas) con enlaces para cambiar de variante; sin el
-  parámetro `malla-diagnostico.js` ni se descarga. Para servir una rama a un teléfono en la misma Wi-Fi:
-  `node scripts/pruebas/lib/servidor.mjs --host 0.0.0.0`.
+  **Táctil** (sin `hover`/puntero fino): ondula a 30 fps pero **no reacciona** al dedo. **Defecto: «normal»**
+  (canvas a DPR ≤ 2; decisión de Harold con su teléfono real, DPR 3: «normal» 59 fps de pantalla y más nítida,
+  «ligera» 61 fps sin mejora). Para comparar hay cuatro variantes, elegibles con
+  `?malla-movil=normal|ligera|pausa-scroll|ligera-pausa` (ligera: canvas a DPR 1; pausa-scroll: no dibuja mientras el
+  dedo hace scroll y vuelve 180 ms después; ligera-pausa: las dos); elegir una a mano desactiva la degradación
+  automática. `?malla=apagada` quita el canvas y el bucle (la página sola).
+  **Degradación automática** (táctil y escritorio, sin parámetros): cada cuadro mide su costo de HILO PRINCIPAL
+  completo (del callback de rAF a la primera tarea posterior, vía `MessageChannel`; medir solo el JS de `dibujar`
+  engaña: el canvas 2D rasteriza después y el JS tarda ~0.4 ms cuando el cuadro cuesta ~14). Costo de la malla =
+  mediana de los cuadros con dibujo − mediana de los cuadros sin dibujo. Si pasa de 8 ms sostenidos (mediana de
+  ≥ 30 dibujos), baja un nivel: **1** = 20 fps y canvas a DPR 1 (el respaldo «ligera»); **2** = 15 fps y cuadrícula de
+  192 px (la mitad de puntos). Cada 30 s prueba volver al nivel anterior (el plazo se duplica, hasta 240 s, si la prueba
+  falla). La onda dura ~9 s por ciclo, así que 15 fps no se ve congelada. No consulta la GPU ni guarda nada.
+  `?malla-forzar=software` fija el nivel 2 y `?malla-forzar=normal` lo desactiva (pruebas).
+  **Diagnóstico en un teléfono real:** `?malla-diagnostico=1` muestra un panel plegable que no se puede malinterpretar:
+  «Pantalla» (cuadros que pinta el navegador, medidos con rAF) con el máximo visto (la tasa del teléfono: 60/120 Hz;
+  si sale ~30, el ahorro de batería de Android la está limitando); «En reposo» (últimos 5 s sin tocar) y «Durante el
+  scroll» (último gesto: fps promedio, mínimo por 250 ms, peor cuadro); «Malla: N dibujos/s (tope)» (el bucle de la
+  malla, que NO es la pantalla); «Costo de la malla por dibujo p50 / p95»; nivel de degradación y motivo; cuadros y
+  tareas largas. «Copiar resultados» deja un texto plano (variante, navegador, DPR, canvas, aceleración con
+  `WEBGL_debug_renderer_info`, ahorro de movimiento) y hay enlaces a «apagada» y las cuatro variantes. Sin el parámetro
+  `malla-diagnostico.js` ni se descarga. `node scripts/pruebas/medir-malla.mjs` reproduce la tabla de costos emulada
+  (hilo principal por segundo en reposo y en scroll, fps de scroll, tareas largas; medianas de N corridas). Para servir
+  una rama a un teléfono en la misma Wi-Fi: `node scripts/pruebas/lib/servidor.mjs --host 0.0.0.0`.
   Un `MutationObserver`
   sobre `data-theme` y el cambio de `prefers-color-scheme` redibujan en el mismo microtask (y otra vez a los
   700 ms, por si el respaldo sin View Transitions aún estaba fundiendo los tokens). Arranca tras `load` +
@@ -1053,7 +1066,7 @@ Qué vigila cada prueba (todas corren en `todo.mjs`):
 | `rendimiento.mjs` | Arranque de la portada en móvil con CPU ×4 y 4G lenta: el LCP es texto del hero (no una imagen ni la malla) y llega en ≤ 2 s; CLS 0.000; TBT ≤ 250 ms (medido con CPU ×4: el de Lighthouse es otra escala); **ningún `<script src>` clásico en el `<head>`** y GSAP no se pide antes del primer pintado. Interacción (Event Timing, el INP de laboratorio): toggle de tema, abrir/cerrar un `<details>`, punto de la navegación, mouse sobre el hero con la malla; cada una ≤ 200 ms con CPU ×4 (hoy la peor, el toggle de tema, ronda 150–180 ms). |
 | `cls.mjs` | CLS ≤ 0.02 en la portada a 360, 390, 412, 820, 1024 y 1440 px con las fuentes 1.5 s tarde, y el reacomodo del hero en el barrido de 320 a 480 px. |
 | `compresion.mjs` | Que el servidor de pruebas comprima como Caddy; sin esto los números del laboratorio no representan a producción. |
-| `malla.mjs` | Malla continua (#98): existe y pinta, se mueve sola, reacciona al mouse y no al toque, 30/60 fps, pausas, reduced-motion, intensidad detrás del recorrido, sin JS, costo por cuadro (escritorio < 4 ms y móvil con CPU ×4 < 10 ms) sin tareas largas, y contraste AA del texto de toda la portada. |
+| `malla.mjs` | Malla continua (#98): existe y pinta, se mueve sola, reacciona al mouse y no al toque, 30/60 fps, pausas, reduced-motion, intensidad detrás del recorrido, sin JS, costo por cuadro (escritorio < 4 ms y móvil con CPU ×4 < 10 ms) sin tareas largas, `?malla=apagada`, el panel de diagnóstico (reposo/scroll, copiar, plegar), la degradación por software (`?malla-forzar=software`, y sola con CPU ×8, con recuperación) y el defecto táctil «normal», y contraste AA del texto de toda la portada. |
 
 **Por qué el LCP móvil era «bimodal» (1.65 s o 2.3 s, y 1.05 s o 1.5 s con compresión).** Lighthouse no mide el LCP:
 lo *simula* (Lantern) desde el trazo de una corrida rápida en local. Su gráfica del primer pintado incluye la tarea de
