@@ -335,12 +335,18 @@ try {
     const { ctx, page } = await abrir({ tema: "dark", ancho: 390, alto: 844, movil: true });
     page.on("request", (r) => pedidos.push(r.url()));
     const i0 = await info(page);
-    ok(i0 && i0.variante === "normal" && i0.dpr === 2, `móvil por defecto: variante normal a DPR 2 (${JSON.stringify(i0)})`);
+    ok(i0 && i0.variante === "ligera" && i0.dpr === 1, `móvil por defecto: variante ligera a DPR 1 (${JSON.stringify(i0)})`);
     const diag0 = await page.evaluate(() => !!document.querySelector(".malla-diagnostico"));
     const mods = await page.evaluate(() => performance.getEntriesByType("resource").some((e) => /malla-diagnostico/.test(e.name)));
     ok(!diag0 && !mods && !pedidos.some((u) => /malla-diagnostico/.test(u)), "sin ?malla-diagnostico no hay medidor ni se descarga su módulo");
     await ctx.close();
-    // ligera: canvas a DPR 1, sigue ondulando a ~30 fps.
+    // normal: canvas a DPR 2 (el de antes de la auditoría); ligera: DPR 1, sigue ondulando a ~30 fps.
+    {
+      const { ctx, page } = await abrir({ tema: "dark", ancho: 390, alto: 844, movil: true, query: "?malla-movil=normal" });
+      const i = await info(page);
+      ok(i && i.variante === "normal" && i.dpr === 2, `?malla-movil=normal: canvas a DPR 2 (${JSON.stringify(i)})`);
+      await ctx.close();
+    }
     {
       const { ctx, page } = await abrir({ tema: "dark", ancho: 390, alto: 844, movil: true, query: "?malla-movil=ligera" });
       const i = await info(page);
@@ -378,7 +384,7 @@ try {
         const el = document.querySelector(".malla-diagnostico");
         return el ? { texto: el.textContent, enlaces: el.querySelectorAll("a").length, visible: el.getBoundingClientRect().height > 20 } : null;
       });
-      ok(!!d && d.visible && /malla: ligera/.test(d.texto) && /fps página/.test(d.texto) && d.enlaces === 3, `?malla-diagnostico=1: medidor visible con variante, fps y 3 enlaces (${d ? d.texto.split("\n").slice(0, 3).join(" | ") : "no existe"})`);
+      ok(!!d && d.visible && /malla: ligera/.test(d.texto) && /fps página/.test(d.texto) && d.enlaces === 4, `?malla-diagnostico=1: medidor visible con variante, fps y 4 enlaces (${d ? d.texto.split("\n").slice(0, 3).join(" | ") : "no existe"})`);
       await page.screenshot({ path: path.join(salida, "malla-diagnostico-movil.png") });
       await ctx.close();
     }
