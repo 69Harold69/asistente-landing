@@ -331,14 +331,17 @@ al primer clic en el toggle).
   cubre todo; `IntersectionObserver`). La malla queda **fija** respecto al viewport (sin parallax con el scroll: lo
   más barato; no repinta la página al hacer scroll). **Movimiento reducido:** con `prefers-reduced-motion` se
   dibuja una vez, estática (un instante fijo de la onda) y sin reaccionar; el cambio en vivo se atiende.
-  **Táctil** (sin `hover`/puntero fino): ondula a 30 fps pero **no reacciona** al dedo. Tres variantes para
-  el teléfono, elegibles con `?malla-movil=normal|ligera|pausa-scroll` (normal: DPR ≤ 2; ligera: canvas a DPR 1;
-  pausa-scroll: no dibuja mientras el dedo hace scroll y vuelve 180 ms después); por defecto **normal** (provisional: se fija con la medición)
-  (medición con CPU ×4/×6, con y sin GPU, en la auditoría del punto de control 1). **Diagnóstico en un teléfono real:**
+  **Táctil** (sin `hover`/puntero fino): ondula a 30 fps pero **no reacciona** al dedo. Cuatro variantes para
+  el teléfono, elegibles con `?malla-movil=normal|ligera|pausa-scroll|ligera-pausa` (normal: DPR ≤ 2; ligera: canvas
+  a DPR 1; pausa-scroll: no dibuja mientras el dedo hace scroll y vuelve 180 ms después; ligera-pausa: las dos). Por
+  defecto **ligera**: en gama media emulada sin GPU (CPU ×4 / ×6) bajó el hilo principal en reposo de ~510 / ~760 a
+  ~340 / ~300 ms/s y subió el scroll de ~35 / ~27 a ~48 / ~44 fps, sin más cambio visible que líneas un poco más
+  suaves; con GPU las cuatro quedan casi igual que sin malla y la pausa en el scroll no ayudó de forma consistente
+  (auditoría del punto de control 1). **Diagnóstico en un teléfono real:**
   `?malla-diagnostico=1` muestra un medidor (variante, DPR del canvas, fps de la página promedio y mínimo de 5 s,
   cuadros de la malla por segundo, cuadros > 50 ms y tareas largas) con enlaces para cambiar de variante; sin el
-  parámetro `malla-diagnostico.js` ni se descarga. Para abrir una rama desde el teléfono en la misma Wi-Fi:
-  `node scripts/pruebas/lib/servidor.mjs --host 0.0.0.0 --puerto 8780` y `http://<IP de la máquina>:8780/?malla-diagnostico=1`.
+  parámetro `malla-diagnostico.js` ni se descarga. Para servir una rama a un teléfono en la misma Wi-Fi:
+  `node scripts/pruebas/lib/servidor.mjs --host 0.0.0.0`.
   Un `MutationObserver`
   sobre `data-theme` y el cambio de `prefers-color-scheme` redibujan en el mismo microtask (y otra vez a los
   700 ms, por si el respaldo sin View Transitions aún estaba fundiendo los tokens). Arranca tras `load` +
