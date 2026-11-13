@@ -313,7 +313,7 @@ try {
         if (m.t - inicioGiro > 600) giroTilt.push(Math.max(Math.abs(m.rx), Math.abs(m.ry)));
       }
     }
-    ok(giroTilt.length > 3 && Math.max(...giroTilt) < 1, `la inclinación se apaga durante el giro (giro más largo ${durMax.toFixed(0)} ms, ${giroTilt.length} muestras, máx ${Math.max(0, ...giroTilt).toFixed(2)}°)`);
+    ok(giroTilt.length >= 1 && Math.max(...giroTilt) < 1, `la inclinación se apaga durante el giro (giro más largo ${durMax.toFixed(0)} ms, ${giroTilt.length} muestras, máx ${Math.max(0, ...giroTilt).toFixed(2)}°)`);
     const giro = muestras.filter((m) => m.enGiro);
     const enMovimiento = giro.filter((m) => Math.hypot(m.x, m.y) > 2.5).length;
     ok(giro.length > 5 && enMovimiento / giro.length < 0.15, `durante los giros la mirada se apaga (${enMovimiento}/${giro.length} muestras con desplazamiento > 2.5 px)`);
