@@ -186,9 +186,25 @@
   width: calc(96 * var(--dp));
   height: calc(96 * var(--dp));
   background: var(--color-bg-elevated);
-  /* Mirada (tilt.js, #27): la mascota se corre hasta 7 dp hacia el cursor. `translate`
-     se compone con el `transform` de la respiración y con la escala del envoltorio. */
-  translate: calc(var(--mira-x, 0) * 7 * var(--dp)) calc(var(--mira-y, 0) * 7 * var(--dp));
+  position: relative;
+  /* Mirada (tilt.js, #27/#99): la mascota se corre hasta 16 dp (~1/6 de su diámetro) hacia el cursor.
+     `translate` se compone con el `transform` de la respiración y con la escala del envoltorio. */
+  translate: calc(var(--mira-x, 0) * 16 * var(--dp)) calc(var(--mira-y, 0) * 16 * var(--dp));
+}
+
+/* Brillo pequeño del lado del cursor (#99): realce propio de la landing, no de la app. Con la mascota en
+   reposo (sin mirada) o sin JS no se ve. Va dentro del punto, así hereda la respiración. */
+.ps-splash .ps-dot::after {
+  content: "";
+  position: absolute;
+  width: 22%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--color-accent);
+  opacity: min(1, max(var(--mira-x, 0), var(--mira-y, 0), calc(var(--mira-x, 0) * -1), calc(var(--mira-y, 0) * -1)));
+  left: calc(50% + var(--mira-x, 0) * 30% - 11%);
+  top: calc(50% + var(--mira-y, 0) * 30% - 11%);
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {

@@ -41,7 +41,7 @@ asistente-landing/
 │   │   ├── progreso.js  Pista "Desliza para descubrir"
 │   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
 │   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
-│   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto) y mirada de la mascota
+│   │   ├── tilt.js      Inclinación del teléfono con el mouse (8° a los lados / 6° arriba-abajo, con inercia) y mirada de la mascota
 │   │   ├── malla.js     Malla de fondo del hero (canvas 2D que reacciona al cursor)
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
@@ -320,19 +320,32 @@ al primer clic en el toggle).
   táctil (sin `hover`/puntero fino) se dibuja una vez, estática: en táctil el dedo hace
   scroll y una animación solo gastaría batería. Arranca tras `load` + `requestIdleCallback`
   (el LCP es el titular). Sin JS no existe el canvas y el hero queda igual.
-- **Mirada de la mascota (`tilt.js`, `scenes.css`, `phone.css`, #27):** la mascota de la app es un
-  punto sin rasgos (`ic_launcher_foreground.xml`), así que no hay ojos que separar: la «mirada» es un
-  desplazamiento pequeño del punto hacia el cursor, en el Splash (`.ps-splash .ps-dot`, hasta 7 dp) y
-  en la espalda del teléfono (`.phone-mascota-halo`, hasta 9 % de su tamaño). El mismo `pointermove`
-  pasivo y el mismo rAF de la inclinación alimentan `--mira-x/--mira-y` (-1..1, `gsap.quickTo` de 0.45 s,
-  un poco más rápido que el tilt de 0.7 s) en `.phone-tilt`. Se aplica con la propiedad `translate`,
-  que se compone con el `transform` de la coreografía (la escala de `.ps-dot-escala`, el giro de
-  `.phone`, la respiración del punto) sin pisarlo. Se apaga —y vuelve suave al centro— durante los
-  giros/vuelos (`yaruki:estado.enGiro`), mientras la mascota del hero crece con el scroll
-  (`mascota > 1.02`) y al salir el cursor; no existe en táctil ni con reduced-motion (mismo
-  `matchMedia` que el tilt). La inclinación del teléfono sigue en ±4° (Notion sugiere 8° laterales y
-  6° verticales: opción pendiente de Harold). Como la espalda solo se ve durante un giro, en la
-  práctica su mirada se ve en el modo de inspección `?cara=espalda` o con el scroll detenido sobre ella.
+- **Inclinación y mirada (`tilt.js`, `scenes.css`, `phone.css`, #27, #99):**
+  - **Inclinación:** el teléfono se inclina hacia el cursor hasta **8° a los lados y 6° arriba/abajo**
+    (antes ±4°), con peso. Son resortes amortiguados por tiempo (constante de 0.28 s al seguir, sin GSAP, un
+    solo rAF que se detiene cuando todo llegó a su objetivo). Cada lado se normaliza por la distancia del
+    teléfono a ese borde de la ventana, así las cuatro esquinas llegan al máximo aunque el teléfono viva en
+    una columna. **Vuelve despacio al centro** (constante de 1.1 s) al salir el cursor de la ventana o si no
+    se mueve en 4 s. Durante cada giro/vuelo se apaga rápido (0.18 s) y retoma desde 0 al aterrizar, sin
+    saltos. Va por `--tilt-x/--tilt-y` en `.phone-tilt` (solo `transform`, compuesto; el giro de `.phone` y
+    el vuelo de `.escenario-3d` están en otros envoltorios).
+  - **Variante para comparar en la demostración:** `?inclinacion=mayor` sube a 11° / 8° (el envoltorio
+    lleva `data-inclinacion`). Por defecto, 8° / 6°; no hay botón ni se promociona.
+  - **Dónde aplica:** `min-width: 1024px` + `hover: hover` + `pointer: fine` + sin reduced-motion. La
+    tablet con mouse (768–1023 px) **no** inclina: el teléfono ahí está en la franja del recorrido de una
+    columna y a 8° la perspectiva lo acerca al texto vecino.
+  - **Mirada de la mascota:** la mascota de la app es un punto sin rasgos (`ic_launcher_foreground.xml`), así
+    que no hay ojos: la «mirada» es el desplazamiento del punto hacia el cursor (Splash
+    `.ps-splash .ps-dot`, hasta 16 dp = 1/6 de su diámetro; espalda `.phone-mascota-halo`, hasta 16 % de su
+    tamaño) más **un brillo pequeño del lado del cursor** (`::after`, solo CSS y tokens; es un realce propio
+    de la landing, la app no lo tiene). Sin mirada (reposo, sin JS) el brillo tiene opacidad 0. Se aplica con
+    la propiedad `translate`, que se compone con el `transform` de la coreografía y con la respiración sin
+    pisarlos. Se apaga —y vuelve suave al centro— durante los giros, mientras la mascota del hero crece con
+    el scroll (`mascota > 1.02`) y al salir el cursor; no existe en táctil ni con reduced-motion.
+  - **Pendiente (opcional del Notion):** el punto del logo del header también mirando al cursor.
+  - **Prueba:** `scripts/pruebas/mirada.mjs` espera por estado (rAF dentro de la página), no por tiempo
+    (#88); verifica ángulos en las cuatro esquinas, la variante, el regreso al centro, el apagado durante
+    el giro y el brillo del lado correcto.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
   magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
