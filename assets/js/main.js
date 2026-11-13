@@ -76,8 +76,9 @@ mostrarDemoDeTemaSiCorresponde(botonesTema[0]);
 await cargarVendor(["gsap.min.js", "ScrollTrigger.min.js"]);
 const escenario = inicializarEscenario();
 inicializarTilt();
-// La malla del hero arranca sola tras `load` + idle: nunca retrasa el titular (LCP).
-inicializarMalla(document.getElementById("hero"));
+// La malla (un canvas fijo para toda la portada) arranca sola tras `load` + idle: nunca retrasa el titular (LCP).
+// Las fases del recorrido bajan su intensidad mientras ocupan la pantalla (`--malla-recorrido`, tokens.css).
+inicializarMalla([...document.querySelectorAll('.secciones > section[id^="fase-"]')]);
 
 /*
   Botón "Únete a la beta": ya es un enlace real en el HTML (`href` al Google

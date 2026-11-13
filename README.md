@@ -42,7 +42,7 @@ asistente-landing/
 │   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
 │   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
 │   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto) y mirada de la mascota
-│   │   ├── malla.js     Malla de fondo del hero (canvas 2D que reacciona al cursor)
+│   │   ├── malla.js     Malla de fondo continua de la portada (un canvas fijo: onda en reposo + cursor)
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
 │   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, avisos, llamada, dashboard (+ contar.js)
@@ -299,31 +299,46 @@ al primer clic en el toggle).
   el acento. Decorativo (sin texto ni rol); se va con los puntos
   (`data-fuera`); sin JS queda el conector tenue.
 - **Mascota del header:** respira y se infla con el hover de un CTA de la beta o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
-- **Malla de fondo (`malla.js`, #26):** `<canvas class="malla-hero">` creado por el
-  módulo como primer hijo de `#hero`, decorativo (`aria-hidden`, `pointer-events:
-  none`), a todo el ancho de la ventana y detrás del texto (`z-index: -1` dentro del
-  contexto de `#hero`), con una máscara que lo desvanece hacia abajo. Tamaño y
-  desfase por CSSOM (`--malla-ancho/alto/izq`), nítido en HiDPI (`devicePixelRatio`
-  con tope 2 y como máximo 8 Mpx de canvas, ~1.5x en 2560×1440) y redimensionado con `ResizeObserver`. Valores (Notion «Ideas para V2»):
-  cuadrícula de 128 px, radio 300 px, empuje `38 px × (1 − d/r)²`, líneas de
-  1.1 px, puntos de 1.35 px (+3 px). **Colores y opacidades de los tokens**
-  (`tokens.css`): reposo `--color-border-card`, encendido `--color-accent`, y las
-  opacidades `--malla-linea-*`/`--malla-punto-*` (tenues en claro). **Contraste AA:**
-  dentro de las cajas del texto del hero (líneas de texto, botones y chips, con 8 px de
-  margen para el foco) la malla se deforma con el cursor pero **no se enciende**: se
-  dibuja en reposo, en un solo trazo y un solo relleno (sin apilar opacidades), y el
-  texto secundario queda en ≥ 4.5:1 en los dos temas. Fuera del texto el encendido es
-  el de siempre. `scripts/pruebas/malla.mjs` lo mide en píxeles renderizados (peor
-  píxel con el cursor real barriendo cada bloque). Un
-  `MutationObserver` sobre `data-theme` y el cambio de `prefers-color-scheme`
-  redibujan en el mismo microtask, así que el revelado circular y la demo de tema la
-  repintan bien. **Sin trabajo en reposo:** no hay bucle continuo; el único
-  `requestAnimationFrame` (la función `cuadro`) corre mientras la malla converge hacia el cursor
-  y se detiene al asentarse; tampoco corre con el hero fuera de pantalla
-  (`IntersectionObserver`) ni con la pestaña oculta. Con `prefers-reduced-motion` y en
-  táctil (sin `hover`/puntero fino) se dibuja una vez, estática: en táctil el dedo hace
-  scroll y una animación solo gastaría batería. Arranca tras `load` + `requestIdleCallback`
-  (el LCP es el titular). Sin JS no existe el canvas y el hero queda igual.
+- **Malla de fondo continua (`malla.js`, #98; nació en el hero con el #26):** UN solo
+  `<canvas class="malla-fondo">`, fijo (`position: fixed`, `z-index: -1`, alto `100lvh`), creado por el
+  módulo como primer hijo de `<body>` y visible en toda la portada donde el fondo es el mismo: el
+  `background` de `<body>` se propaga al lienzo, así que las secciones sin fondo propio la dejan ver y lo
+  que sí pinta fondo (tarjetas, la franja del teléfono en móvil y el pie) la tapa. Decorativo
+  (`aria-hidden`, `pointer-events: none`). **Solo en la portada:** las páginas legales y las guías no la
+  montan. Dos movimientos, a la manera de la referencia (Notion «Ideas para V2»):
+  1. **Onda en reposo:** cada punto flota hasta ±15 px (9 px + 6 px, senos y cosenos según su posición y
+     el tiempo, ~9 s por ciclo), así que está viva aunque no muevas el mouse.
+  2. **Cursor:** cuadrícula de 128 px, radio 300 px, empuje `38 px × (1 − d/r)²`, líneas de 1.1 px, puntos de
+     1.35 px (+3 px); del color del borde de tarjeta al acento, con inercia (la malla vuelve sola al salir).
+  **Colores:** salen de los tokens (`--color-border-card` en reposo, `--color-accent` encendido, las
+  opacidades `--malla-*` de `tokens.css`, más tenues en claro). **Se dibujan opacos**, ya mezclados con
+  `--color-bg` (detrás del canvas solo hay ese color liso): dos trazos que se cruzan no apilan opacidad y el
+  peor píxel posible es el del nivel más encendido, así que el contraste se garantiza por construcción. Cada
+  nivel funde dos capas (la de reposo se apaga y la del acento se enciende); mezclar colores y opacidades por
+  separado dejaba un valle de contraste a medio camino. Los topes de `--malla-linea-activa`/`--malla-punto-activo`
+  salen del texto secundario (el de menor contraste base: 5.5:1 en claro, 7.3:1 en oscuro): en oscuro 0.28 / 0.30
+  y en claro 0.12 / 0.14 dejan ≥ 4.5:1; la referencia (0.30 / 0.56) no cabe debajo del texto. El texto **en acento**
+  (kicker de cada fase y enlaces en línea; selector `SEL_TEXTO_ACENTO`) tiene un contraste base de 4.6:1 en claro y
+  ninguna línea de la malla cabe detrás, así que ahí la malla no se pinta (hueco de 5 px alrededor de cada línea de
+  texto, medido en coordenadas de página y vuelto a medir al cambiar el layout).
+  **Intensidad:** es `opacity` del canvas (la compone la GPU, cero costo por cuadro). `--malla-intensidad` vale 1;
+  mientras una fase del teléfono (`.secciones > section[id^="fase-"]`) cruza el centro de la pantalla, malla.js pone
+  `data-malla-recorrido` en `<html>` y pasa a `--malla-recorrido` (`tokens.css`, hoy **0.5**), con 700 ms de
+  transición; en el hero, «Tu día» (`#cta`) y todo lo que sigue vuelve a 1. API para el vidrio (#100) y la
+  demostración: `fijarIntensidadRecorrido(0..1)` / `intensidadRecorrido()` exportadas de `malla.js`, o
+  `?malla=pleno|medio|<0..1>` en la URL (solo para comparar niveles). **Rendimiento:** un solo
+  `requestAnimationFrame` (la función `cuadro`), sin asignaciones por cuadro (arreglos tipados reutilizados), un
+  `beginPath` por nivel de opacidad, **30 fps en reposo y en táctil, 60 fps solo mientras el cursor se mueve**; DPR
+  ≤ 2 y ≤ 8 Mpx de canvas; cero cuadros con la pestaña oculta y con `<main>` fuera de pantalla (el pie opaco lo
+  cubre todo; `IntersectionObserver`). La malla queda **fija** respecto al viewport (sin parallax con el scroll: lo
+  más barato; no repinta la página al hacer scroll). **Movimiento reducido:** con `prefers-reduced-motion` se
+  dibuja una vez, estática (un instante fijo de la onda) y sin reaccionar; el cambio en vivo se atiende.
+  **Táctil** (sin `hover`/puntero fino): ondula a 30 fps pero **no reacciona** al dedo. Un `MutationObserver`
+  sobre `data-theme` y el cambio de `prefers-color-scheme` redibujan en el mismo microtask (y otra vez a los
+  700 ms, por si el respaldo sin View Transitions aún estaba fundiendo los tokens). Arranca tras `load` +
+  `requestIdleCallback` (el LCP es el titular). Sin JS no existe el canvas y la página queda igual.
+  `scripts/pruebas/malla.mjs` mide todo lo anterior, incluido el contraste en píxeles renderizados de todos los
+  bloques de texto de la portada (peor píxel con el cursor real barriendo cada uno).
 - **Mirada de la mascota (`tilt.js`, `scenes.css`, `phone.css`, #27):** la mascota de la app es un
   punto sin rasgos (`ic_launcher_foreground.xml`), así que no hay ojos que separar: la «mirada» es un
   desplazamiento pequeño del punto hacia el cursor, en el Splash (`.ps-splash .ps-dot`, hasta 7 dp) y
@@ -952,7 +967,7 @@ Qué vigila cada prueba (todas corren en `todo.mjs`):
 | `rendimiento.mjs` | Arranque de la portada en móvil con CPU ×4 y 4G lenta: el LCP es texto del hero (no una imagen ni la malla) y llega en ≤ 2 s; CLS 0.000; TBT ≤ 250 ms (medido con CPU ×4: el de Lighthouse es otra escala); **ningún `<script src>` clásico en el `<head>`** y GSAP no se pide antes del primer pintado. Interacción (Event Timing, el INP de laboratorio): toggle de tema, abrir/cerrar un `<details>`, punto de la navegación, mouse sobre el hero con la malla; cada una ≤ 200 ms con CPU ×4 (hoy la peor, el toggle de tema, ronda 150–180 ms). |
 | `cls.mjs` | CLS ≤ 0.02 en la portada a 360, 390, 412, 820, 1024 y 1440 px con las fuentes 1.5 s tarde, y el reacomodo del hero en el barrido de 320 a 480 px. |
 | `compresion.mjs` | Que el servidor de pruebas comprima como Caddy; sin esto los números del laboratorio no representan a producción. |
-| `malla.mjs` | Costo por cuadro de la malla (< 4 ms) y sin tareas largas con el cursor moviéndose. |
+| `malla.mjs` | Malla continua (#98): existe y pinta, se mueve sola, reacciona al mouse y no al toque, 30/60 fps, pausas, reduced-motion, intensidad detrás del recorrido, sin JS, costo por cuadro (escritorio < 4 ms y móvil con CPU ×4 < 10 ms) sin tareas largas, y contraste AA del texto de toda la portada. |
 
 **Por qué el LCP móvil era «bimodal» (1.65 s o 2.3 s, y 1.05 s o 1.5 s con compresión).** Lighthouse no mide el LCP:
 lo *simula* (Lantern) desde el trazo de una corrida rápida en local. Su gráfica del primer pintado incluye la tarea de

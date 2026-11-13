@@ -955,22 +955,37 @@ strong {
 }
 
 /*
-  Malla de fondo del hero (malla.js): el canvas lo crea el módulo, ocupa todo el
-  ancho de la ventana (el hero sólo mide una columna) y va DETRÁS del texto
-  (`#hero` es un contexto de apilamiento: z-index 1). El tamaño y el desfase
-  llegan por CSSOM en `--malla-*`. Se desvanece hacia abajo para no dejar un
-  corte seco donde termina el hero.
+  Malla de fondo continua (malla.js, #98): UN canvas fijo, creado por el módulo como primer
+  hijo de <body>. `z-index: -1` lo deja sobre el fondo del documento (el `background` de
+  <body> se propaga al lienzo) y bajo todo lo demás: las secciones sin fondo propio lo
+  dejan ver y las tarjetas, la franja del teléfono (móvil) y el pie lo cubren. No recibe
+  clics. Alto `100lvh` (el viewport grande): la barra de direcciones del móvil no
+  redimensiona el bitmap. La intensidad es opacidad CSS (la compone la GPU, cero costo
+  por cuadro): `--malla-intensidad` vale 1 y, con `data-malla-recorrido` en la raíz
+  (malla.js lo pone mientras una fase del teléfono cruza el centro de la pantalla), pasa
+  a `--malla-recorrido` (tokens.css). El tamaño del bitmap lo decide el JS.
 */
-.malla-hero {
-  position: absolute;
+.malla-fondo {
+  position: fixed;
   top: 0;
-  left: var(--malla-izq, 0);
-  width: var(--malla-ancho, 100%);
-  height: var(--malla-alto, 100%);
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
   z-index: -1;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+  opacity: var(--malla-intensidad, 1);
+  transition: opacity 700ms ease;
+}
+
+html[data-malla-recorrido] {
+  --malla-intensidad: var(--malla-recorrido, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .malla-fondo {
+    transition: none;
+  }
 }
 
 .hero-significado {
