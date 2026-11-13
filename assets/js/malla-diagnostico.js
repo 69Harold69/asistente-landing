@@ -157,6 +157,7 @@ export function iniciarDiagnostico() {
     }
     gesto = null;
     enScroll = false;
+    pintar(); // el resultado del gesto se lee al soltar, sin esperar al siguiente segundo
   }
 
   function lineas() {
