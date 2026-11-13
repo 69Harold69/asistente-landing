@@ -928,29 +928,43 @@ strong {
 }
 
 /*
-  Retención (#122): stage.js marca con `data-retencion` las fases cuya tarjeta cabe bajo la franja y les da `--ret-ini` (el
-  scroll en px al que el borde de arriba toca la franja) y `--ret-largo` (cuánto se queda quieta). La animación va ligada
-  al scroll del documento: transform en el compositor, sin JS por cuadro; mueve la sección entera (texto, tarjeta y aro).
-  Sin soporte de `animation-timeline`, con «reducir movimiento» o sin JS no hay retención: la tarjeta sube normal y el
-  padding de arriba sigue dando su tramo de lectura.
+  Imán de lectura (#122, solo táctil ≤ 1023 px y sin «reducir movimiento»): `iman.js` pone `data-iman` en <html> y
+  coloca un ancla invisible (`.iman`) sobre la tarjeta de cada fase del recorrido, con `scroll-margin-top` = alto de la
+  franja + su degradado. El snap es el del navegador, de PROXIMIDAD: solo atrapa si el gesto termina cerca de un ancla, y
+  lo resuelve dentro de la inercia del propio gesto (no hay un segundo movimiento hecho con JS). Un ancla más alta que la
+  pantalla (chat, «Tu día») deja leerla libre de arriba a abajo. `data-desarmado` apaga el ancla de la que el usuario
+  está saliendo, para que el imán atrape al llegar y nunca jale de regreso. Sin JS, en escritorio o con «reducir
+  movimiento» no hay imán.
 */
-@keyframes retener-tarjeta {
-  to {
-    transform: translateY(calc(var(--ret-largo) * 1px));
-  }
+html[data-iman] {
+  scroll-snap-type: y proximity;
 }
 
-@supports (animation-timeline: scroll()) {
-  @media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
-    .secciones > .seccion[data-retencion] {
-      animation-name: retener-tarjeta;
-      animation-duration: auto;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-timeline: scroll(root block);
-      animation-range: calc(var(--ret-ini) * 1px) calc((var(--ret-ini) + var(--ret-largo)) * 1px);
-    }
-  }
+.imanes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 0;
+  pointer-events: none;
+}
+
+.iman {
+  position: absolute;
+  left: 0;
+  width: 1px;
+}
+
+html[data-iman] .iman:not([data-desarmado]) {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+
+/* Un enlace con hash a una fase deja su tarjeta en el mismo punto que el imán (bajo la franja y su degradado), también
+   en las tarjetas más altas que la pantalla, donde el snap deja el scroll libre: borde de la sección + 2 svh de su
+   `padding-top` sobre la franja = tarjeta; se sube el degradado (2.5rem) y el aire del imán (4 px). */
+html[data-iman] .secciones > .seccion {
+  scroll-margin-top: calc(2.5rem + 4px - 2 * var(--vh-pequeno));
 }
 
 @media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
@@ -2222,6 +2236,24 @@ html[data-vidrio] .pie .fase-kicker::after {
   html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-kicker {
     margin-bottom: var(--space-1);
     padding: 0.2em 0.8em;
+  }
+}
+
+/* Compactación extra, solo bajo 380 px de ancho (360×740 y similares; #122). A 360 px las tarjetas de Elementos y de
+   Avisos medían ~382 px contra ~374 de zona útil bajo la franja: no cabían enteras en el punto del imán. Se gana un
+   renglón por párrafo con ancho (no con letra): la sección pasa de 14 a 10 px de margen lateral, y la separación bajo
+   la píldora y bajo el título baja 8 → 4 px y 14 → 10 px. El párrafo sigue en 17 px con interlineado 1.5. */
+@media (max-width: 379.98px) {
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) {
+    padding-inline: 0.625rem;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-titulo {
+    margin-bottom: 0.625rem;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-kicker {
+    margin-bottom: 0.25rem;
   }
 }
 

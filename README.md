@@ -130,19 +130,25 @@ teléfono empiece a girar hacia la fase siguiente. Cómo está resuelto, sin toc
   la vista, con 1.5rem de margen sobre el borde inferior, al menos el 25 % del alto visible de scroll antes del giro
   (1.5rem + (25 % − 8 %)). El espacio va DESPUÉS del bloque, así que se adapta solo a la altura real de cada tarjeta, y
   si la tarjeta no cabe entera bajo la franja el texto sube normal mientras el teléfono espera en su escena.
-- *Retención de la tarjeta.* Un bloque que cabe entre la franja y el borde inferior sube con el scroll, así que solo
-  está «entero» mientras recorre ese hueco (decenas de px): para darle el 25 % del alto visible, la sección se queda
-  quieta con el borde de arriba pegado a la franja (2 px bajo el degradado) `--ret-largo` px de scroll y después sigue.
-  `stage.js` (`fijarRetencion`) calcula, en px y al medir, `--ret-ini` (scroll al que el borde toca la franja) y
-  `--ret-largo` (`25 % × alto visible − tramo libre`) y marca la sección con `data-retencion`; la animación es CSS pura
-  ligada al scroll (`animation-timeline: scroll(root block)` + `animation-range`, bloque «Retención» de `base.css`):
-  transform en el compositor, sin JS por cuadro, y mueve la sección entera (texto, tarjeta y aro) como un bloque. No
-  añade scroll: va dentro del `padding-bottom` de arriba. Sin soporte de `animation-timeline`, con «reducir movimiento»
-  o sin JS no hay retención (la tarjeta sube normal). Chrome no reubica el rango de una animación en marcha cuando
-  cambian las variables: por eso se quita y se vuelve a poner `data-retencion` al cambiar. Si la tarjeta no cabe
-  (p. ej. el chat, ~504 px) no hay retención: sube normal y el giro espera por el padding.
-  Al entrar por hash el navegador alinea la caja con el `transform` ya aplicado y la tarjeta aterriza ~20 px bajo
-  el borde superior ideal (como antes: el hash ya dejaba el borde de arriba bajo el degradado).
+- *Imán de lectura (táctil ≤ 1023 px, sin «reducir movimiento»; `assets/js/iman.js`, bloque «Imán de lectura» de
+  `base.css`, prueba `movil-iman.mjs`).* Reemplaza a la retención de la PR #123 (la tarjeta pegada bajo la franja con una
+  animación ligada al scroll), que en el teléfono se sentía como un tropezón. Es `scroll-snap-type: y proximity` del
+  navegador sobre `<html>`: un ancla invisible por fase (`.iman`, del alto de la tarjeta, con `scroll-margin-top` =
+  franja + degradado + 4 px) hace que un gesto que termina cerca de la fase se detenga solo con la tarjeta pegada bajo la
+  franja, dentro de la misma inercia (sin un segundo movimiento con JS); un gesto fuerte sigue de largo y puede parar
+  varias fases después. Si la tarjeta es más alta que lo que queda de pantalla (chat, «Tu día»), el ancla cubre la
+  pantalla y el scroll queda libre dentro de ella. El rango de proximidad de Chrome es 1/3 del alto de la pantalla:
+  para que el imán atrape al llegar y nunca jale de regreso, al empezar un gesto (toque, rueda o tecla) en reposo sobre
+  un ancla, esa ancla se desarma (`data-desarmado`) hasta que el scroll termina fuera de su rango. La rueda y las
+  teclas avanzan a saltos que terminan cada uno por separado: con ellas se desarman todas las anclas cuyo rango contiene
+  la posición (si no, la rueda se quedaba pegada en una fase), y atrapa la que se alcanza desde fuera. No hay imán en el
+  hero, la parte final ni el pie (no tienen anclas), ni en escritorio, ni sin JS, ni en el teléfono en horizontal. Un
+  hash a una fase cae en el mismo punto (`scroll-margin-top` de la sección). Las pruebas que miden con `scrollTo`
+  apagan el imán en la página (`scroll-snap-type: none` en línea), porque Chrome también ajusta al ancla un
+  `scrollTo` que cae cerca.
+- *Compactación extra bajo 380 px.* A 360 px las tarjetas de Elementos y Avisos no cabían bajo la franja: la sección
+  pasa de 14 a 10 px de margen lateral (un renglón menos por párrafo) y la separación bajo la píldora y el título baja
+  8 → 4 y 14 → 10 px. La letra del párrafo no cambia (17 px).
 - *Alto visible.* `--vh-pequeno` (`tokens.css`) es `1svh` (con respaldo `1vh`): la franja (44 / 50 svh), el `padding-top`
   y el `min-height` de las secciones, y `stage.js` (una sonda `.sonda-alto` de `100svh`, no `innerHeight`) usan el viewport
   PEQUEÑO, el de las barras de Chrome a la vista, que no cambia al esconderlas: el layout no salta y el cálculo de «cabe /

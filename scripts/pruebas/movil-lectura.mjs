@@ -17,15 +17,18 @@
       borde inferior y el arranque del giro (puede ser negativo: el giro empieza antes de verla).
 
   Qué afirma (salvo `--solo-medir`):
-    (i)   Si el bloque cabe en la zona útil: `entero` ≥ min(25 % del alto visible, lo que cabe de hecho
-          = zonaAlto − H − 1.5rem) y `ultima` ≥ 25 % del alto visible. Un bloque de 400 px en una zona de 430 px
-          se mueve 1:1 con el scroll: «entero y quieto» durante el 25 % es geométricamente imposible, por eso el
-          mínimo exigido es lo que de verdad cabe, más el tramo con la última línea a la vista.
+    (o)   Sin retención: ninguna sección lleva `data-retencion` ni una animación ligada al scroll (se quitó en #122 por
+          sentirse como un tropezón; la reemplaza el imán, que prueba `movil-iman.mjs`).
+    (i)   Si el bloque cabe en la zona útil: `entero` ≥ lo que cabe de hecho (zonaAlto − H − 1.5rem, menos 12 px de
+          paso de muestreo) y `ultima` ≥ 25 % del alto visible. Un bloque de 400 px en una zona de 430 px se mueve 1:1
+          con el scroll: «entero» dura lo que sobra de zona; el tramo cómodo de lectura lo da el imán, que lo deja quieto.
     (ii)  Si no cabe: el giro no empieza antes de que la última línea haya sido visible (`ultima` ≥ 25 % del alto).
     (iii) Nada del bloque se ve debajo del teléfono: con el bloque dentro de la zona útil, el elemento que está
           en el centro del primer y del último elemento es del propio bloque, no de la franja.
     (iv)  El recorrido total no crece de forma absurda (el límite es `--max-crece`, 1.35 veces la longitud del
           scroll de la versión base si se pasa `--base-json`; sin base solo se reporta).
+  Las mediciones recorren el scroll con `scrollTo`, así que el imán (snap) se apaga en la página medida
+  (`scroll-snap-type: none` en línea sobre <html>): si no, cada `scrollTo` cerca de una fase caería en el ancla.
   El cierre (`#cta`) no tiene fase siguiente: solo se afirma que el bloque queda entero en la zona útil si cabe.
 
   Tamaños: 360×740, 390×844 y 407×904, cada uno también «con barras» de Chrome (≈128 px menos de alto).
@@ -131,6 +134,14 @@ for (const [w, h0] of tamanos) {
       }
       await esperarCarga(page, { portada: true });
       await dormir(600);
+      // (o) sin retención; y el imán apagado para medir posiciones arbitrarias con scrollTo.
+      const retencion = await page.evaluate(() => {
+        document.documentElement.style.setProperty("scroll-snap-type", "none");
+        return [...document.querySelectorAll(".secciones > .seccion")]
+          .filter((s) => s.hasAttribute("data-retencion") || s.style.getPropertyValue("--ret-ini") || getComputedStyle(s).animationName !== "none")
+          .map((s) => s.id);
+      });
+      if (retencion.length) fallas.push(`${etiqueta}: (o) quedan secciones con retención o animación ligada al scroll: ${retencion.join(", ")}`);
       const dom = await page.evaluate(medirDom, FASES);
       const giros = await recorrerGiros(page);
       if (giros.length !== FASES.length) fallas.push(`${etiqueta}: se esperaban ${FASES.length} giros y se observaron ${giros.length} (${giros.join(", ")})`);
@@ -148,8 +159,7 @@ for (const [w, h0] of tamanos) {
         const hasta = b.bt - zonaTop;            // y hasta el cual el bloque empieza por debajo de la zona útil
         const limite = giroSig ?? Infinity;
         // «Entero»: se mide de verdad, rectángulo en mano: cada 10 px de scroll, hasta el arranque del giro, cuenta si el
-        // primer y el último elemento (con el margen de la tarjeta) caben entre la zona útil y el borde inferior. Así
-        // cuenta también la retención (la tarjeta pegada a la franja), que no se deduce del layout.
+        // primer y el último elemento (con el margen de la tarjeta) caben entre la zona útil y el borde inferior.
         const entero = cabe
           ? await page.evaluate(async ({ id, desde, hasta, zonaTop, vh, margen }) => {
               const paso = 10;
@@ -223,8 +233,8 @@ if (!soloMedir) {
     }
     const minimo = DWELL * f.vh;
     if (f.cabe) {
-      const pide = minimo; // 25 % del alto visible, con el bloque ENTERO a la vista (la retención lo hace posible)
-      if (f.entero < pide - 12) fallas.push(`${f.etiqueta} ${f.id}: (i) cabe (${f.H} ≤ ${f.zonaAlto}) y solo ${f.entero} px de scroll con el bloque entero antes del giro (mínimo ${Math.round(pide)})`);
+      const pide = f.posible; // lo que cabe de hecho: el bloque sube 1:1 con el scroll (el imán es el que lo deja quieto)
+      if (f.entero < pide - 12) fallas.push(`${f.etiqueta} ${f.id}: (i) cabe (${f.H} ≤ ${f.zonaAlto}) y solo ${f.entero} px de scroll con el bloque entero antes del giro (cabrían ${Math.round(pide)})`);
     }
     if (f.ultima < minimo - 2) fallas.push(`${f.etiqueta} ${f.id}: (${f.cabe ? "i" : "ii"}) la última línea lleva ${f.ultima} px de scroll visible cuando empieza el giro (mínimo ${Math.round(minimo)})`);
   }
