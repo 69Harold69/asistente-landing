@@ -57,8 +57,8 @@ const pasos = [
   ["mirada", process.execPath, ["mirada.mjs", "--salida", path.join(salida, "mirada")]],
   // Avance de la portada (#60, opción B): sin barra superior; riel entre los puntos, 0-100 %, desvanecido, reduced-motion y sin JS.
   ["progreso", process.execPath, ["progreso.mjs"]],
-  // Vidrio (#100): contraste AA en píxeles con la malla encendida sin huecos (títulos grandes 3:1, texto pequeño sobre el vidrio 4.5:1), claro/oscuro × escritorio/móvil, en las secciones que cubren todos los tipos de tarjeta.
-  ["vidrio-contraste", process.execPath, ["vidrio-contraste.mjs", "--solo", "hero,fase-chat,cta,lo-que-viene,preguntas", "--salida", path.join(salida, "vidrio-contraste")]],
+  // Vidrio (#100, hoy el defecto de la portada): contraste AA en píxeles con la malla encendida sin huecos (títulos grandes 3:1, texto pequeño sobre el vidrio 4.5:1), claro/oscuro × escritorio/móvil, en TODAS las secciones (hero, 5 fases, «Tu día», cómo funciona, lo que viene, FAQ abierta, quién está detrás) y el header.
+  ["vidrio-contraste", process.execPath, ["vidrio-contraste.mjs", "--salida", path.join(salida, "vidrio-contraste")]],
   ["vidrio-franja", process.execPath, ["vidrio-franja.mjs", "--salida", path.join(salida, "vidrio-franja")]],
   // Lectura en móvil (#122): el texto de cada fase se alcanza a leer antes de que el teléfono gire hacia la siguiente (360×740, 390×844, 407×904 y con barras de Chrome, claro y oscuro).
   ["movil-lectura", process.execPath, ["movil-lectura.mjs"]],
@@ -81,8 +81,6 @@ const EXCEPCIONES = {
   "lib/comun.mjs": "librería compartida",
   "lib/scroll.mjs": "librería (rueda real)",
   "lib/servidor.mjs": "librería (servidor de pruebas; también `npm run servir`)",
-  "vidrio-entregables.mjs": "herramienta manual: láminas y videos del vidrio para el dueño",
-  "vidrio.mjs": "herramienta de comparación del vidrio (capturas, rendimiento, video), se corre a mano; el contraste lo corre `vidrio-contraste`",
   "medir-malla.mjs": "herramienta de medición de la malla (#98): produce una tabla, no es prueba; se corre a mano",
 };
 function sinRegistrar() {

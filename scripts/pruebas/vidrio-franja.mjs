@@ -3,7 +3,9 @@
   vidrio-franja (#100): en móvil la franja fija del teléfono (`.stage`) debe dejar ver la malla de borde a borde. Con
   reduced-motion (malla estática) se compara la captura normal contra otra con el texto y las tarjetas ocultos (solo la malla,
   sin la franja): fuera de la caja del teléfono, dentro de la franja, los píxeles deben ser iguales (sin franjas sólidas).
-  390×844 y 360×800, claro y oscuro, DPR 3, con gesto táctil real hasta la sección. Sale con 1 si más de 0.5 % difiere.
+  360×740, 390×844 y 407×904 (el teléfono de Harold: Android Chrome, DPR 3), claro y oscuro, con gesto táctil real hasta la
+  sección. Sale con 1 si más de 0.5 % difiere. Además, la franja existe y tiene malla pintada con la malla degradada
+  (`?malla-forzar=software`), y con `?malla=apagada` no hay canvas roto: la franja queda con su fondo normal (opaco).
 */
 import fs from "node:fs";
 import { leerArgs, lanzarChromium, scriptInicial, esperarCarga, dormir } from "./lib/comun.mjs";
@@ -14,11 +16,11 @@ const nav = await lanzarChromium();
 const out = a.salida && a.salida !== true ? a.salida : "/tmp/yaruki-franja"; fs.mkdirSync(out, { recursive: true });
 let fallo = false;
 const limpia = await nav.newPage();
-for (const [w, h] of [[390, 844], [360, 800]]) for (const tema of ["light", "dark"]) {
+for (const [w, h] of [[360, 740], [390, 844], [407, 904]]) for (const tema of ["light", "dark"]) {
   const ctx = await nav.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, colorScheme: tema, reducedMotion: "reduce", locale: "es-MX" });
   await ctx.addInitScript(scriptInicial({ tema }));
   const page = await ctx.newPage();
-  await page.goto(srv.url + "/?" + (a.q ?? "vidrio=1"), { waitUntil: "load" });
+  await page.goto(srv.url + "/?" + (a.q ?? ""), { waitUntil: "load" });
   await esperarCarga(page, { portada: true });
   await dormir(1200);
   // gesto táctil real: arrastres con CDP
@@ -55,6 +57,32 @@ for (const [w, h] of [[390, 844], [360, 800]]) for (const tema of ["light", "dar
   }, { A: A.toString("base64"), B: B.toString("base64"), info, w, h });
   console.log(w, tema, `franja ${info.stage.map(Math.round)} ${res.pct} % de píxeles distintos (máx ${res.maxd})`);
   if (Number(res.pct) > 0.5) fallo = true;
+  await ctx.close();
+}
+
+/* Modos sin diff de píxeles: malla degradada (se mueve, no es comparable cuadro a cuadro) y apagada. */
+for (const [w, h] of [[360, 740], [390, 844], [407, 904]]) for (const tema of ["light", "dark"]) for (const modo of ["degradada", "apagada"]) {
+  const ctx = await nav.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, colorScheme: tema, locale: "es-MX" });
+  await ctx.addInitScript(scriptInicial({ tema }));
+  const page = await ctx.newPage();
+  await page.goto(srv.url + "/?" + (modo === "degradada" ? "malla-forzar=software" : "malla=apagada"), { waitUntil: "load" });
+  await esperarCarga(page, { portada: true });
+  // La franja del teléfono solo está en pantalla dentro del recorrido: hay que bajar hasta la primera fase.
+  await page.evaluate(() => scrollTo(0, document.getElementById("fase-chat").getBoundingClientRect().top + scrollY + 200));
+  await dormir(2500);
+  const r = await page.evaluate(() => {
+    const f = document.querySelector(".malla-franja");
+    const st = document.getElementById("stage");
+    let pintados = 0;
+    if (f && f.width && f.height) {
+      const d = f.getContext("2d").getImageData(0, 0, f.width, f.height).data;
+      for (let i = 3; i < d.length; i += 4) if (d[i] > 0) pintados++;
+    }
+    return { franja: !!f, ancho: f?.clientWidth ?? 0, alto: f?.clientHeight ?? 0, pintados, fondo: !!document.querySelector("canvas.malla-fondo"), bg: getComputedStyle(st).backgroundColor, stage: st.clientWidth };
+  });
+  const ok = modo === "degradada" ? r.franja && r.ancho === r.stage && r.alto > 40 && r.pintados > 500 : !r.franja && !r.fondo && !/rgba\(0, 0, 0, 0\)|transparent/.test(r.bg);
+  console.log(w, tema, modo, ok ? "ok" : "FALLA", JSON.stringify(r));
+  if (!ok) fallo = true;
   await ctx.close();
 }
 await nav.close(); await srv.cerrar(); console.log(fallo ? "FALLA: la franja tapa la malla" : "la malla es continua en la franja"); process.exit(fallo ? 1 : 0);

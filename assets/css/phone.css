@@ -65,7 +65,7 @@
     pointer-events: none;
   }
 
-  /* Vidrio (#100, `?vidrio=1`): la franja es opaca (tapa el texto que sube) y malla.js repinta encima de ese fondo el
+  /* Vidrio (#100): la franja es opaca (tapa el texto que sube) y malla.js repinta encima de ese fondo el
      trozo de malla que le toca, para que la malla se vea también ahí. Va debajo del teléfono y del degradado. */
   .malla-franja {
     position: absolute;

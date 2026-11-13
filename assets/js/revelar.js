@@ -38,7 +38,7 @@ const limitar01 = (v) => Math.min(Math.max(v, 0), 1);
 const SOLTAR_FOCO_PX = 32;
 
 /*
-  Vidrio (#100, `?vidrio=1`): la tarjeta de la sección (su `::after`/`::before`, base.css) no es una pieza, así que
+  Vidrio (#100, siempre activo): la tarjeta de la sección (su `::after`/`::before`, base.css) no es una pieza, así que
   su opacidad es la variable `--vidrio-op` de la sección; se anima con la primera pieza para que no aparezca una
   tarjeta vacía antes que el texto. La salida (escritorio) sí desvanece la sección entera: mientras su opacidad es
   < 1 la sección es raíz de fondo y el `backdrop-filter` de la tarjeta deja de ver la malla (la tarjeta queda como

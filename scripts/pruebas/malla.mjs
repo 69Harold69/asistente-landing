@@ -9,7 +9,7 @@
     - ritmo: ~30 fps en reposo y 60 fps solo mientras el cursor se mueve; cero cuadros con la pestaña oculta y con
       <main> fuera de pantalla (el pie lo cubre); se reanuda al volver;
     - con prefers-reduced-motion: se dibuja una vez, estática, sin reaccionar, y el cambio en vivo se atiende;
-    - el atenuado detrás del recorrido (data-malla-recorrido) y el parámetro ?malla=pleno|medio|<0..1>;
+    - la intensidad detrás del recorrido (data-malla-recorrido): plena (1), decisión de Harold;
     - sin JavaScript no hay canvas ni hueco;
     - costo por cuadro (escritorio y móvil con CPU ×4) y sin tareas largas;
     - contraste AA (4.5, o 3 en texto grande) del texto de TODA la portada (hero, fase del recorrido, «Tu día», «Cómo
@@ -475,7 +475,7 @@ try {
     }
   }
 
-  /* ---- 9. atenuado detrás del recorrido y ?malla= ---- */
+  /* ---- 9. intensidad detrás del recorrido ---- */
   console.log("\n== intensidad detrás del recorrido");
   {
     const { ctx, page } = await abrir({ tema: "light" });
@@ -490,23 +490,12 @@ try {
     const enFase = await opacidadCanvas(page);
     const atrib = await page.evaluate(() => document.documentElement.hasAttribute("data-malla-recorrido"));
     const nivel = await page.evaluate(() => Number(getComputedStyle(document.documentElement).getPropertyValue("--malla-recorrido")));
-    ok(atrib && Math.abs(enFase - nivel) < 0.02, `con una fase del teléfono al centro se atenúa a --malla-recorrido (${enFase.toFixed(2)} de ${nivel})`);
+    ok(nivel === 1 && atrib && Math.abs(enFase - nivel) < 0.02, `con una fase del teléfono al centro queda a --malla-recorrido, plena (${enFase.toFixed(2)} de ${nivel})`);
     await ruedaHasta(page, Math.round(await sitio("como-funciona")));
     await dormir(1500);
     const despues = await opacidadCanvas(page);
     ok(despues > 0.99, `pasado el recorrido (Cómo funciona) vuelve a plena intensidad (${despues})`);
     await ctx.close();
-    for (const [q, esperado] of [["?malla=pleno", 1], ["?malla=medio", 0.5], ["?malla=0.2", 0.2]]) {
-      const { ctx: c2, page: p2 } = await abrir({ tema: "light", query: q });
-      await ruedaHasta(p2, Math.round(await p2.evaluate(() => {
-        const r = document.getElementById("fase-elementos").getBoundingClientRect();
-        return window.scrollY + r.top + r.height / 2 - innerHeight / 2;
-      })));
-      await dormir(1500);
-      const o = await opacidadCanvas(p2);
-      ok(Math.abs(o - esperado) < 0.02, `${q}: detrás de una fase la malla queda en ${esperado} (${o.toFixed(2)})`);
-      await c2.close();
-    }
   }
 
   /* ---- 10. sin JavaScript ---- */
@@ -597,7 +586,7 @@ try {
       const page = await ctx.newPage();
       guardia.instalar(page, `malla contraste ${tema}`);
       await page.addInitScript(scriptInicial({ tema }));
-      await page.goto(srv.url + "/" + (a.query && a.query !== true ? String(a.query) : "?malla=pleno"), { waitUntil: "load" });
+      await page.goto(srv.url + "/" + (a.query && a.query !== true ? String(a.query) : ""), { waitUntil: "load" });
       await esperarCarga(page, { portada: true });
       await page.waitForSelector("canvas.malla-fondo", { state: "attached", timeout: 6000 }).catch(() => {});
       await dormir(600);

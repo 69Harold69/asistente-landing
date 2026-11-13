@@ -11,15 +11,18 @@
      tarjeta al acento. Todo con inercia: al salir el cursor la malla vuelve sola.
 
   Reglas que cumple:
-  - Los colores salen de los tokens (`--color-border-card` en reposo, `--color-accent`
-    encendido) y sus opacidades de `--malla-*` (tokens.css): el claro es más tenue que el
-    oscuro, y el toggle con revelado circular y la demo de tema la repintan en el mismo
-    microtask del cambio de `data-theme`.
+  - Los colores salen de los tokens: el acento (`--color-accent`) tanto en reposo como
+    encendido, con las opacidades de `--malla-*` (tokens.css; las mismas en claro y oscuro:
+    líneas 0.10 → 0.30 y puntos 0.28 → 0.56, la malla «referencia» de Harold). El toggle con
+    revelado circular y la demo de tema la repintan en el mismo microtask del cambio de
+    `data-theme`.
   - Intensidad: el canvas se atenúa con `opacity` CSS (`--malla-intensidad`, gratis: la
     compone la GPU). Mientras el recorrido del teléfono (las fases) ocupa la pantalla, la
     raíz lleva `data-malla-recorrido` y la intensidad pasa a `--malla-recorrido`
-    (tokens.css). API: `fijarIntensidadRecorrido(0..1)` / `intensidadRecorrido()`;
-    `?malla=pleno|medio|<0..1>` en la URL la fija (solo para comparar niveles).
+    (tokens.css, hoy 1: la malla va a plena intensidad también detrás de las fases, decisión
+    de Harold). API: `fijarIntensidadRecorrido(0..1)` / `intensidadRecorrido()`.
+  - Parámetros de diagnóstico que quedan: `?malla=apagada`, `?malla-diagnostico=1`,
+    `?malla-movil=…` y `?malla-forzar=…`.
   - Rendimiento: un solo requestAnimationFrame (`cuadro`), sin asignaciones por cuadro
     (arreglos tipados reutilizados), trazo por lotes (un `beginPath` por nivel de opacidad),
     30 fps en reposo y en táctil, 60 fps solo mientras el cursor se mueve. Pausa real con la
@@ -91,14 +94,9 @@ const NIVELES_DEGRADACION = [
 ];
 
 /*
-  PROTOTIPO `?malla=referencia` (y `?vidrio=1`, que la incluye): la malla más encendida, cerca de la referencia (del
-  acento: líneas 0.10 → 0.30 y puntos 0.28 → 0.56, igual en claro y oscuro) y a plena intensidad también detrás de las
-  fases. La malla se dibuja DETRÁS de todo, sin huecos bajo el texto (#100): el contraste del párrafo lo da el vidrio
-  y el de los títulos grandes se mide con la malla debajo (3:1).
+  La malla se dibuja DETRÁS de todo, sin huecos bajo el texto (#100): el contraste del párrafo lo da el vidrio
+  (hay vidrio siempre, `data-vidrio` en `<html>` desde el HTML) y el de los títulos grandes se mide con la malla debajo (3:1).
 */
-const REFERENCIA = { lineaReposo: 0.1, puntoReposo: 0.28, lineaActiva: 0.3, puntoActivo: 0.56 };
-let referencia = false;
-let vidrio = false;
 
 const MQ_FINO = "(hover: hover) and (pointer: fine)";
 const MQ_REDUCIDO = "(prefers-reduced-motion: reduce)";
@@ -117,7 +115,7 @@ function rgbDe(valor, respaldo) {
 
 const raiz = document.documentElement;
 
-/* ---- API de intensidad (el vidrio del #100 y la demostración la usan) ---- */
+/* ---- API de intensidad (la demostración de tema la usa) ---- */
 
 /** Intensidad (0..1) de la malla mientras el recorrido del teléfono ocupa la pantalla. */
 export function intensidadRecorrido() {
@@ -131,7 +129,7 @@ export function fijarIntensidadRecorrido(valor) {
   else raiz.style.setProperty("--malla-recorrido", String(Math.min(1, Math.max(0, Number(valor)))));
 }
 
-/** `?malla=pleno|medio|0.35`: solo para comparar niveles en el punto de control. */
+/** Lee un parámetro de la URL (diagnóstico: `malla`, `malla-forzar`, `malla-movil`). */
 function parametro(nombre) {
   try {
     return new URLSearchParams(location.search).get(nombre);
@@ -149,39 +147,8 @@ function varianteMovilDeUrl() {
   }
 }
 
-function aplicarParametro() {
-  let p = null;
-  try {
-    p = new URLSearchParams(location.search).get("malla");
-  } catch {
-    return;
-  }
-  try {
-    const q = new URLSearchParams(location.search);
-    const forma = q.get("vidrio-forma");
-    vidrio = q.get("vidrio") === "1" || forma === "unica" || forma === "separada";
-    // Solo para comparar en el punto de control: la otra composición y el relleno del vidrio (0..1).
-    if (vidrio && forma === "unica") raiz.setAttribute("data-vidrio-forma", "unica");
-    const relleno = Number(q.get("vidrio-relleno"));
-    if (vidrio && q.has("vidrio-relleno") && Number.isFinite(relleno)) raiz.style.setProperty("--vidrio-relleno", String(Math.min(1, Math.max(0, relleno))));
-    const desenfoque = Number(q.get("vidrio-desenfoque"));
-    if (vidrio && q.has("vidrio-desenfoque") && Number.isFinite(desenfoque)) raiz.style.setProperty("--vidrio-desenfoque", `${Math.min(40, Math.max(0, desenfoque))}px`);
-  } catch {}
-  raiz.toggleAttribute("data-vidrio", vidrio);
-  if (vidrio && !p) p = "referencia";
-  if (!p) return;
-  if (p === "referencia") {
-    referencia = true;
-    fijarIntensidadRecorrido(1);
-    return;
-  }
-  const v = p === "pleno" ? 1 : p === "medio" ? 0.5 : Number(p);
-  if (Number.isFinite(v)) fijarIntensidadRecorrido(v);
-}
-
 export function inicializarMalla(fasesRecorrido = []) {
   if (typeof HTMLCanvasElement === "undefined") return;
-  aplicarParametro();
   // `?malla=apagada`: la página sola, sin canvas ni bucle (para saber si el costo del scroll es de la malla o de la página).
   if (parametro("malla") === "apagada") return;
   const arrancar = () => (window.requestIdleCallback ? window.requestIdleCallback(() => montar(fasesRecorrido), { timeout: 1500 }) : setTimeout(() => montar(fasesRecorrido), 200));
@@ -202,11 +169,11 @@ function montar(fasesRecorrido) {
 
   /*
     Franja del teléfono en móvil (#100): `.stage` es opaca (tapa el texto que sube por detrás) y por eso tapaba también
-    la malla. Con `?vidrio=1` lleva un segundo canvas que repinta ahí el trozo de la malla que le toca (un
+    la malla. Lleva siempre un segundo canvas que repinta ahí el trozo de la malla que le toca (un
     `drawImage` del canvas principal, sin recalcular nada): el texto sigue tapado y la malla se ve también en la
     franja. Solo existe en móvil/tablet (en escritorio `.stage` no tiene fondo).
   */
-  const stage = vidrio ? document.getElementById("stage") : null;
+  const stage = document.getElementById("stage");
   let franja = null;
   let franjaCtx = null;
   if (stage) {
@@ -320,18 +287,13 @@ function montar(fasesRecorrido) {
     };
     c = {
       fondo: rgbDe(cs.getPropertyValue("--color-bg"), [250, 247, 242]),
-      reposo: rgbDe(cs.getPropertyValue("--color-border-card"), [221, 212, 199]),
+      reposo: rgbDe(cs.getPropertyValue("--color-accent"), [108, 92, 224]),
       activo: rgbDe(cs.getPropertyValue("--color-accent"), [108, 92, 224]),
-      lineaReposo: num("--malla-linea-reposo", 0.6),
-      lineaActiva: num("--malla-linea-activa", 0.2),
-      puntoReposo: num("--malla-punto-reposo", 0.8),
-      puntoActivo: num("--malla-punto-activo", 0.4),
+      lineaReposo: num("--malla-linea-reposo", 0.1),
+      lineaActiva: num("--malla-linea-activa", 0.3),
+      puntoReposo: num("--malla-punto-reposo", 0.28),
+      puntoActivo: num("--malla-punto-activo", 0.56),
     };
-    if (referencia) {
-      // Como la referencia: la malla es del acento también en reposo (líneas 0.10, puntos 0.28) y se enciende a 0.30 / 0.56.
-      c.reposo = c.activo;
-      Object.assign(c, REFERENCIA);
-    }
     /*
       Colores OPACOS ya mezclados con el fondo (`--color-bg`): lo único que hay detrás del canvas es ese color liso
       (las secciones no pintan fondo; lo que sí lo pinta, tarjetas y pie, tapa el canvas). Así dos trazos que se cruzan
