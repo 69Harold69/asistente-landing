@@ -79,9 +79,9 @@ export function mount(contenedor) {
         <h2 class="ps-titulo">Leer 20 minutos</h2>
         <div class="ps-heatmap">${celdas()}</div>
         <div class="ps-card">
-          <div class="ps-card-titulo">Racha y consolidación</div>
+          <div class="ps-card-titulo">Racha</div>
           <p>Racha actual: <span class="ps-racha" data-racha>0</span> día(s)</p>
-          <p>Antigüedad: ${ANTIGUEDAD} día(s)</p>
+          <p>Antigüedad: ${ANTIGUEDAD} días</p>
           <p>Cumplimiento últimos ${ANTIGUEDAD} día(s): <span data-cumplimiento>${textoCumplimiento(CUMPLIDOS_ANTES)}</span></p>
           <div class="ps-divisor"></div>
           <p class="ps-nota">Todavía no alcanza el umbral para sugerirlo como Rutina.</p>

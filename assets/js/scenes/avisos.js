@@ -58,7 +58,7 @@ export function mount(contenedor) {
         ${fila("eventos", "Junta con ventas", "16:45 · Empieza en 15 minutos.")}
         <div class="ps-aviso-deslizable">
           <div class="ps-aviso-fondo"><span>Completar</span></div>
-          ${fila("tareas", "Llamar al doctor", "18:00 · Tarea pendiente para ahora.", " ps-aviso--movil")}
+          ${fila("tareas", "Llamar al doctor", "18:00 · Tarea pendiente.", " ps-aviso--movil")}
         </div>
         <div class="ps-avisos-grupo ps-avisos-grupo--acordeon">
           <span>ESTA SEMANA · 3</span>
