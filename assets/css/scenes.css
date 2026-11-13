@@ -252,8 +252,7 @@
   Contorno transparente (`outline`): el círculo se mueve a posiciones subpíxel dentro del contexto 3D del
   teléfono y como capa compuesta (respira con `transform`); el contorno amplía la caja que se rasteriza con
   un margen transparente, así los bordes de esa caja nunca quedan pegados a píxeles pintados (#99, líneas finas
-  en los bordes de la caja al moverse). La variante `?brillo=orilla` (solo para comparar) pinta el brillo
-  como un realce en la orilla interior, del lado del cursor.
+  en los bordes de la caja al moverse).
 */
 .ps-splash .ps-dot {
   width: calc(96 * var(--dp));
@@ -265,9 +264,12 @@
     calc(-2 * var(--dp)) color-mix(in oklab, var(--color-on-accent) calc(var(--mira-r, 0) * 70%), transparent);
 }
 
-[data-brillo="orilla"] .ps-splash .ps-dot {
-  box-shadow: inset calc(var(--mira-x, 0) * -7 * var(--dp)) calc(var(--mira-y, 0) * -7 * var(--dp)) calc(9 * var(--dp))
-    calc(-3 * var(--dp)) color-mix(in oklab, var(--color-accent) calc(var(--mira-r, 0) * 55%), transparent);
+/* Con colores forzados (alto contraste) el navegador pinta el contorno transparente con el color del sistema: sería
+   un aro blanco que el diseño no tiene. Ahí no hay movimiento subpíxel que cuidar (auditoría de #99). */
+@media (forced-colors: active) {
+  .ps-splash .ps-dot {
+    outline: none;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {

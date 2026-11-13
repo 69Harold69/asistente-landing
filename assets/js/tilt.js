@@ -2,8 +2,7 @@
   Yaruki — el teléfono «te voltea a ver» (V2, #99, correcciones de la revisión de Harold).
 
   Inclinación hacia el cursor con peso (inercia), sólo en escritorio con puntero fino y sin "reducir
-  movimiento". Tres variantes para que Harold compare (`?inclinacion=`):
-    15 → 15° a los lados y 8° arriba/abajo · 20 → 20° / 10° (por defecto) · 25 → 25° / 12°.
+  movimiento": 20° a los lados y 10° arriba/abajo (decisión de Harold tras comparar 15°/8°, 20°/10° y 25°/12°).
 
   Por qué antes casi no se notaba a los lados (diagnóstico, README «Inclinación y mirada»):
     1. Perspectiva débil: 1600 px en `.escenario-3d`. El trapecio que produce rotateY es proporcional a
@@ -34,8 +33,8 @@
   la coreografía sin pisarlas. Se apaga durante los giros/vuelos y mientras la mascota del hero crece con
   el scroll, y vuelve suave a su centro exacto.
 */
-const VARIANTES = { 15: { x: 8, y: 15 }, 20: { x: 10, y: 20 }, 25: { x: 12, y: 25 } };
-const VARIANTE_DEFECTO = "20";
+// Grados máximos: x = rotateX (arriba/abajo), y = rotateY (a los lados).
+const MAX = { x: 10, y: 20 };
 // Perspectiva efectiva de la inclinación y la del contenedor (phone.css, `.escenario-3d`), en px.
 const PERSPECTIVA = 900;
 const PERSPECTIVA_GIRO = 1600;
@@ -58,14 +57,6 @@ export function inicializarTilt() {
   const envoltorio = document.getElementById("tilt-telefono");
   const telefono = document.getElementById("telefono");
   if (!envoltorio || !telefono) return;
-
-  const params = new URLSearchParams(location.search);
-  const pedida = params.get("inclinacion");
-  const variante = Object.hasOwn(VARIANTES, pedida) ? pedida : VARIANTE_DEFECTO;
-  const max = VARIANTES[variante];
-  envoltorio.dataset.inclinacion = variante;
-  // Forma del brillo, solo para comparar en dev: `?brillo=orilla` (por defecto, halo).
-  if (params.get("brillo") === "orilla") envoltorio.dataset.brillo = "orilla";
 
   const mq = window.matchMedia(
     "(min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)"
@@ -90,7 +81,7 @@ export function inicializarTilt() {
     // 1/d de la perspectiva extra; con fuerza 0 queda «sin perspectiva» (d enorme, sin efecto visible).
     const inv = act.pf * INV_PERSPECTIVA;
     s.setProperty("--tilt-p", `${inv > 1e-7 ? Math.round(1 / inv) : 1e7}px`);
-    s.setProperty("--tilt-dx", `${((act.ry / max.y) * DESPLAZAMIENTO).toFixed(2)}px`);
+    s.setProperty("--tilt-dx", `${((act.ry / MAX.y) * DESPLAZAMIENTO).toFixed(2)}px`);
     s.setProperty("--mira-x", act.mx.toFixed(3));
     s.setProperty("--mira-y", act.my.toFixed(3));
     s.setProperty("--mira-r", Math.min(1, Math.hypot(act.mx, act.my)).toFixed(3));
@@ -146,8 +137,8 @@ export function inicializarTilt() {
     const nx = lim(dx / Math.max(80, alcanceX));
     const ny = lim(dy / Math.max(80, dy < 0 ? cy : window.innerHeight - cy));
     // El teléfono "mira" hacia el cursor.
-    obj.ry = nx * max.y;
-    obj.rx = -ny * max.x;
+    obj.ry = nx * MAX.y;
+    obj.rx = -ny * MAX.x;
     obj.pf = 1;
     if (!mascotaCreciendo) {
       obj.mx = nx;

@@ -55,6 +55,8 @@ const pasos = [
   ["malla", process.execPath, ["malla.mjs", "--salida", path.join(salida, "malla")]],
   // Mirada de la mascota (#27): dirección y tope, giros, transform intacto, reduced-motion y táctil.
   ["mirada", process.execPath, ["mirada.mjs", "--salida", path.join(salida, "mirada")]],
+  // Rendijas en la pantalla del teléfono inclinado (#99): centinela detrás del frente y fondo de la pantalla = el de la escena.
+  ["rendijas", process.execPath, ["rendijas.mjs", "--salida", path.join(salida, "rendijas")]],
   // Avance de la portada (#60, opción B): sin barra superior; riel entre los puntos, 0-100 %, desvanecido, reduced-motion y sin JS.
   ["progreso", process.execPath, ["progreso.mjs"]],
   // Vidrio (#100, hoy el defecto de la portada): contraste AA en píxeles con la malla encendida sin huecos (títulos grandes 3:1, texto pequeño sobre el vidrio 4.5:1), claro/oscuro × escritorio/móvil, en TODAS las secciones (hero, 5 fases, «Tu día», cómo funciona, lo que viene, FAQ abierta, quién está detrás) y el header.

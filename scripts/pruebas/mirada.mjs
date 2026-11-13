@@ -9,12 +9,13 @@
     - al sacar el cursor vuelve al centro;
     - durante un giro/vuelo de la coreografía no hay saltos ni se pisa el `transform` de la coreografía
       (la mirada va por la propiedad `translate`) y al terminar el teléfono queda de frente (0°);
-    - con prefers-reduced-motion y en táctil no se mueve;
-    - la inclinación llega al máximo de cada variante en las esquinas (#99, revisión de Harold): por defecto
-      20° a los lados y 10° arriba/abajo, `?inclinacion=15` → 15°/8°, `?inclinacion=25` → 25°/12°; vuelve
-      despacio al centro al salir el cursor y también si se queda quieto;
+    - con prefers-reduced-motion y en táctil no se mueve; con colores forzados la mascota no lleva contorno (se
+      pintaría como un aro);
+    - la inclinación llega al máximo en las esquinas (#99, decisión de Harold): 20° a los lados y 10°
+      arriba/abajo (un `?inclinacion=` viejo en la URL no cambia nada); vuelve despacio al centro al salir el
+      cursor y también si se queda quieto;
     - en píxeles proyectados, el giro lateral se nota más que el vertical (diferencia de alto entre los bordes
-      izquierdo y derecho > diferencia de ancho entre arriba y abajo), en las tres variantes;
+      izquierdo y derecho > diferencia de ancho entre arriba y abajo);
     - no hay elemento de pupila (ni `::after` en el Splash ni en la espalda) y el brillo es suave, afuera del
       círculo y del lado del cursor; sin mirada es transparente;
     - al salir el cursor el círculo vuelve EXACTO a su centro;
@@ -385,14 +386,14 @@ try {
   // espalda, 16 % de su tamaño (≈ 1/6).
   await probarCara("splash", "/?escena=splash", ".ps-splash .ps-dot", (d) => d / 6);
   await probarCara("espalda", "/?escena=splash&cara=espalda", ".phone-mascota-halo", (d) => d * 0.16);
-  // Variantes para que Harold compare (#99): 15°/8° y 25°/12° (la de 20°/10° es la de por defecto, arriba).
-  await probarCara("splash", "/?escena=splash", ".ps-splash .ps-dot", (d) => d / 6, { query: "&inclinacion=15", maxX: 8, maxY: 15, etiqueta: " (?inclinacion=15)" });
-  await probarCara("splash", "/?escena=splash", ".ps-splash .ps-dot", (d) => d / 6, { query: "&inclinacion=25", maxX: 12, maxY: 25, etiqueta: " (?inclinacion=25)" });
+  // Las variantes de la demostración (`?inclinacion=15|25`) se quitaron: el parámetro ya no cambia nada.
+  await probarCara("splash", "/?escena=splash", ".ps-splash .ps-dot", (d) => d / 6, { query: "&inclinacion=25", etiqueta: " (?inclinacion=25 ignorado)" });
 
   /* ---- el giro lateral se nota más que el vertical, en píxeles proyectados (tres variantes) ---- */
   console.log("\n== lateral contra vertical (px proyectados)");
-  for (const [v, minimoLateral] of [["15", 40], ["20", 55], ["25", 70]]) {
-    const { ctx, page } = await abrir({ ruta: `/?inclinacion=${v}`, etiqueta: `mirada proyeccion ${v}` });
+  {
+    const minimoLateral = 55;
+    const { ctx, page } = await abrir({ etiqueta: "mirada proyeccion" });
     await esperarQuieto(page, "#telefono");
     const tel = await centro(page, "#telefono");
     const medir = async (x, y) => {
@@ -406,8 +407,8 @@ try {
     const aba = await medir(tel.x, 896);
     const lat = Math.min(izq.lateral, der.lateral);
     const ver = Math.max(arr.vertical, aba.vertical);
-    ok(lat >= minimoLateral, `?inclinacion=${v}: el giro lateral se ve (diferencia de alto entre bordes ${izq.lateral.toFixed(1)} / ${der.lateral.toFixed(1)} px ≥ ${minimoLateral})`);
-    ok(lat > ver * 1.5, `?inclinacion=${v}: lateral claramente mayor que vertical (${lat.toFixed(1)} px contra ${ver.toFixed(1)} px)`);
+    ok(lat >= minimoLateral, `el giro lateral se ve (diferencia de alto entre bordes ${izq.lateral.toFixed(1)} / ${der.lateral.toFixed(1)} px ≥ ${minimoLateral})`);
+    ok(lat > ver * 1.5, `lateral claramente mayor que vertical (${lat.toFixed(1)} px contra ${ver.toFixed(1)} px)`);
     await ctx.close();
   }
 
@@ -460,8 +461,23 @@ try {
         const t = d ? getComputedStyle(d).translate : "none";
         const v = t === "none" ? [0, 0] : t.split(" ").map(parseFloat);
         const g = (n) => parseFloat(env.style.getPropertyValue(n)) || 0;
-        r.muestras.push({ t: performance.now(), enGiro: e.detail.enGiro, mascota: e.detail.mascota, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
+        // Sin Splash montado (otra escena en el teléfono) no hay mascota que medir: `montada` false.
+        r.muestras.push({ t: performance.now(), enGiro: e.detail.enGiro, mascota: e.detail.mascota, montada: !!d, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
       });
+      /* Saltos (auditoría de #99, #88): cada vez que tilt.js escribe sus propiedades (una vez por cuadro de su resorte)
+         se registra el valor, con un MutationObserver sobre el `style` del envoltorio. Muestrear en el evento de
+         stage.js (otro rAF) mezclaba fases: cuando los dos rAF cambiaban de orden, un intervalo traía 2 pasos del
+         resorte y otro 0, y el «salto» medido salía al doble (3.0–3.6° con un máximo real de 1.8°). */
+      r.pasos = [];
+      new MutationObserver(() => {
+        const d = dot();
+        const t = d ? getComputedStyle(d).translate : "none";
+        const v = t === "none" ? [0, 0] : t.split(" ").map(parseFloat);
+        const g = (n) => parseFloat(env.style.getPropertyValue(n)) || 0;
+        // Tiempo del CUADRO (el mismo que recibe el rAF de tilt.js), no la hora del callback: con carga, dos pasos
+        // seguidos pueden correr a 8 ms de reloj aunque sus cuadros estén a 33 ms, y eso duplicaba el salto.
+        r.pasos.push({ t: document.timeline.currentTime ?? performance.now(), montada: !!d, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
+      }).observe(env, { attributes: true, attributeFilter: ["style"] });
       // Muestreo independiente en cada cuadro: nadie más que stage.js escribe el `transform` del envoltorio
       // de la mascota (sólo "" o scale(n)) y la mascota no tiene `transform` en línea (la mirada va por `translate`).
       r.pisadas = [];
@@ -482,8 +498,8 @@ try {
     });
     ok(mirando > 2, `en reposo, con el cursor lejos, la mascota ya está mirando (${mirando.toFixed(1)} px)`);
     const antes = await page.evaluate(() => document.querySelector(".ps-dot-escala")?.style.transform ?? "");
-    await ruedaHasta(page, 2200);
-    // El cursor se mueve MIENTRAS giran (en paralelo con la rueda), no después.
+    // El cursor se mueve MIENTRAS giran (en paralelo con la rueda), no después. Bajada lenta (giros largos, de más
+    // de 600 ms aun sin carga: el apagado se mide pasados 600 ms) y subida rápida.
     let girando = true;
     const moverCursor = (async () => {
       for (let i = 0; girando; i++) {
@@ -491,25 +507,38 @@ try {
         await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       }
     })();
+    await ruedaHasta(page, 2200, { paso: 25 });
     await ruedaHasta(page, 0);
     girando = false;
     await moverCursor;
     const e = await reposo(page, leerEstado);
     const muestras = await page.evaluate(() => window.__mira.muestras);
+    const pasos = await page.evaluate(() => window.__mira.pasos);
     ok(registro && muestras.length > 20, `hubo muestras de la coreografía (${muestras.length})`);
-    // Velocidad (px por cuadro de 16.7 ms), no px entre muestras: con la máquina cargada los cuadros se alargan
-    // y la distancia entre muestras crece sin que haya salto alguno. El tope escala con el recorrido (16 dp, antes 7).
+    // Cambio por paso del resorte, expresado por cuadro de 16.7 ms: con la máquina cargada los cuadros se alargan y el
+    // paso crece sin que haya salto. El divisor va de 1 a 3 cuadros (tilt.js limita cada paso a 50 ms): un paso tras
+    // una pausa larga del bucle cuenta entero, así un salto al rearrancar no se diluye. El tope de la mirada escala con
+    // el recorrido (16 dp, antes 7).
     let salto = 0;
     let saltoTilt = 0;
-    for (let i = 1; i < muestras.length; i++) {
-      const dt = Math.max(1, muestras[i].t - muestras[i - 1].t);
-      salto = Math.max(salto, (Math.hypot(muestras[i].x - muestras[i - 1].x, muestras[i].y - muestras[i - 1].y) / dt) * 16.7);
-      saltoTilt = Math.max(saltoTilt, (Math.hypot(muestras[i].rx - muestras[i - 1].rx, muestras[i].ry - muestras[i - 1].ry) / dt) * 16.7);
+    let donde = "";
+    for (let i = 1; i < pasos.length; i++) {
+      const cuadros = Math.min(3, Math.max(1, (pasos[i].t - pasos[i - 1].t) / 16.7));
+      // La escena del Splash se desmonta en las fases y se vuelve a montar al regresar: la mascota nueva nace donde
+      // ya va la mirada (no es un salto que se vea). Solo cuentan pares con la mascota montada en los dos.
+      const sm = pasos[i].montada && pasos[i - 1].montada ? Math.hypot(pasos[i].x - pasos[i - 1].x, pasos[i].y - pasos[i - 1].y) / cuadros : 0;
+      if (sm > salto) donde = `dt ${(pasos[i].t - pasos[i - 1].t).toFixed(1)} ms, (${pasos[i - 1].x.toFixed(2)}, ${pasos[i - 1].y.toFixed(2)}) → (${pasos[i].x.toFixed(2)}, ${pasos[i].y.toFixed(2)}), paso ${i} de ${pasos.length}`;
+      salto = Math.max(salto, sm);
+      saltoTilt = Math.max(saltoTilt, Math.hypot(pasos[i].rx - pasos[i - 1].rx, pasos[i].ry - pasos[i - 1].ry) / cuadros);
     }
-    ok(salto < 3.7, `la mirada no da saltos entre cuadros de la coreografía (máx ${salto.toFixed(2)} px por cuadro)`);
-    // Mismo criterio relativo que con 8° (1.2° por cuadro = 15 % del máximo): 15 % de los 20° por defecto.
+    ok(pasos.length > 60, `hubo pasos del resorte durante la coreografía (${pasos.length})`);
+    const paresMontada = pasos.filter((p, i) => i && p.montada && pasos[i - 1].montada).length;
+    ok(paresMontada > 30, `hubo pasos con la mascota del Splash montada (${paresMontada})`);
+    ok(salto < 3.7, `la mirada no da saltos entre cuadros de la coreografía (máx ${salto.toFixed(2)} px por cuadro; ${donde})`);
+    // Mismo criterio relativo que con 8° (1.2° por cuadro = 15 % del máximo): 15 % de los 20°. El máximo natural es
+    // ~1.8° por cuadro (apagar 20° con el resorte de 0.18 s al entrar en un giro); un salto real se pasa de 3°.
     ok(saltoTilt < 20 * 0.15, `la inclinación no da saltos al entrar ni al salir del giro (máx ${saltoTilt.toFixed(2)}° por cuadro, tope ${(20 * 0.15).toFixed(1)}°)`);
-    // La inclinación se apaga durante el vuelo: pasados 700 ms de giro ya está en ~0.
+    // La inclinación se apaga durante el vuelo: pasados 600 ms de giro ya está en ~0.
     const giroTilt = [];
     let inicioGiro = null;
     let durMax = 0;
@@ -522,7 +551,7 @@ try {
       }
     }
     ok(giroTilt.length >= 1 && Math.max(...giroTilt) < 1, `la inclinación se apaga durante el giro (giro más largo ${durMax.toFixed(0)} ms, ${giroTilt.length} muestras, máx ${Math.max(0, ...giroTilt).toFixed(2)}°)`);
-    const giro = muestras.filter((m) => m.enGiro);
+    const giro = muestras.filter((m) => m.enGiro && m.montada);
     const enMovimiento = giro.filter((m) => Math.hypot(m.x, m.y) > 2.5).length;
     ok(giro.length > 5 && enMovimiento / giro.length < 0.15, `durante los giros la mirada se apaga (${enMovimiento}/${giro.length} muestras con desplazamiento > 2.5 px)`);
     ok(e.angulo !== null && (e.angulo < 0.6 || e.angulo > 359.4) && e.escena === "splash", `al regresar arriba el teléfono queda de frente en splash (${e.angulo?.toFixed(2)}°, ${e.escena})`);
@@ -568,6 +597,21 @@ try {
     const t = await leerTilt(page);
     ok(t.rx === 0 && t.ry === 0, `${nombre}: el teléfono no se inclina (${t.rx}, ${t.ry})`);
     ok(Math.hypot(c.x - base.x, c.y - base.y) < 0.6, `${nombre}: la mascota no se mueve (${Math.hypot(c.x - base.x, c.y - base.y).toFixed(2)} px)`);
+    await ctx.close();
+  }
+
+  /* ---- colores forzados: el contorno transparente de la mascota no se pinta como un aro (auditoría de #99) ---- */
+  console.log("\n== colores forzados");
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 }, forcedColors: "active" });
+    const page = await ctx.newPage();
+    guardia.instalar(page, "mirada colores forzados");
+    await page.addInitScript(scriptInicial({ tema: "dark" }));
+    await page.goto(srv.url + "/?escena=splash", { waitUntil: "load" });
+    for (const sel of [".ps-splash .ps-dot", ".phone-mascota-halo"]) {
+      const estilo = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).outlineStyle, sel);
+      ok(estilo === "none", `colores forzados: ${sel} sin contorno (outline-style ${estilo})`);
+    }
     await ctx.close();
   }
 

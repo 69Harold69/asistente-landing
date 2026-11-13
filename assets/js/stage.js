@@ -138,6 +138,7 @@ export function inicializarEscenario() {
   const { escena, cara, angulo } = leerParametrosDeInspeccion();
   if (escena || cara || angulo !== null) {
     montarEnCapa(pantalla, escena ?? ESCENA_POR_DEFECTO);
+    telefono.dataset.fondo = escena ?? ESCENA_POR_DEFECTO;
     fijarRotacion(telefono, angulo ?? ROTACION_POR_CARA[cara ?? CARA_POR_DEFECTO]);
     telefono.dataset.cara = angulo !== null ? `${angulo}` : cara ?? CARA_POR_DEFECTO;
     return null;
@@ -146,6 +147,7 @@ export function inicializarEscenario() {
   if (!window.gsap) {
     // No debería pasar (vendorizado local): mejor el cierre real que la pantalla vacía.
     montarEnCapa(pantalla, "dashboard");
+    telefono.dataset.fondo = "dashboard";
     return null;
   }
 
@@ -209,6 +211,10 @@ function crearCapas(pantalla) {
     if (encima) asegurar(encima, capaBase);
     fijarOpacidad(capaBase, 1, 1);
     fijarOpacidad(otra, encima ? t : 0, 2);
+    // Fondo de la pantalla y de su respaldo (phone.css, `data-fondo`): el de la escena opaca de abajo, así una
+    // rendija entre capas del teléfono inclinado deja ver el mismo color y no el de la página (#99).
+    const telefono = pantalla.closest(".phone");
+    if (telefono && telefono.dataset.fondo !== base) telefono.dataset.fondo = base;
 
     const dominante = encima && t >= 0.5 ? encima : base;
     if (dominante !== activa) {

@@ -113,7 +113,8 @@
   /* Proporciones del teléfono como fracción del ancho: a 296px dan el
      radio de 44px, el bisel de 10px y ~15px de grosor del plan (4.2). */
   --phone-radius: calc(var(--phone-width) * 0.149);
-  --phone-bezel: calc(var(--phone-width) * 0.034);
+  /* Bisel en px enteros (#99): la pantalla no arranca en una orilla fraccionaria dentro del frente inclinado. */
+  --phone-bezel: round(calc(var(--phone-width) * 0.034), 1px);
   --phone-depth: calc(var(--phone-width) * 0.05);
   position: relative;
   perspective: 1600px;
@@ -233,6 +234,8 @@
 }
 
 .phone {
+  /* Fondo de la escena de abajo (stage.js pone `data-fondo`): lo usan la pantalla y su respaldo (#99). */
+  --fondo-pantalla: var(--color-bg);
   position: relative;
   width: 100%;
   aspect-ratio: 9 / 19.5;
@@ -251,6 +254,41 @@
   scroll (etapa 4) la va a animar GSAP cuadro a cuadro, no una `transition`
   de CSS, así que no hace falta una acá todavía.
 */
+
+.phone[data-fondo="chat"],
+.phone[data-fondo="elementos"] {
+  --fondo-pantalla: var(--color-bg-elevated);
+}
+
+.phone[data-fondo="splash"],
+.phone[data-fondo="logro"] {
+  --fondo-pantalla: var(--color-accent);
+}
+
+.phone[data-fondo="llamada"] {
+  /* El mismo degradado de `.ps-llamada` (scenes.css). */
+  --fondo-pantalla: linear-gradient(180deg, #13111f 0%, #332c57 160%);
+}
+
+/*
+  Rendijas en la pantalla con el teléfono inclinado (#99, revisión de Harold): con 20° y la perspectiva de 900 px el
+  compositor dibuja la cara del frente en varios trozos (mosaicos y capas compuestas: la mascota que respira, la barra
+  de estado que se encima). Entre trozo y trozo puede quedar una rendija de subpíxel, y lo que se ve por ella es lo
+  que hay DETRÁS de la cara: la página. Este respaldo es un plano liso del color de la escena, apenas detrás del
+  frente (1 px en Z) y del tamaño de la pantalla: por una rendija se ve el mismo color. Solo se pinta de frente
+  (`backface-visibility`) y no recibe eventos. Las escenas además se enciman 1 px sobre la orilla de la pantalla
+  (`.capa-escena`) y el bisel se redondea a px enteros: sin orillas fraccionarias entre capas.
+*/
+.phone::before {
+  content: "";
+  position: absolute;
+  inset: var(--phone-bezel);
+  border-radius: calc(var(--phone-radius) - var(--phone-bezel));
+  background: var(--fondo-pantalla);
+  transform: translateZ(calc(var(--phone-depth) / 2 - 1px));
+  backface-visibility: hidden;
+  pointer-events: none;
+}
 
 .phone-cara {
   position: absolute;
@@ -302,7 +340,7 @@
   height: 100%;
   border-radius: calc(var(--phone-radius) - var(--phone-bezel));
   overflow: hidden;
-  background: var(--color-bg);
+  background: var(--fondo-pantalla);
   container-type: inline-size;
   container-name: pantalla;
 }
@@ -327,7 +365,15 @@
 */
 .capa-escena {
   position: absolute;
-  inset: 0;
+  /* 1 px más allá de la orilla de la pantalla (la recorta su `overflow`): la escena nunca termina justo en el borde. */
+  inset: -1px;
+}
+
+/* Lo mismo cuando la escena va directo en la pantalla (modo de inspección `?escena=`, o sin GSAP). */
+.phone-pantalla > .escena {
+  margin: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
 }
 
 /*
@@ -497,9 +543,11 @@
     color-mix(in oklab, var(--color-accent) calc(var(--mira-r, 0) * 75%), transparent);
 }
 
-[data-brillo="orilla"] .phone-mascota-halo {
-  box-shadow: inset calc(var(--mira-x, 0) * -0.45rem) calc(var(--mira-y, 0) * -0.45rem) 0.55rem -0.2rem
-    color-mix(in oklab, var(--color-on-accent) calc(var(--mira-r, 0) * 60%), transparent);
+/* Colores forzados: sin el contorno transparente (se pintaría como un aro; ver scenes.css). */
+@media (forced-colors: active) {
+  .phone-mascota-halo {
+    outline: none;
+  }
 }
 
 .phone-mascota-halo::before {
