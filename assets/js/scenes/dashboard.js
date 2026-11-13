@@ -11,7 +11,7 @@ import { contar, detener } from "./contar.js?v=aa71b9d321";
  *
  * La pantalla real se desplaza; aquí el contenido va en el orden real y lo que no cabe queda bajo el botón y la
  * barra, igual que en la app al abrirla. Datos de ejemplo coherentes entre sí: «Llevas 2 de 4 tareas de hoy»
- * (2/4), racha de 6 días, 1 proyecto activo, 1 tarea vencida y 2 de hoy sin hacer.
+ * (2/4), racha de 6 días en «Meditar 10 minutos» (el hábito diario de Notificaciones; «Leer 20 minutos», el del detalle de Hábitos, aún no tiene racha), 1 proyecto activo, 1 tarea vencida y 2 de hoy sin hacer.
  */
 export const id = "dashboard";
 
@@ -26,10 +26,10 @@ export function mount(contenedor) {
     <div class="escena ps-dash">
       ${logotipo()}
       <h2 class="ps-titulo">Tu día</h2>
-      <div class="ps-glass">Llevas 2 de 4 tareas de hoy. Tu racha activa: 6 días en Leer 20 minutos.</div>
+      <div class="ps-glass">Llevas 2 de 4 tareas de hoy. Tu racha activa: 6 días en Meditar 10 minutos.</div>
       <div class="ps-bento-card ps-bento-card--racha">
         <div class="ps-bento-etiqueta">Racha activa</div>
-        <div class="ps-bento-valor"><span data-contar="6">6</span> días — Leer 20 minutos</div>
+        <div class="ps-bento-valor"><span data-contar="6">6</span> días — Meditar 10 minutos</div>
       </div>
       <div class="ps-dash-fila">
         <div class="ps-bento-card">

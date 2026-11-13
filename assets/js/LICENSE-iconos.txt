@@ -44,8 +44,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 2. Íconos de Material de la barra inferior y del botón del asistente (Outlined.Home, AutoMirrored.Outlined.List,
-   Outlined.Notifications, Outlined.Person; burbuja de chat de `ui/common/IconoChat.kt`) y el check de las
-   preguntas (Filled.Check), paths de androidx.compose.material:material-icons-core 1.6.8.
+   Outlined.Notifications, Outlined.Person; burbuja de chat de `ui/common/IconoChat.kt`), el check de las
+   preguntas (Filled.Check) y los de la barra de detalle y las filas de Notificaciones (AutoMirrored.Filled.ArrowBack,
+   Filled.MoreVert), paths de androidx.compose.material:material-icons-core 1.6.8.
 
 Copyright 2024 The Android Open Source Project
 
