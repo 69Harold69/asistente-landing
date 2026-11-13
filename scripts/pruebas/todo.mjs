@@ -79,6 +79,7 @@ const EXCEPCIONES = {
   "lib/comun.mjs": "librería compartida",
   "lib/scroll.mjs": "librería (rueda real)",
   "lib/servidor.mjs": "librería (servidor de pruebas; también `npm run servir`)",
+  "vidrio-entregables.mjs": "herramienta manual: láminas y videos del vidrio para el dueño",
   "vidrio.mjs": "herramienta de comparación del vidrio (capturas, rendimiento, video), se corre a mano; el contraste lo corre `vidrio-contraste`",
 };
 function sinRegistrar() {

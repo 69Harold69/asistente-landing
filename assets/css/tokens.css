@@ -91,10 +91,10 @@
   /* Vidrio (#100, `?vidrio=1`): tarjetas de «Liquid Glass» ligero sobre la malla. `--vidrio-relleno` (0..1) es la opacidad del
      tinte (`?vidrio-relleno=0.3` lo cambia solo para comparar); el desenfoque es bajo a propósito: se debe seguir viendo la
      malla detrás. Contraste medido en píxeles: scripts/pruebas/vidrio.mjs. */
-  --vidrio-relleno: 0.3;
+  --vidrio-relleno: 0.2;
   --vidrio-tinte: 255 255 255;
   --vidrio-fondo: linear-gradient(180deg, rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) * 1.3)), rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) * 0.7)));
-  --vidrio-fondo-movil: rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) + 0.2));
+  --vidrio-fondo-movil: rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) + 0.3));
   --vidrio-mosaico: rgb(var(--vidrio-tinte) / 0.22);
   --vidrio-fondo-solido: #ffffff;
   --vidrio-desenfoque: 6px;
@@ -130,7 +130,7 @@
     --malla-linea-activa: 0.28;
     --malla-punto-reposo: 1;
     --malla-punto-activo: 0.3;
-    --vidrio-relleno: 0.3;
+    --vidrio-relleno: 0.2;
     --vidrio-tinte: 30 27 48;
     --vidrio-fondo-solido: #1e1b30;
     --vidrio-luz: rgb(255 255 255 / 0.22);
@@ -171,7 +171,7 @@
   --malla-linea-activa: 0.28;
   --malla-punto-reposo: 1;
   --malla-punto-activo: 0.3;
-  --vidrio-relleno: 0.3;
+  --vidrio-relleno: 0.2;
   --vidrio-tinte: 30 27 48;
   --vidrio-fondo-solido: #1e1b30;
   --vidrio-luz: rgb(255 255 255 / 0.22);
@@ -204,10 +204,10 @@
   --malla-linea-activa: 0.12;
   --malla-punto-reposo: 0.25;
   --malla-punto-activo: 0.14;
-  --vidrio-relleno: 0.3;
+  --vidrio-relleno: 0.2;
   --vidrio-tinte: 255 255 255;
   --vidrio-fondo: linear-gradient(180deg, rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) * 1.3)), rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) * 0.7)));
-  --vidrio-fondo-movil: rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) + 0.2));
+  --vidrio-fondo-movil: rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) + 0.3));
   --vidrio-mosaico: rgb(var(--vidrio-tinte) / 0.22);
   --vidrio-fondo-solido: #ffffff;
   --vidrio-desenfoque: 6px;

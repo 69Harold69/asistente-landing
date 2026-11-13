@@ -51,7 +51,6 @@ a:hover {
   crema en claro, 5.4:1 en oscuro) cae a 3.4–4.0:1 cuando el cursor enciende las líneas debajo. El kicker de cada fase y los
   enlaces en línea usan `--color-on-accent-soft` (el tono de los chips): ≥ 4.5:1 medido en píxeles (malla.mjs, vidrio-contraste.mjs).
 */
-.fase-kicker,
 main :is(p, span) a:not(.button) {
   color: var(--color-on-accent-soft);
 }
@@ -1228,7 +1227,7 @@ html[data-malla-recorrido] {
   font-weight: 600;
   font-size: 1.0625rem;
   line-height: 1.4;
-  color: var(--color-accent);
+  color: var(--color-on-accent-soft); /* no el acento puro: ver la nota de los enlaces en línea, arriba (#100) */
   margin-bottom: var(--space-1);
 }
 
@@ -2127,13 +2126,18 @@ html[data-vidrio-forma="unica"] :is(.fase-kicker, .hero-significado)::after {
   content: none;
 }
 
+/* «Desliza para descubrir» va en el flujo de la rejilla (debajo de la tarjeta), no absoluta al pie del hero: así no se
+   encima con la nota ni con el borde de la tarjeta. */
 html[data-vidrio] .pista-scroll {
   position: relative;
+  bottom: auto;
+  left: auto;
+  margin: var(--space-3) 0 0;
 }
 
 @media (min-width: 1024px) {
-  html[data-vidrio] .pista-scroll {
-    position: absolute;
+  html[data-vidrio] #hero {
+    align-content: start;
   }
 }
 
