@@ -461,7 +461,8 @@ try {
         const t = d ? getComputedStyle(d).translate : "none";
         const v = t === "none" ? [0, 0] : t.split(" ").map(parseFloat);
         const g = (n) => parseFloat(env.style.getPropertyValue(n)) || 0;
-        r.muestras.push({ t: performance.now(), enGiro: e.detail.enGiro, mascota: e.detail.mascota, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
+        // Sin Splash montado (otra escena en el teléfono) no hay mascota que medir: `montada` false.
+        r.muestras.push({ t: performance.now(), enGiro: e.detail.enGiro, mascota: e.detail.mascota, montada: !!d, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
       });
       /* Saltos (auditoría de #99, #88): cada vez que tilt.js escribe sus propiedades (una vez por cuadro de su resorte)
          se registra el valor, con un MutationObserver sobre el `style` del envoltorio. Muestrear en el evento de
@@ -475,7 +476,7 @@ try {
         const g = (n) => parseFloat(env.style.getPropertyValue(n)) || 0;
         // Tiempo del CUADRO (el mismo que recibe el rAF de tilt.js), no la hora del callback: con carga, dos pasos
         // seguidos pueden correr a 8 ms de reloj aunque sus cuadros estén a 33 ms, y eso duplicaba el salto.
-        r.pasos.push({ t: document.timeline.currentTime ?? performance.now(), x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
+        r.pasos.push({ t: document.timeline.currentTime ?? performance.now(), montada: !!d, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
       }).observe(env, { attributes: true, attributeFilter: ["style"] });
       // Muestreo independiente en cada cuadro: nadie más que stage.js escribe el `transform` del envoltorio
       // de la mascota (sólo "" o scale(n)) y la mascota no tiene `transform` en línea (la mirada va por `translate`).
@@ -520,13 +521,20 @@ try {
     // el recorrido (16 dp, antes 7).
     let salto = 0;
     let saltoTilt = 0;
+    let donde = "";
     for (let i = 1; i < pasos.length; i++) {
       const cuadros = Math.min(3, Math.max(1, (pasos[i].t - pasos[i - 1].t) / 16.7));
-      salto = Math.max(salto, Math.hypot(pasos[i].x - pasos[i - 1].x, pasos[i].y - pasos[i - 1].y) / cuadros);
+      // La escena del Splash se desmonta en las fases y se vuelve a montar al regresar: la mascota nueva nace donde
+      // ya va la mirada (no es un salto que se vea). Solo cuentan pares con la mascota montada en los dos.
+      const sm = pasos[i].montada && pasos[i - 1].montada ? Math.hypot(pasos[i].x - pasos[i - 1].x, pasos[i].y - pasos[i - 1].y) / cuadros : 0;
+      if (sm > salto) donde = `dt ${(pasos[i].t - pasos[i - 1].t).toFixed(1)} ms, (${pasos[i - 1].x.toFixed(2)}, ${pasos[i - 1].y.toFixed(2)}) → (${pasos[i].x.toFixed(2)}, ${pasos[i].y.toFixed(2)}), paso ${i} de ${pasos.length}`;
+      salto = Math.max(salto, sm);
       saltoTilt = Math.max(saltoTilt, Math.hypot(pasos[i].rx - pasos[i - 1].rx, pasos[i].ry - pasos[i - 1].ry) / cuadros);
     }
     ok(pasos.length > 60, `hubo pasos del resorte durante la coreografía (${pasos.length})`);
-    ok(salto < 3.7, `la mirada no da saltos entre cuadros de la coreografía (máx ${salto.toFixed(2)} px por cuadro)`);
+    const paresMontada = pasos.filter((p, i) => i && p.montada && pasos[i - 1].montada).length;
+    ok(paresMontada > 30, `hubo pasos con la mascota del Splash montada (${paresMontada})`);
+    ok(salto < 3.7, `la mirada no da saltos entre cuadros de la coreografía (máx ${salto.toFixed(2)} px por cuadro; ${donde})`);
     // Mismo criterio relativo que con 8° (1.2° por cuadro = 15 % del máximo): 15 % de los 20°. El máximo natural es
     // ~1.8° por cuadro (apagar 20° con el resorte de 0.18 s al entrar en un giro); un salto real se pasa de 3°.
     ok(saltoTilt < 20 * 0.15, `la inclinación no da saltos al entrar ni al salir del giro (máx ${saltoTilt.toFixed(2)}° por cuadro, tope ${(20 * 0.15).toFixed(1)}°)`);
@@ -543,7 +551,7 @@ try {
       }
     }
     ok(giroTilt.length >= 1 && Math.max(...giroTilt) < 1, `la inclinación se apaga durante el giro (giro más largo ${durMax.toFixed(0)} ms, ${giroTilt.length} muestras, máx ${Math.max(0, ...giroTilt).toFixed(2)}°)`);
-    const giro = muestras.filter((m) => m.enGiro);
+    const giro = muestras.filter((m) => m.enGiro && m.montada);
     const enMovimiento = giro.filter((m) => Math.hypot(m.x, m.y) > 2.5).length;
     ok(giro.length > 5 && enMovimiento / giro.length < 0.15, `durante los giros la mirada se apaga (${enMovimiento}/${giro.length} muestras con desplazamiento > 2.5 px)`);
     ok(e.angulo !== null && (e.angulo < 0.6 || e.angulo > 359.4) && e.escena === "splash", `al regresar arriba el teléfono queda de frente en splash (${e.angulo?.toFixed(2)}°, ${e.escena})`);
