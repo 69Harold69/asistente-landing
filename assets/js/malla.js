@@ -85,7 +85,7 @@ const MARGEN_HUECO = 5;
   sobre la tarjeta de vidrio (`?vidrio=1`, #fase-chat), que se protege con la propia tarjeta.
 */
 const SEL_TEXTO_TODO =
-  "main :is(h1, h2, h3, p, summary, dd, dt, .pista-scroll):not(.stage *), .pie :is(h2, h3, p, li), .site-header .wordmark";
+  "main :is(h1, h2, h3, p, summary, dd, dt, .pista-scroll, .button, .pasos-beta li span):not(.stage *), .pie :is(h2, h3, p, li), .site-header .wordmark";
 const REFERENCIA = { lineaReposo: 0.1, puntoReposo: 0.28, lineaActiva: 0.3, puntoActivo: 0.56 };
 let referencia = false;
 let vidrio = false;
