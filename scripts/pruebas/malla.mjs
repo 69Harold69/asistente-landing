@@ -393,7 +393,11 @@ try {
       ok(!!d && ["apagada", "normal", "ligera", "pausa-scroll", "ligera-pausa"].every((v) => d.enlaces.includes(v)), `enlaces a las variantes y a «apagada» (${d?.enlaces.join(", ")})`);
       ok(!!d && d.alto < d.vh * 0.6, `el panel no tapa media pantalla (${d?.alto.toFixed(0)} de ${d?.vh} px)`);
       // Un gesto de scroll rellena «Durante el scroll» y lo conserva al soltar.
-      for (let k = 0; k < 3; k++) await cdp.send("Input.synthesizeScrollGesture", { x: 195, y: 600, yDistance: -500, speed: 600, gestureSourceType: "touch" });
+      // (Toques reales por CDP, arriba del panel: synthesizeScrollGesture no desplaza aquí y un arrastre sobre el panel desplaza el panel.)
+      const toqueDiag = (type, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x: 195, y, id: 1 }] });
+      await toqueDiag("touchStart", 480);
+      for (let i = 1; i <= 40; i++) { await toqueDiag("touchMove", 480 - i * 8); await dormir(16); }
+      await toqueDiag("touchEnd", 0);
       await dormir(900);
       d = await leer();
       ok(!!d && /Durante el scroll \(último gesto, [\d.]+ s\): \d+ fps · mín \d+ · peor cuadro \d+ ms/.test(d.texto), `tras un scroll, «Durante el scroll» muestra fps, mínimo y peor cuadro (${d ? (d.texto.match(/Durante el scroll[^\n]*/) || [""])[0] : ""})`);

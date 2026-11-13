@@ -77,6 +77,7 @@ const EXCEPCIONES = {
   "lib/scroll.mjs": "librería (rueda real)",
   "lib/servidor.mjs": "librería (servidor de pruebas; también `npm run servir`)",
   "vidrio.mjs": "herramienta del PROTOTIPO de vidrio (punto de control 1), se corre a mano",
+  "medir-malla.mjs": "herramienta de medición de la malla (#98): produce una tabla, no es prueba; se corre a mano",
 };
 function sinRegistrar() {
   const corridos = new Set([...pasos, tactil].flatMap(([, , args]) => args).filter((x) => /\.(mjs|py)$/.test(x)).map((x) => path.normalize(x)));

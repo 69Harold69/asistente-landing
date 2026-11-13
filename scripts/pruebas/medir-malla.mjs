@@ -66,8 +66,16 @@ async function una(variante) {
   await page.evaluate(() => { window.__r.t.length = 0; window.__r.largas = 0; });
   const s0 = await tarea();
   const ini = Date.now();
+  let recorrido = 0;
   if (movil) {
-    for (let k = 0; k < 4; k++) await cdp.send("Input.synthesizeScrollGesture", { x: 195, y: 700, yDistance: -600, speed: 700, gestureSourceType: "touch" });
+    // Toques reales por CDP (synthesizeScrollGesture no desplaza en esta máquina): 5 arrastres de 40 pasos de 12 px cada ~16 ms, con fling.
+    const toque = (type, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x: 195, y, id: 1 }] });
+    for (let k = 0; k < 5; k++) {
+      await toque("touchStart", 760);
+      for (let i = 1; i <= 40; i++) { await toque("touchMove", 760 - i * 12); await dormir(16); }
+      await toque("touchEnd", 0);
+    }
+    recorrido = await page.evaluate(() => scrollY);
   } else {
     await page.mouse.move(700, 450);
     for (let k = 0; k < 60; k++) { await page.mouse.wheel(0, 60); await dormir(35); }
@@ -80,18 +88,18 @@ async function una(variante) {
   const dts95 = dts.slice().sort((x, y) => x - y)[Math.floor(dts.length * 0.95)] ?? NaN;
   const i2 = await info();
   await ctx.close();
-  return { reposoMs, reposoLargas, mallaFps, fpsScroll, p95Intervalo: dts95, scrollMs: ((s1 - s0) * 1000) / dur, scrollLargas: sr.largas, costoP50: i2?.costoP50 ?? NaN, costoJs: i2?.costoJsP50 ?? NaN, costoP95: i2?.costoP95 ?? NaN, nivel: i2?.nivel ?? NaN };
+  return { reposoMs, reposoLargas, mallaFps, fpsScroll, p95Intervalo: dts95, scrollMs: ((s1 - s0) * 1000) / dur, recorrido, scrollLargas: sr.largas, costoP50: i2?.costoP50 ?? NaN, costoJs: i2?.costoJsP50 ?? NaN, costoP95: i2?.costoP95 ?? NaN, nivel: i2?.nivel ?? NaN };
 }
 
 console.log(`# ${movil ? "móvil 390×844 DPR 2 táctil" : "escritorio 1440×900"} · CPU ×${cpu} · ${corridas} corridas (mediana)${extra ? ` · ${extra}` : ""}${a.args ? ` · ${a.args}` : ""}`);
-console.log("| variante | reposo ms/s | reposo T.largas | scroll ms/s | scroll fps (rAF) | scroll p95 intervalo ms | scroll T.largas | malla dib/s | costo cuadro p50 / p95 ms (JS p50) | nivel deg. |");
-console.log("|---|---|---|---|---|---|---|---|---|---|");
+console.log("| variante | reposo ms/s | reposo T.largas | scroll ms/s | scroll fps (rAF) | scroll p95 intervalo ms | scroll T.largas | px recorridos | malla dib/s | costo cuadro p50 / p95 ms (JS p50) | nivel deg. |");
+console.log("|---|---|---|---|---|---|---|---|---|---|---|");
 for (const v of variantes) {
   const rs = [];
   for (let i = 0; i < corridas; i++) rs.push(await una(v));
   const m = (k) => med(rs.map((r) => r[k]));
   const f = (n, d = 0) => (Number.isFinite(n) ? n.toFixed(d) : "–");
-  console.log(`| ${v} | ${f(m("reposoMs"))} | ${f(m("reposoLargas"))} | ${f(m("scrollMs"))} | ${f(m("fpsScroll"))} | ${f(m("p95Intervalo"))} | ${f(m("scrollLargas"))} | ${f(m("mallaFps"))} | ${f(m("costoP50"), 1)} / ${f(m("costoP95"), 1)} | ${f(m("nivel"))} |`);
+  console.log(`| ${v} | ${f(m("reposoMs"))} | ${f(m("reposoLargas"))} | ${f(m("scrollMs"))} | ${f(m("fpsScroll"))} | ${f(m("p95Intervalo"))} | ${f(m("scrollLargas"))} | ${f(m("recorrido"))} | ${f(m("mallaFps"))} | ${f(m("costoP50"), 1)} / ${f(m("costoP95"), 1)} | ${f(m("nivel"))} |`);
 }
 await navegador.close();
 await srv.cerrar();
