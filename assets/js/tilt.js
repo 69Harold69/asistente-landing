@@ -10,6 +10,7 @@
 
   Variante para comparar en la demostración: `?inclinacion=mayor` (11°/8°). Por defecto 8°/6°.
 
+  (Su rAF no se llama `cuadro`: malla.mjs cuenta solo los rAF con ese nombre.)
   Un solo rAF, sólo mientras algo se mueve: resortes amortiguados por tiempo (sin GSAP ni layout por
   cuadro; sólo propiedades personalizadas que alimentan `transform`/`translate`).
 
@@ -64,7 +65,7 @@ export function inicializarTilt() {
     s.setProperty("--mira-y", act.my.toFixed(3));
   };
 
-  function cuadro(t) {
+  function pasoResorte(t) {
     raf = 0;
     const dt = Math.min(0.05, Math.max(0.001, (t - tPrev) / 1000 || 0.016));
     tPrev = t;
@@ -84,13 +85,13 @@ export function inicializarTilt() {
       else sigue = true;
     }
     aplicar();
-    if (sigue) raf = requestAnimationFrame(cuadro);
+    if (sigue) raf = requestAnimationFrame(pasoResorte);
   }
 
   const arrancar = () => {
     if (raf) return;
     tPrev = performance.now();
-    raf = requestAnimationFrame(cuadro);
+    raf = requestAnimationFrame(pasoResorte);
   };
 
   const lim = (v) => Math.max(-1, Math.min(1, v));
