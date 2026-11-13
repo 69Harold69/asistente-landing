@@ -27,7 +27,7 @@ const ok = (cond, msg) => {
   if (!cond) problemas.push(msg);
 };
 const TAM = { movil: [390, 844, true], tablet: [820, 1180, true], escritorio: [1440, 900, false], "escritorio-1024": [1024, 768, false] };
-const SECCIONES = ["fase-chat", "fase-elementos", "fase-habitos", "fase-avisos", "fase-llamada", "cta"];
+const SECCIONES = ["hero", "fase-chat", "fase-elementos", "fase-habitos", "fase-avisos", "fase-llamada", "cta"];
 
 async function abrir({ tema = "light", tam = "escritorio", reducido = false, js = true }) {
   const [w, h, m] = TAM[tam];
@@ -152,17 +152,17 @@ try {
       /* el riel va de centro a centro de los puntos */
       const r0 = await riel(page);
       const alturaPuntos = r0.puntos[r0.puntos.length - 1].cy - r0.puntos[0].cy;
-      ok(r0.puntos.length === 6 && Math.abs(r0.alto - alturaPuntos) < 1.5, `el riel mide de primer a último punto (${r0.alto.toFixed(1)} px de ${alturaPuntos.toFixed(1)})`);
+      ok(r0.puntos.length === 7 && Math.abs(r0.alto - alturaPuntos) < 1.5, `el riel mide de primer a último punto (${r0.alto.toFixed(1)} px de ${alturaPuntos.toFixed(1)})`);
       ok(Math.abs(r0.ancho - 2) < 0.5, `riel de 2 px (${r0.ancho})`);
 
       const g = await geo(page);
       await irA(page, 0);
-      ok((await avance(page)) === 0, "relleno 0 en el hero (antes de «Chat»)");
+      ok((await avance(page)) === 0, "relleno 0 en el hero (primer punto «Inicio»)");
 
       /* el relleno llega a cada punto justo cuando su sección pasa a leerse */
       for (let i = 0; i < SECCIONES.length; i++) {
         const top = await topDe(page, SECCIONES[i]);
-        await irA(page, Math.min(Math.round(top - g.vh * 0.5 + 6), g.fin + g.vh));
+        await irA(page, i === 0 ? 0 : Math.min(Math.round(top - g.vh * 0.5 + 6), g.fin + g.vh));
         const estado = await page.evaluate(() => [...document.querySelectorAll(".nav-recorrido a")].map((a) => [a.getAttribute("aria-current"), a.hasAttribute("data-pasado")]));
         const idx = estado.findIndex((x) => x[0] === "location");
         const esp = (r0.puntos[i].cy - r0.puntos[0].cy) / alturaPuntos;
@@ -173,6 +173,19 @@ try {
       }
       await irA(page, g.fin);
       ok((await avance(page)) >= 0.999, "100 % al terminar #cta («Tu día»)");
+
+      /* el primer punto es «Inicio»: lleva al tope, deja el riel en 0 y el hash limpio */
+      const primero = await page.evaluate(() => {
+        const a = document.querySelector(".nav-recorrido a");
+        return { href: a.getAttribute("href"), texto: a.textContent.trim() };
+      });
+      ok(primero.href === "#hero" && primero.texto === "Inicio", `el primer punto es «Inicio» → #hero (${primero.href} «${primero.texto}»)`);
+      await page.locator(".nav-recorrido a").first().click();
+      await dormir(1800);
+      const vuelta = await page.evaluate(() => ({ y: Math.round(scrollY), cur: document.querySelector(".nav-recorrido a[aria-current]")?.getAttribute("href"), hash: location.hash, foco: document.activeElement?.id }));
+      ok(vuelta.y === 0 && vuelta.cur === "#hero" && vuelta.hash === "" && vuelta.foco === "hero", `«Inicio» vuelve al tope (scrollY ${vuelta.y}, actual ${vuelta.cur}, hash «${vuelta.hash}», foco ${vuelta.foco})`);
+      ok((await avance(page)) === 0, "tras «Inicio» el riel vuelve a 0");
+      await irA(page, g.fin);
 
       let prev = -1, mono = true;
       const tope = await topDe(page, "cta");
@@ -244,7 +257,7 @@ try {
       const ol = document.querySelector(".nav-recorrido ol");
       return { nav: getComputedStyle(document.querySelector(".nav-recorrido")).display, anclas: document.querySelectorAll(".nav-recorrido a[href^='#']").length, ol: !!ol };
     });
-    ok(v.anclas === 6, `los puntos siguen siendo 6 anclas (nav: ${v.nav})`);
+    ok(v.anclas === 7, `los puntos siguen siendo 7 anclas (nav: ${v.nav})`);
     ok((await avance(page)) === 0, "sin JS el relleno queda en 0 (solo el conector tenue entre los puntos)");
     await ctx.close();
   }
