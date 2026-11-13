@@ -54,6 +54,20 @@ const FRAME_REPOSO = 1000 / 30; // en reposo y en táctil se dibuja a 30 fps
 const MOVIMIENTO_RECIENTE = 900; // ms desde el último movimiento del cursor que cuentan como «interactuando»
 
 /*
+  Táctil (sin hover/puntero fino), donde el teléfono de gama media es el que sufre. Tres variantes, elegibles con
+  `?malla-movil=normal|ligera|pausa-scroll` (para comparar en un teléfono real con `?malla-diagnostico=1`):
+  - normal: 30 fps, canvas a DPR ≤ 2;
+  - ligera: 30 fps, canvas a DPR 1 (un cuarto de píxeles que rasterizar en un teléfono de DPR 2–3);
+  - pausa-scroll: como normal, pero no dibuja mientras el dedo hace scroll (la malla es fija: se queda quieta
+    y vuelve a ondular PAUSA_SCROLL ms después del último evento de scroll).
+  En escritorio no aplica. La que va por defecto se eligió midiendo con CPU ×4 (README).
+*/
+const VARIANTES_MOVIL = ["normal", "ligera", "pausa-scroll"];
+const MOVIL_POR_DEFECTO = "normal";
+const DPR_MAX_LIGERA = 1;
+const PAUSA_SCROLL = 180;
+
+/*
   Texto en color de acento (el kicker de cada fase y los enlaces en línea). Es el único texto cuyo contraste base es
   casi el mínimo (4.6:1 en claro, 5.4:1 en oscuro): cualquier línea de la malla detrás, aun en reposo, lo bajaría de
   4.5:1. El resto del texto (primario y secundario) se protege con las opacidades de `--malla-*` (tokens.css). Detrás de
@@ -62,6 +76,19 @@ const MOVIMIENTO_RECIENTE = 900; // ms desde el último movimiento del cursor qu
 */
 const SEL_TEXTO_ACENTO = "main a:not(.button):not(.link-card), .pie a:not(.link-card), .fase-kicker";
 const MARGEN_HUECO = 5;
+
+/*
+  PROTOTIPO `?malla=referencia` (punto de control 1; rama claude/landing-v2-control-1-vidrio, NO se mergea): la malla
+  más encendida, cerca de la referencia (del acento: líneas 0.10 → 0.30 y puntos 0.28 → 0.56, igual en claro y oscuro)
+  y a plena intensidad también detrás de las fases. Para que
+  el texto siga en AA, la malla abre hueco bajo TODO el texto de la portada (no solo el de acento), salvo el que va
+  sobre la tarjeta de vidrio (`?vidrio=1`, #fase-chat), que se protege con la propia tarjeta.
+*/
+const SEL_TEXTO_TODO =
+  "main :is(h1, h2, h3, p, summary, dd, dt, .pista-scroll, .button, .pasos-beta li span):not(.stage *), .pie :is(h2, h3, p, li), .site-header .wordmark";
+const REFERENCIA = { lineaReposo: 0.1, puntoReposo: 0.28, lineaActiva: 0.3, puntoActivo: 0.56 };
+let referencia = false;
+let vidrio = false;
 
 const MQ_FINO = "(hover: hover) and (pointer: fine)";
 const MQ_REDUCIDO = "(prefers-reduced-motion: reduce)";
@@ -95,6 +122,15 @@ export function fijarIntensidadRecorrido(valor) {
 }
 
 /** `?malla=pleno|medio|0.35`: solo para comparar niveles en el punto de control. */
+function varianteMovilDeUrl() {
+  try {
+    const v = new URLSearchParams(location.search).get("malla-movil");
+    return VARIANTES_MOVIL.includes(v) ? v : MOVIL_POR_DEFECTO;
+  } catch {
+    return MOVIL_POR_DEFECTO;
+  }
+}
+
 function aplicarParametro() {
   let p = null;
   try {
@@ -102,7 +138,16 @@ function aplicarParametro() {
   } catch {
     return;
   }
+  try {
+    vidrio = new URLSearchParams(location.search).get("vidrio") === "1";
+  } catch {}
+  raiz.toggleAttribute("data-vidrio", vidrio);
   if (!p) return;
+  if (p === "referencia") {
+    referencia = true;
+    fijarIntensidadRecorrido(1);
+    return;
+  }
   const v = p === "pleno" ? 1 : p === "medio" ? 0.5 : Number(p);
   if (Number.isFinite(v)) fijarIntensidadRecorrido(v);
 }
@@ -129,6 +174,21 @@ function montar(fasesRecorrido) {
   const mqFino = window.matchMedia(MQ_FINO);
   const mqReducido = window.matchMedia(MQ_REDUCIDO);
   const principal = document.getElementById("contenido");
+  /*
+    Cuadros de animación dibujados, leíbles en `canvas.cuadrosAnimados` (solo lectura). Lo usan las pruebas
+    (scripts/pruebas/malla.mjs) para contar y medir los cuadros de la malla sin depender del nombre de una función
+    ni de los demás rAF de la página (tilt.js, stage.js, progreso.js). Cuesta un incremento por cuadro.
+  */
+  let dibujados = 0;
+  Object.defineProperty(canvas, "cuadrosAnimados", { get: () => dibujados });
+  const varianteMovil = varianteMovilDeUrl();
+  const tactil = () => !mqFino.matches;
+  let enScroll = false; // pausa-scroll: el dedo está haciendo scroll
+  let finScroll = 0;
+  // Estado para el modo de diagnóstico (`?malla-diagnostico=1`, malla-diagnostico.js) y las pruebas.
+  Object.defineProperty(canvas, "mallaInfo", {
+    get: () => ({ variante: tactil() ? varianteMovil : "escritorio", dpr, ancho, alto, cuadros: dibujados, pausadaPorScroll: enScroll }),
+  });
   let ancho = 0;
   let alto = 0;
   let dpr = 1;
@@ -155,7 +215,9 @@ function montar(fasesRecorrido) {
   let radioPunto = new Float32Array(0);
   // Texto en acento: todos los elementos y, aparte, los que están cerca del viewport (se miden en cada cuadro porque
   // las revelaciones y el recorrido los mueven con `transform`).
-  const textoAcento = [...document.querySelectorAll(SEL_TEXTO_ACENTO)];
+  let textoAcento = [...document.querySelectorAll(referencia ? `${SEL_TEXTO_ACENTO}, ${SEL_TEXTO_TODO}` : SEL_TEXTO_ACENTO)];
+  // Con la tarjeta de vidrio, su texto no lleva hueco: lo protege la tarjeta.
+  if (referencia && vidrio) textoAcento = textoAcento.filter((el) => !el.closest("#fase-chat"));
   const textoAcentoCerca = new Set();
   const rangoHueco = document.createRange();
 
@@ -174,6 +236,11 @@ function montar(fasesRecorrido) {
       puntoReposo: num("--malla-punto-reposo", 0.8),
       puntoActivo: num("--malla-punto-activo", 0.4),
     };
+    if (referencia) {
+      // Como la referencia: la malla es del acento también en reposo (líneas 0.10, puntos 0.28) y se enciende a 0.30 / 0.56.
+      c.reposo = c.activo;
+      Object.assign(c, REFERENCIA);
+    }
     /*
       Colores OPACOS ya mezclados con el fondo (`--color-bg`): lo único que hay detrás del canvas es ese color liso
       (las secciones no pintan fondo; lo que sí lo pinta, tarjetas y pie, tapa el canvas). Así dos trazos que se cruzan
@@ -196,7 +263,8 @@ function montar(fasesRecorrido) {
     const nuevoAncho = canvas.clientWidth;
     const nuevoAlto = canvas.clientHeight;
     if (nuevoAncho < 1 || nuevoAlto < 1) return;
-    const nuevoDpr = Math.min(window.devicePixelRatio || 1, DPR_MAX, Math.sqrt(PIXELES_MAX / (nuevoAncho * nuevoAlto)));
+    const dprMax = tactil() && varianteMovil === "ligera" ? DPR_MAX_LIGERA : DPR_MAX;
+    const nuevoDpr = Math.min(window.devicePixelRatio || 1, dprMax, Math.sqrt(PIXELES_MAX / (nuevoAncho * nuevoAlto)));
     if (nuevoAncho === ancho && nuevoAlto === alto && nuevoDpr === dpr) return;
     ancho = nuevoAncho;
     alto = nuevoAlto;
@@ -322,7 +390,7 @@ function montar(fasesRecorrido) {
   }
 
   const reduce = () => mqReducido.matches;
-  const puedeAnimar = () => !reduce() && visible && !document.hidden && ancho > 0;
+  const puedeAnimar = () => !reduce() && visible && !document.hidden && !enScroll && ancho > 0;
   const reacciona = () => mqFino.matches && !reduce();
 
   function agendar() {
@@ -363,6 +431,7 @@ function montar(fasesRecorrido) {
     e.fuerza += (objetivo - e.fuerza) * aFuerza;
     if (Math.abs(objetivo - e.fuerza) < 0.003) e.fuerza = objetivo;
     dibujar(t);
+    dibujados++;
     agendar();
   }
 
@@ -428,7 +497,28 @@ function montar(fasesRecorrido) {
     { passive: true },
   );
   mqReducido.addEventListener?.("change", aplicarModo);
-  mqFino.addEventListener?.("change", () => agendar());
+  mqFino.addEventListener?.("change", () => {
+    medir(); // la variante ligera cambia la resolución del canvas
+    agendar();
+  });
+  if (varianteMovil === "pausa-scroll") {
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!tactil() || reduce()) return;
+        if (!enScroll) {
+          enScroll = true;
+          parar();
+        }
+        clearTimeout(finScroll);
+        finScroll = setTimeout(() => {
+          enScroll = false;
+          agendar();
+        }, PAUSA_SCROLL);
+      },
+      { passive: true },
+    );
+  }
   document.addEventListener("visibilitychange", () => (document.hidden ? parar() : agendar()));
   // <main> fuera de pantalla (el pie, opaco, lo cubre todo): no hay nada que ver ni que animar.
   if (principal) {

@@ -10,7 +10,6 @@
 
   Variante para comparar en la demostración: `?inclinacion=mayor` (11°/8°). Por defecto 8°/6°.
 
-  (Su rAF no se llama `cuadro`: malla.mjs cuenta solo los rAF con ese nombre.)
   Un solo rAF, sólo mientras algo se mueve: resortes amortiguados por tiempo (sin GSAP ni layout por
   cuadro; sólo propiedades personalizadas que alimentan `transform`/`translate`).
 
