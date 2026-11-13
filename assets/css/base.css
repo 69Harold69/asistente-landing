@@ -46,6 +46,16 @@ a:hover {
   text-decoration-thickness: 2px;
 }
 
+/*
+  Texto en acento sobre la malla (#100): con la malla dibujada detrás de todo, sin huecos, el acento puro (4.6:1 sobre el
+  crema en claro, 5.4:1 en oscuro) cae a 3.4–4.0:1 cuando el cursor enciende las líneas debajo. El kicker de cada fase y los
+  enlaces en línea usan `--color-on-accent-soft` (el tono de los chips): ≥ 4.5:1 medido en píxeles (malla.mjs, vidrio-contraste.mjs).
+*/
+.fase-kicker,
+main :is(p, span) a:not(.button) {
+  color: var(--color-on-accent-soft);
+}
+
 :focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 3px;

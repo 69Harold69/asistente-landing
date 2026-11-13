@@ -319,10 +319,9 @@ al primer clic en el toggle).
   nivel funde dos capas (la de reposo se apaga y la del acento se enciende); mezclar colores y opacidades por
   separado dejaba un valle de contraste a medio camino. Los topes de `--malla-linea-activa`/`--malla-punto-activo`
   salen del texto secundario (el de menor contraste base: 5.5:1 en claro, 7.3:1 en oscuro): en oscuro 0.28 / 0.30
-  y en claro 0.12 / 0.14 dejan ≥ 4.5:1; la referencia (0.30 / 0.56) no cabe debajo del texto. El texto **en acento**
-  (kicker de cada fase y enlaces en línea; selector `SEL_TEXTO_ACENTO`) tiene un contraste base de 4.6:1 en claro y
-  ninguna línea de la malla cabe detrás, así que ahí la malla no se pinta (hueco de 5 px alrededor de cada línea de
-  texto, medido en coordenadas de página y vuelto a medir al cambiar el layout).
+  y en claro 0.12 / 0.14 dejan ≥ 4.5:1; la referencia (0.30 / 0.56) no cabe debajo del texto. La malla se dibuja **detrás de todo,
+  sin huecos bajo el texto** (#100; antes había un hueco de 5 px bajo el texto en acento): el contraste del texto en
+  acento sobre las líneas más tenues queda en el límite de AA (ver «Vidrio» abajo, donde sí está medido).
   **Intensidad:** es `opacity` del canvas (la compone la GPU, cero costo por cuadro). `--malla-intensidad` vale 1;
   mientras una fase del teléfono (`.secciones > section[id^="fase-"]`) cruza el centro de la pantalla, malla.js pone
   `data-malla-recorrido` en `<html>` y pasa a `--malla-recorrido` (`tokens.css`, hoy **0.5**), con 700 ms de
@@ -399,6 +398,43 @@ al primer clic en el toggle).
   Finanzas dice que no hay conexión a bancos ni asesoría financiera. Llamadas no repite `#fase-llamada`: una línea y un
   enlace ancla. «Quién está detrás» es una línea con el nombre y la ciudad que el sitio ya publica y un enlace a `/privacidad/`
   (sin foto, redes ni correo nuevos).
+
+### Vidrio sobre la malla (#100, `?vidrio=1`)
+
+Tarjetas de vidrio ligero («Liquid Glass») sobre la malla encendida, **solo con `?vidrio=1`** hasta que el dueño lo apruebe
+(sin el parámetro la página es la de siempre, sin huecos en la malla). `?vidrio=1` basta: activa la malla «referencia»
+(`?malla=referencia`: color de acento, líneas 0.10 → 0.30, puntos 0.28 → 0.56, a pleno también detrás de las fases) y el
+vidrio; `?malla=referencia&vidrio=1` sigue funcionando igual. malla.js pone `data-vidrio` (y `data-vidrio-forma="unica"`) en
+`<html>`; todo el estilo es CSS (`base.css`, bloque «VIDRIO», y los tokens `--vidrio-*` de `tokens.css`). Sin JS no hay vidrio.
+
+- **Qué es vidrio:** relleno translúcido (`--vidrio-relleno`, 0.30 por defecto), `backdrop-filter: blur(--vidrio-desenfoque 6px)
+  saturate(1.5)`, aro con degradado luminoso (luz arriba, casi nada abajo; pseudo-elemento con `mask`), luz especular
+  `inset` en el canto de arriba y sombra tenue. Todo por tokens, en claro y oscuro.
+- **Dónde:** cada fase del recorrido, el hero, «Tu día», «Cómo funciona», «Lo que viene», las preguntas y «Quién está detrás».
+  El texto pequeño va siempre sobre vidrio; el titular y los títulos de sección (texto grande, AA = 3:1) van sueltos sobre
+  la malla.
+- **Dos composiciones comparables:** `?vidrio=1` = **separada** (la recomendada: píldora de vidrio para el kicker, título
+  suelto sobre la malla y una tarjeta con los párrafos y el CTA; cada pregunta, paso y tarjeta de «Lo que viene» es su
+  tarjeta) y `?vidrio=1&vidrio-forma=unica` = **única** (una sola tarjeta con kicker, título y texto; en los bloques, el
+  contenedor entero es la tarjeta y lo de adentro, mosaicos casi sin relleno).
+- **Parámetros de demostración (solo para comparar):** `?vidrio-relleno=<0..1>` y `?vidrio-desenfoque=<px>`.
+- **Animación:** la tarjeta de una fase es el `::after` de la sección y su opacidad es la variable `--vidrio-op`, que
+  revelar.js anima junto con la primera pieza (sin tarjeta vacía antes del texto). La salida en escritorio sigue
+  desvaneciendo la sección entera; mientras su opacidad es < 1 la sección es raíz de fondo y el desenfoque deja de ver la
+  malla (queda un relleno translúcido sin desenfoque durante ese desvanecimiento).
+- **Móvil:** la franja del teléfono (`.stage`) sigue siendo opaca (tapa el texto que sube por detrás), pero con `?vidrio=1`
+  malla.js pone dentro un segundo canvas (`.malla-franja`) que repinta ahí el trozo de malla que le toca (`drawImage` del
+  canvas principal, también bajo el degradado de abajo), así que la malla es continua de borde a borde. Prueba
+  `vidrio-franja.mjs`. En móvil/tablet solo las tarjetas grandes llevan desenfoque; las pequeñas de una lista, relleno
+  `--vidrio-fondo-movil` (relleno + 0.2) sin desenfoque.
+- **Respaldos:** `@supports not (backdrop-filter)`, `prefers-reduced-transparency: reduce` y `prefers-contrast: more` →
+  relleno sólido y sin desenfoque (con más contraste, además el aro es sólido).
+- **Texto en acento:** al quitar los huecos de la malla, el kicker y los enlaces en línea de `<main>` usan
+  `--color-on-accent-soft` (el tono de los chips) también sin vidrio: con el acento puro caían a 3.4–4.0:1 con el cursor
+  encendiendo la malla debajo.
+- **Contraste:** `node vidrio-contraste.mjs` (registrado en `todo.mjs`) mide en píxeles renderizados, con la malla en
+  movimiento y el cursor real encima, títulos grandes contra 3:1 y todo el texto pequeño contra 4.5:1; con `--barrido`
+  repite para varios rellenos. Los números del barrido están en el reporte de la PR.
 
 ### Aviso de iPhone («avísame cuando salga»)
 
