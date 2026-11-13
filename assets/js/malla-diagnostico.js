@@ -4,7 +4,7 @@
 
   Sirve para que Harold mida la malla en su teléfono real antes de publicar (instrucciones en el LEEME del punto de
   control 1 y en el README). Muestra, en una caja fija abajo a la izquierda:
-    - la variante activa de la malla (`?malla-movil=normal|ligera|pausa-scroll`; en escritorio, «escritorio»), el DPR
+    - la variante activa de la malla (`?malla-movil=normal|ligera|pausa-scroll|ligera-pausa`; en escritorio, «escritorio»), el DPR
       del canvas y su tamaño;
     - fps de la PÁGINA (cuadros que pinta el navegador, medidos con requestAnimationFrame): promedio y mínimo por
       segundo de los últimos 5 s;
@@ -13,7 +13,7 @@
   y enlaces para cambiar de variante (recargan la página con el parámetro). Sin estilos inline (base.css,
   `.malla-diagnostico`) ni terceros.
 */
-const VARIANTES = ["normal", "ligera", "pausa-scroll"];
+const VARIANTES = ["normal", "ligera", "pausa-scroll", "ligera-pausa"];
 const VENTANA = 5; // segundos
 
 export function iniciarDiagnostico() {

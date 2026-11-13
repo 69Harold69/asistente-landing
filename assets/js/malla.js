@@ -59,11 +59,12 @@ const MOVIMIENTO_RECIENTE = 900; // ms desde el último movimiento del cursor qu
   - normal: 30 fps, canvas a DPR ≤ 2;
   - ligera: 30 fps, canvas a DPR 1 (un cuarto de píxeles que rasterizar en un teléfono de DPR 2–3);
   - pausa-scroll: como normal, pero no dibuja mientras el dedo hace scroll (la malla es fija: se queda quieta
-    y vuelve a ondular PAUSA_SCROLL ms después del último evento de scroll).
+    y vuelve a ondular PAUSA_SCROLL ms después del último evento de scroll);
+  - ligera-pausa: las dos cosas (DPR 1 y pausa durante el scroll).
   En escritorio no aplica. La que va por defecto se eligió midiendo con CPU ×4 (README).
 */
-const VARIANTES_MOVIL = ["normal", "ligera", "pausa-scroll"];
-const MOVIL_POR_DEFECTO = "normal";
+const VARIANTES_MOVIL = ["normal", "ligera", "pausa-scroll", "ligera-pausa"];
+const MOVIL_POR_DEFECTO = "ligera";
 const DPR_MAX_LIGERA = 1;
 const PAUSA_SCROLL = 180;
 
@@ -234,7 +235,7 @@ function montar(fasesRecorrido) {
     const nuevoAncho = canvas.clientWidth;
     const nuevoAlto = canvas.clientHeight;
     if (nuevoAncho < 1 || nuevoAlto < 1) return;
-    const dprMax = tactil() && varianteMovil === "ligera" ? DPR_MAX_LIGERA : DPR_MAX;
+    const dprMax = tactil() && varianteMovil.startsWith("ligera") ? DPR_MAX_LIGERA : DPR_MAX;
     const nuevoDpr = Math.min(window.devicePixelRatio || 1, dprMax, Math.sqrt(PIXELES_MAX / (nuevoAncho * nuevoAlto)));
     if (nuevoAncho === ancho && nuevoAlto === alto && nuevoDpr === dpr) return;
     ancho = nuevoAncho;
@@ -472,7 +473,7 @@ function montar(fasesRecorrido) {
     medir(); // la variante ligera cambia la resolución del canvas
     agendar();
   });
-  if (varianteMovil === "pausa-scroll") {
+  if (varianteMovil === "pausa-scroll" || varianteMovil === "ligera-pausa") {
     window.addEventListener(
       "scroll",
       () => {
