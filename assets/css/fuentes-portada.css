@@ -75,10 +75,26 @@
 @font-face {
   font-family: "Baloo 2 Fallback";
   src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("Arial");
-  font-weight: 600 800;
+  font-weight: 700 800;
   size-adjust: 94.5%;
   ascent-override: 114%;
   descent-override: 55.4%;
+  line-gap-override: 0%;
+}
+
+/*
+  Semibold aparte (#100, auditoría): con 94.5% (medido para el ExtraBold) el significado del hero y los kickers en
+  respaldo medían 4.8% MÁS que con Baloo 2 SemiBold (medido en el navegador, Liberation Sans Bold = métricas de Arial
+  Bold), y la píldora del significado partía en 2 renglones entre 336 y 344 px. 94.5 / 1.048 = 90.2%; ascent/descent
+  = hhea de Baloo 2 (1.078/0.524) / 0.902, así el alto de línea no cambia.
+*/
+@font-face {
+  font-family: "Baloo 2 Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("Arial");
+  font-weight: 600;
+  size-adjust: 90.2%;
+  ascent-override: 119.5%;
+  descent-override: 58.1%;
   line-gap-override: 0%;
 }
 
