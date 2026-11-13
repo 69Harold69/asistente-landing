@@ -144,6 +144,9 @@ teléfono empiece a girar hacia la fase siguiente. Cómo está resuelto, sin toc
   hash a una fase cae en el mismo punto (`scroll-margin-top` de la sección). Las pruebas que miden con `scrollTo`
   apagan el imán en la página (`scroll-snap-type: none` en línea), porque Chrome también ajusta al ancla un
   `scrollTo` que cae cerca.
+- *Compactación extra bajo 380 px.* A 360 px las tarjetas de Elementos y Avisos no cabían bajo la franja: la sección
+  pasa de 14 a 10 px de margen lateral (un renglón menos por párrafo) y la separación bajo la píldora y el título baja
+  8 → 4 y 14 → 10 px. La letra del párrafo no cambia (17 px).
 - *Alto visible.* `--vh-pequeno` (`tokens.css`) es `1svh` (con respaldo `1vh`): la franja (44 / 50 svh), el `padding-top`
   y el `min-height` de las secciones, y `stage.js` (una sonda `.sonda-alto` de `100svh`, no `innerHeight`) usan el viewport
   PEQUEÑO, el de las barras de Chrome a la vista, que no cambia al esconderlas: el layout no salta y el cálculo de «cabe /

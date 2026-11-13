@@ -2228,6 +2228,24 @@ html[data-vidrio] .pie .fase-kicker::after {
   }
 }
 
+/* Compactación extra, solo bajo 380 px de ancho (360×740 y similares; #122). A 360 px las tarjetas de Elementos y de
+   Avisos medían ~382 px contra ~374 de zona útil bajo la franja: no cabían enteras en el punto del imán. Se gana un
+   renglón por párrafo con ancho (no con letra): la sección pasa de 14 a 10 px de margen lateral, y la separación bajo
+   la píldora y bajo el título baja 8 → 4 px y 14 → 10 px. El párrafo sigue en 17 px con interlineado 1.5. */
+@media (max-width: 379.98px) {
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) {
+    padding-inline: 0.625rem;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-titulo {
+    margin-bottom: 0.625rem;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-kicker {
+    margin-bottom: 0.25rem;
+  }
+}
+
 /* «Desliza para descubrir» va en el flujo de la rejilla (debajo de la tarjeta), no absoluta al pie del hero: así no se
    encima con la nota ni con el borde de la tarjeta. */
 html[data-vidrio] .pista-scroll {
