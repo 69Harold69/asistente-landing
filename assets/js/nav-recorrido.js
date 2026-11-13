@@ -19,10 +19,12 @@ export function inicializarNavRecorrido(escenario) {
     if (!seccion.hasAttribute("tabindex")) seccion.setAttribute("tabindex", "-1");
     a.addEventListener("click", (e) => {
       e.preventDefault();
-      window.scrollTo({ top: escenario.destinoDe(id), behavior: reducido() ? "instant" : "smooth" });
+      // «Inicio» lleva al tope de la página (no al borde del hero, que empieza bajo el encabezado).
+      window.scrollTo({ top: id === "hero" ? 0 : escenario.destinoDe(id), behavior: reducido() ? "instant" : "smooth" });
       // El foco acompaña al salto (lectores de pantalla, teclado), sin mover el scroll.
       seccion.focus({ preventScroll: true });
-      if (history.replaceState) history.replaceState(null, "", `#${id}`);
+      // Al inicio la URL queda sin hash: es la página tal cual, no una sección.
+      if (history.replaceState) history.replaceState(null, "", id === "hero" ? location.pathname + location.search : `#${id}`);
     });
   });
 
@@ -36,11 +38,14 @@ export function inicializarNavRecorrido(escenario) {
   /*
     Riel entre los puntos (#60): el relleno llega a cada punto justo cuando su sección pasa a leerse
     (la misma línea que usa `seccionLeida`: la mitad de la ventana), con tramos iguales porque los
-    puntos están a la misma distancia. Antes del primer punto vale 0 y en el último, 1.
+    puntos están a la misma distancia. En el primer punto («Inicio», el tope de la página) vale 0 y en el último, 1.
   */
   const lista = nav.querySelector("ol");
   function avance(y) {
-    const anclas = enlaces.map((a) => escenario.destinoDe(a.getAttribute("href").slice(1)) - window.innerHeight * 0.5);
+    const anclas = enlaces.map((a) => {
+      const id = a.getAttribute("href").slice(1);
+      return id === "hero" ? 0 : escenario.destinoDe(id) - window.innerHeight * 0.5;
+    });
     const n = anclas.length - 1;
     if (n < 1 || y <= anclas[0]) return 0;
     if (y >= anclas[n]) return 1;
