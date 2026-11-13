@@ -42,7 +42,7 @@ html[data-final="c"] .bloque > .container::before {
 html[data-final="c"] .bloque .fase-titulo {
   max-width: 16ch;
   margin-inline: auto;
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
   font-size: clamp(2.3rem, 1.5rem + 3.4vw, 4.1rem);
   line-height: 1.04;
   letter-spacing: -0.015em;
@@ -150,8 +150,8 @@ html[data-final="c"] .pasos-lista > li:nth-child(2) p::before {
   height: 1.9rem;
   border-radius: 50%;
   background:
-    linear-gradient(135deg, transparent 46%, #fff 47% 55%, transparent 56%) 0.62rem 0.5rem / 0.5rem 0.5rem no-repeat,
-    linear-gradient(45deg, transparent 46%, #fff 47% 55%, transparent 56%) 0.28rem 0.7rem / 0.55rem 0.55rem no-repeat,
+    linear-gradient(to top right, transparent 38%, #fff 40% 60%, transparent 62%) 0.46rem 0.88rem / 0.42rem 0.42rem no-repeat,
+    linear-gradient(to bottom right, transparent 40%, #fff 42% 58%, transparent 60%) 0.82rem 0.5rem / 0.72rem 0.72rem no-repeat,
     var(--color-success);
 }
 
@@ -285,19 +285,22 @@ html[data-final="c"] .bloque--breve > .container::before {
   height: 19rem;
 }
 
-html[data-final="c"] .bloque--breve .fase-titulo::after {
+/* La rayita de firma va sobre la tarjeta, fuera de la caja del título. */
+html[data-final="c"] .bloque--breve .bloque-intro::before {
   content: "";
-  display: block;
+  position: absolute;
+  top: -1.2rem;
+  left: 50%;
   width: 3.4rem;
   height: 4px;
-  margin: var(--space-2) auto 0;
+  transform: translateX(-50%);
   border-radius: 4px;
   background: var(--color-accent);
 }
 
 html[data-final="c"] .bloque--breve .bloque-intro {
   max-width: 38rem;
-  margin-top: var(--space-3);
+  margin-top: 4rem;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
   font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
