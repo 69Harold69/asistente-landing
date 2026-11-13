@@ -1,0 +1,277 @@
+/*
+  PROTOTIPO #102 — Dirección B «Mosaico».
+  Idea: la parte final como un mosaico de vidrio de piezas de distinto peso (bento). Cada sección abre con el título a
+  la izquierda y la introducción a la derecha, en una sola franja; «Cómo funciona» es un recorrido horizontal con
+  nodos sobre un hilo; «Lo que viene» es un mosaico asimétrico donde «Llamadas con Yaruki» pesa más porque ya tiene su
+  escena arriba; las preguntas van en dos columnas; «Quién está detrás» lleva un punto-mascota luminoso.
+  Solo cambia la presentación: HTML, textos y enlaces son los de hoy. Mismas superficies de vidrio (tokens `--vidrio-*`).
+*/
+
+html[data-final="b"] {
+  --b-gap: clamp(0.75rem, 0.4rem + 1.2vw, 1.25rem);
+  --b-glow: color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+
+html[data-final="b"] .bloque {
+  padding-top: clamp(4rem, 2.5rem + 5vw, 7rem);
+}
+
+/* ---- Cabecera de sección: título | introducción en una franja ---- */
+html[data-final="b"] .bloque .fase-titulo {
+  font-size: clamp(2.1rem, 1.45rem + 2.6vw, 3.4rem);
+  line-height: 1.04;
+  max-width: 14ch;
+  margin-bottom: var(--space-3);
+}
+
+html[data-final="b"] .bloque-intro {
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+
+@media (min-width: 900px) {
+  html[data-final="b"] #como-funciona > .container,
+  html[data-final="b"] #lo-que-viene > .container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+    column-gap: var(--space-5);
+    align-items: end;
+  }
+
+  html[data-final="b"] #como-funciona > .container > .fase-titulo,
+  html[data-final="b"] #lo-que-viene > .container > .fase-titulo { grid-column: 1; grid-row: 1; margin-bottom: 0; }
+  html[data-final="b"] #como-funciona > .container > .bloque-intro,
+  html[data-final="b"] #lo-que-viene > .container > .bloque-intro { grid-column: 2; grid-row: 1; justify-self: end; }
+  html[data-final="b"] .bloque > .container > :is(.pasos-lista, .viene-lista) { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* ---- Cómo funciona: recorrido horizontal, nodos sobre un hilo ---- */
+html[data-final="b"] .pasos-lista {
+  position: relative;
+  gap: var(--b-gap);
+  margin-top: 5.25rem;
+}
+
+@media (min-width: 861px) {
+  html[data-final="b"] .pasos-lista::before {
+    content: "";
+    position: absolute;
+    top: -1.4rem;
+    left: 1.6rem;
+    right: 1.6rem;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 20%, transparent));
+  }
+}
+
+html[data-final="b"] .pasos-lista > li {
+  padding: var(--space-4) var(--space-3) var(--space-3);
+  border-radius: var(--radius-lg);
+}
+
+html[data-final="b"] .pasos-lista > li::before {
+  position: absolute;
+  top: -2.6rem;
+  left: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  margin: 0;
+  border-radius: 50%;
+  font-size: 1.35rem;
+  background: var(--color-accent);
+  color: var(--color-on-accent-ui);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+html[data-final="b"] .pasos-lista h3 {
+  font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.45rem);
+  line-height: 1.2;
+  margin-bottom: var(--space-1);
+}
+
+html[data-final="b"] .pasos-lista p {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 860px) {
+  html[data-final="b"] .pasos-lista {
+    margin-top: 4.25rem;
+    gap: 4rem;
+  }
+
+  html[data-final="b"] .pasos-lista > li {
+    margin-top: 0.5rem;
+  }
+}
+
+/* ---- Lo que viene: mosaico asimétrico ---- */
+html[data-final="b"] .viene-lista {
+  gap: var(--b-gap);
+  margin-top: var(--space-4);
+}
+
+@media (min-width: 901px) {
+  html[data-final="b"] .tarjeta-viene {
+    grid-column: span 2;
+  }
+
+  html[data-final="b"] .tarjeta-viene:nth-child(1) { grid-column: span 4; }
+  html[data-final="b"] .tarjeta-viene:nth-child(2) { grid-column: span 2; grid-row: span 2; }
+  html[data-final="b"] .tarjeta-viene:nth-child(3),
+  html[data-final="b"] .tarjeta-viene:nth-child(4) { grid-column: span 2; }
+  html[data-final="b"] .tarjeta-viene:nth-child(5) { grid-column: 1 / -1; }
+}
+
+html[data-final="b"] .tarjeta-viene,
+html[data-final="b"] .tarjeta-viene:nth-child(n + 4) {
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 900px) {
+  html[data-final="b"] .tarjeta-viene:nth-child(1) { grid-column: 1 / -1; }
+  html[data-final="b"] .tarjeta-viene:nth-child(5) { grid-column: 1 / -1; }
+}
+
+html[data-final="b"] .tarjeta-viene h3 {
+  font-size: clamp(1.2rem, 1.05rem + 0.5vw, 1.4rem);
+}
+
+html[data-final="b"] .tarjeta-viene p {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+/* La pieza grande (Llamadas) lleva un resplandor de acento detrás del vidrio y un título mayor. */
+html[data-final="b"] .tarjeta-viene:nth-child(1) {
+  isolation: isolate;
+  padding: var(--space-4) var(--space-4) var(--space-4);
+}
+
+html[data-final="b"] .tarjeta-viene:nth-child(1)::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(60% 90% at 100% 0%, var(--b-glow), transparent 70%);
+}
+
+html[data-final="b"] .tarjeta-viene:nth-child(1) h3 {
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+}
+
+html[data-final="b"] .tarjeta-viene:nth-child(1) p {
+  max-width: 32rem;
+  font-size: 1.125rem;
+}
+
+/* ---- Preguntas: dos columnas ---- */
+html[data-final="b"] .bloque-preguntas {
+  display: block;
+}
+
+@media (min-width: 900px) {
+  html[data-final="b"] .bloque-preguntas {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+    column-gap: var(--space-5);
+    align-items: end;
+    row-gap: var(--space-4);
+  }
+
+  html[data-final="b"] .bloque-cabecera {
+    display: contents;
+    position: static;
+  }
+
+  html[data-final="b"] .bloque-cabecera > .fase-titulo { grid-column: 1; grid-row: 1; margin-bottom: 0; }
+  html[data-final="b"] .bloque-cabecera > .bloque-intro { grid-column: 2; grid-row: 1; justify-self: end; }
+  html[data-final="b"] .preguntas-lista { grid-column: 1 / -1; grid-row: 2; }
+}
+
+html[data-final="b"] .preguntas-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--b-gap);
+  align-items: start;
+  margin-top: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  html[data-final="b"] .preguntas-lista { margin-top: 0; }
+}
+
+@media (max-width: 860px) {
+  html[data-final="b"] .preguntas-lista { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+}
+
+html[data-final="b"] .pregunta {
+  border-radius: var(--radius-lg);
+}
+
+html[data-final="b"] .pregunta summary {
+  min-height: 4rem;
+  padding: var(--space-2) var(--space-3);
+  font-size: clamp(1.05rem, 1rem + 0.25vw, 1.2rem);
+}
+
+html[data-final="b"] .pregunta[open] {
+  grid-column: 1 / -1;
+  box-shadow: inset 0 1px 0 var(--vidrio-luz), inset 0 0 0 1px var(--color-accent), var(--vidrio-sombra);
+}
+
+html[data-final="b"] .pregunta-respuesta {
+  max-width: none;
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+html[data-final="b"] .pregunta-respuesta p {
+  font-size: 1.0625rem;
+}
+
+html[data-final="b"] .pregunta summary:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
+  border-radius: var(--radius-lg);
+}
+
+/* ---- Quién está detrás: punto-mascota luminoso + tarjeta ancha ---- */
+html[data-final="b"] .bloque--breve > .container {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-4);
+  row-gap: 0;
+  align-items: center;
+}
+
+html[data-final="b"] .bloque--breve > .container::before {
+  content: "";
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: clamp(4.5rem, 3rem + 6vw, 7.5rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgb(255 255 255 / 0.85) 0 7%, transparent 8%),
+    radial-gradient(circle at 50% 50%, var(--color-accent) 0 52%, color-mix(in srgb, var(--color-accent) 32%, transparent) 54% 72%, transparent 74%);
+  box-shadow: 0 0 4rem 0.5rem var(--b-glow);
+}
+
+html[data-final="b"] .bloque--breve .fase-titulo { grid-column: 2; margin-bottom: var(--space-2); }
+html[data-final="b"] .bloque--breve .bloque-intro { grid-column: 2; max-width: 44rem; padding: var(--space-3); border-radius: var(--radius-lg); font-size: 1.125rem; }
+
+@media (max-width: 560px) {
+  html[data-final="b"] .bloque--breve > .container { grid-template-columns: minmax(0, 1fr); }
+  html[data-final="b"] .bloque--breve > .container::before { grid-column: 1; grid-row: auto; margin-bottom: var(--space-3); width: 4.5rem; }
+  html[data-final="b"] .bloque--breve .fase-titulo,
+  html[data-final="b"] .bloque--breve .bloque-intro { grid-column: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-final="b"] .pregunta { transition: box-shadow 200ms ease; }
+}
