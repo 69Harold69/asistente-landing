@@ -134,8 +134,8 @@ tramo previo al primer vuelo; en móvil/tablet la franja del teléfono entra
 desde abajo del CTA, así que el tramo arranca recién cuando la franja terminó
 de entrar en pantalla (#11: antes el círculo crecía con el teléfono todavía
 cortado por el borde inferior del viewport) y termina antes del primer giro.
-**Avisos (`#fase-avisos`, 2026-10-13):** la pestaña Notificaciones de la app (`scenes/avisos.js`, de `NotificacionesScreen.kt`), entre el logro y la llamada; en bucle baja un aviso del sistema y una fila se desliza a "Completar". Por esta fase, la llamada pasó a la columna derecha (`.seccion--derecha`). **Hábitos → logro (`TRAMOS_LOGRO`):**
-la sección mide 160vh: primero el heatmap quieto, después un cruce de opacidad
+**Avisos (`#fase-avisos`, 2026-10-13):** la pestaña Notificaciones de la app (`scenes/avisos.js`, de `NotificacionesScreen.kt`), entre el logro y la llamada; en bucle baja un aviso del sistema y una fila se desliza a "Completar" y aparece el diálogo de confirmación. Por esta fase, la llamada pasó a la columna derecha (`.seccion--derecha`). **Hábitos → logro (`TRAMOS_LOGRO`):**
+la sección mide 160vh: primero el detalle del hábito quieto, después un cruce de opacidad
 de frente a "logro". **Cierre:** el Dashboard aterriza al centro de la página,
 queda quieto mientras se lee el CTA y sube con la página cuando el sticky se
 suelta (`#cta` mide 150vh en escritorio).

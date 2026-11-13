@@ -884,77 +884,84 @@
   border-radius: 999px;
 }
 
-/* Hábitos (HabitoDetalleScreen.kt + heatmap del mockup) --------------------- */
+/* Hábitos (HabitoDetalleScreen.kt, 0.1.6a) -------------------------------------- */
 
 .ps-habitos-cuerpo {
   display: flex;
   flex-direction: column;
-  padding: calc(16 * var(--dp)) calc(24 * var(--dp)) calc(24 * var(--dp));
+  padding: calc(24 * var(--dp));
 }
 
 .ps-habitos .ps-titulo {
   margin-bottom: calc(16 * var(--dp));
 }
 
-.ps-heatmap {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: calc(6 * var(--dp));
+/* BarraElemento: «Regresar» y ⋮ de 48dp, título al centro-izquierda. */
+.ps-topbar--elemento {
+  justify-content: flex-start;
+  padding: 0 calc(4 * var(--dp));
+}
+
+.ps-topbar--elemento .ps-topbar-titulo {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ps-topbar-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: calc(48 * var(--dp));
+  height: calc(48 * var(--dp));
+}
+
+.ps-topbar-icono svg {
+  width: calc(24 * var(--dp));
+  height: calc(24 * var(--dp));
+  fill: currentColor;
+}
+
+.ps-habito-estado {
+  margin: 0 0 calc(8 * var(--dp));
+  font-size: calc(16 * var(--dp));
+  line-height: 1.5;
+}
+
+/* Creado: labelSmall, color `secondary` de M3. */
+.ps-habito-creado {
+  margin: 0 0 calc(24 * var(--dp));
+  font-size: calc(11 * var(--dp));
+  line-height: calc(16 / 11);
+  /* `MaterialTheme.colorScheme.secondary` es el violeta de acento de la app (capturas de la 0.1.6a). */
+  color: var(--ps-acento-texto);
+}
+
+.ps-habitos .ps-btn {
+  width: 100%;
+}
+
+.ps-habitos .ps-fila-switch {
   margin-bottom: calc(16 * var(--dp));
 }
 
-.ps-celda {
-  aspect-ratio: 1;
-  border-radius: calc(6 * var(--dp));
-  background: var(--color-border);
+/* Spacer 8dp + 16dp entre «Pausar» y «Editar». */
+.ps-habitos .ps-btn--primario {
+  margin-top: calc(24 * var(--dp));
 }
 
-/*
-  Sólo 2 estados reales: cumplido (verde éxito) y vacío. Un día sin cumplir
-  es una celda vacía, nunca roja (el dato real es booleano por día — punto
-  de control 2, bug 8). `--suave` es sólo textura tipo GitHub, sigue siendo
-  "cumplido".
-*/
-.ps-celda--hecha {
-  background: var(--color-success);
-}
-
-.ps-celda--suave {
-  background: color-mix(in srgb, var(--color-success) 55%, var(--color-border));
-}
-
-/* Días anteriores a la creación del hábito: fuera de la ventana, sin dato. */
-.ps-celda--fuera {
-  background: none;
-  box-shadow: inset 0 0 0 1px var(--color-border);
-}
-
-/* Hoy: anillo de éxito vacío; al cumplirse se llena con una capa que entra
-   por `opacity` (no se transiciona `background-color`). */
-.ps-celda--hoy {
-  position: relative;
-  background: none;
-  box-shadow: inset 0 0 0 calc(2 * var(--dp)) var(--color-success);
-}
-
-.ps-celda--hoy::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--color-success);
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.ps-celda--hoy.ps-celda--hecha::after {
-  opacity: 1;
-  transform: none;
-}
-
-.ps-racha {
-  display: inline-block;
+/* titleLarge (22sp): «Aún sin racha» / «1 día». */
+.ps-card p.ps-racha {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(22 * var(--dp));
+  line-height: calc(28 / 22);
+  margin-bottom: calc(4 * var(--dp));
+  transform-origin: left center;
 }
 
 /* Card de M3 por defecto: superficie, radio 12dp, padding 16dp. */
@@ -966,7 +973,7 @@
 }
 
 .ps-card-titulo {
-  font-weight: 600;
+  font-weight: 400;
   font-size: calc(16 * var(--dp));
   margin-bottom: calc(8 * var(--dp));
 }
@@ -977,17 +984,6 @@
   line-height: 1.45;
 }
 
-.ps-divisor {
-  height: 1px;
-  background: var(--color-border);
-  margin: calc(8 * var(--dp)) 0;
-}
-
-.ps-card .ps-nota {
-  font-size: calc(13 * var(--dp));
-  color: var(--color-text-secondary);
-}
-
 .ps-fila-switch {
   display: flex;
   align-items: center;
@@ -995,9 +991,24 @@
   margin-bottom: 0;
 }
 
-.ps-fila-switch span {
+.ps-fila-textos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-right: calc(8 * var(--dp));
+}
+
+/* titleSmall (14sp, 500). */
+.ps-fila-textos span {
   font-weight: 600;
   font-size: calc(14 * var(--dp));
+}
+
+/* bodySmall (12sp) en `secondary`. */
+.ps-fila-textos .ps-fila-sub {
+  font-weight: 400;
+  font-size: calc(12 * var(--dp));
+  color: var(--ps-acento-texto);
 }
 
 /* Switch de M3: pista 52×32dp; apagado = contorno + perilla chica de 16dp,
@@ -1529,6 +1540,71 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1;
+}
+
+/* IconButton ⋮ de la fila: se resta su margen para no engordar la fila. */
+.ps-aviso-mas {
+  display: flex;
+  flex-shrink: 0;
+  margin: calc(-12 * var(--dp)) calc(-8 * var(--dp)) calc(-12 * var(--dp)) 0;
+  width: calc(48 * var(--dp));
+  height: calc(48 * var(--dp));
+  align-items: center;
+  justify-content: center;
+}
+
+.ps-aviso-mas svg {
+  width: calc(24 * var(--dp));
+  height: calc(24 * var(--dp));
+  fill: var(--color-text);
+}
+
+/* AlertDialog de M3 de la confirmación (NotificacionesScreen.kt:319-336) sobre su scrim. */
+.ps-dialogo-fondo {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 calc(24 * var(--dp));
+  background: rgb(0 0 0 / 0.32);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ps-dialogo {
+  width: 100%;
+  padding: calc(24 * var(--dp));
+  border-radius: calc(28 * var(--dp));
+  background: var(--color-bg-elevated);
+}
+
+.ps-dialogo-titulo {
+  font-size: calc(22 * var(--dp));
+  line-height: calc(28 / 22);
+  margin-bottom: calc(16 * var(--dp));
+}
+
+.ps-dialogo p {
+  margin: 0 0 calc(24 * var(--dp));
+  font-size: calc(14 * var(--dp));
+  line-height: calc(20 / 14);
+  color: var(--color-text-secondary);
+}
+
+.ps-dialogo-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: calc(8 * var(--dp));
+  font-size: calc(14 * var(--dp));
+  font-weight: 600;
+  color: var(--ps-acento-texto);
+}
+
+.ps-dialogo-acciones span {
+  padding: calc(10 * var(--dp)) calc(12 * var(--dp));
 }
 
 .ps-aviso-titulo,
