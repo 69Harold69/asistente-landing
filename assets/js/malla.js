@@ -77,6 +77,19 @@ const PAUSA_SCROLL = 180;
 const SEL_TEXTO_ACENTO = "main a:not(.button):not(.link-card), .pie a:not(.link-card), .fase-kicker";
 const MARGEN_HUECO = 5;
 
+/*
+  PROTOTIPO `?malla=referencia` (punto de control 1; rama claude/landing-v2-control-1-vidrio, NO se mergea): la malla
+  más encendida, cerca de la referencia (del acento: líneas 0.10 → 0.30 y puntos 0.28 → 0.56, igual en claro y oscuro)
+  y a plena intensidad también detrás de las fases. Para que
+  el texto siga en AA, la malla abre hueco bajo TODO el texto de la portada (no solo el de acento), salvo el que va
+  sobre la tarjeta de vidrio (`?vidrio=1`, #fase-chat), que se protege con la propia tarjeta.
+*/
+const SEL_TEXTO_TODO =
+  "main :is(h1, h2, h3, p, summary, dd, dt, .pista-scroll):not(.stage *), .pie :is(h2, h3, p, li), .site-header .wordmark";
+const REFERENCIA = { lineaReposo: 0.1, puntoReposo: 0.28, lineaActiva: 0.3, puntoActivo: 0.56 };
+let referencia = false;
+let vidrio = false;
+
 const MQ_FINO = "(hover: hover) and (pointer: fine)";
 const MQ_REDUCIDO = "(prefers-reduced-motion: reduce)";
 
@@ -125,7 +138,16 @@ function aplicarParametro() {
   } catch {
     return;
   }
+  try {
+    vidrio = new URLSearchParams(location.search).get("vidrio") === "1";
+  } catch {}
+  raiz.toggleAttribute("data-vidrio", vidrio);
   if (!p) return;
+  if (p === "referencia") {
+    referencia = true;
+    fijarIntensidadRecorrido(1);
+    return;
+  }
   const v = p === "pleno" ? 1 : p === "medio" ? 0.5 : Number(p);
   if (Number.isFinite(v)) fijarIntensidadRecorrido(v);
 }
@@ -193,7 +215,9 @@ function montar(fasesRecorrido) {
   let radioPunto = new Float32Array(0);
   // Texto en acento: todos los elementos y, aparte, los que están cerca del viewport (se miden en cada cuadro porque
   // las revelaciones y el recorrido los mueven con `transform`).
-  const textoAcento = [...document.querySelectorAll(SEL_TEXTO_ACENTO)];
+  let textoAcento = [...document.querySelectorAll(referencia ? `${SEL_TEXTO_ACENTO}, ${SEL_TEXTO_TODO}` : SEL_TEXTO_ACENTO)];
+  // Con la tarjeta de vidrio, su texto no lleva hueco: lo protege la tarjeta.
+  if (referencia && vidrio) textoAcento = textoAcento.filter((el) => !el.closest("#fase-chat"));
   const textoAcentoCerca = new Set();
   const rangoHueco = document.createRange();
 
@@ -212,6 +236,11 @@ function montar(fasesRecorrido) {
       puntoReposo: num("--malla-punto-reposo", 0.8),
       puntoActivo: num("--malla-punto-activo", 0.4),
     };
+    if (referencia) {
+      // Como la referencia: la malla es del acento también en reposo (líneas 0.10, puntos 0.28) y se enciende a 0.30 / 0.56.
+      c.reposo = c.activo;
+      Object.assign(c, REFERENCIA);
+    }
     /*
       Colores OPACOS ya mezclados con el fondo (`--color-bg`): lo único que hay detrás del canvas es ese color liso
       (las secciones no pintan fondo; lo que sí lo pinta, tarjetas y pie, tapa el canvas). Así dos trazos que se cruzan

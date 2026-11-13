@@ -448,7 +448,7 @@ try {
       const page = await ctx.newPage();
       guardia.instalar(page, `malla contraste ${tema}`);
       await page.addInitScript(scriptInicial({ tema }));
-      await page.goto(srv.url + "/?malla=pleno", { waitUntil: "load" });
+      await page.goto(srv.url + "/" + (a.query && a.query !== true ? String(a.query) : "?malla=pleno"), { waitUntil: "load" });
       await esperarCarga(page, { portada: true });
       await page.waitForSelector("canvas.malla-fondo", { state: "attached", timeout: 6000 }).catch(() => {});
       await dormir(600);
