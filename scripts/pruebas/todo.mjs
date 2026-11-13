@@ -62,6 +62,8 @@ const pasos = [
   ["vidrio-franja", process.execPath, ["vidrio-franja.mjs", "--salida", path.join(salida, "vidrio-franja")]],
   // Lectura en móvil (#122): el texto de cada fase se alcanza a leer antes de que el teléfono gire hacia la siguiente (360×740, 390×844, 407×904 y con barras de Chrome, claro y oscuro).
   ["movil-lectura", process.execPath, ["movil-lectura.mjs"]],
+  // Imán de lectura en móvil táctil (#122): con un gesto suave el scroll termina en la fase siguiente; no regresa al salir; el gesto fuerte pasa de largo; nada fuera del recorrido, con «reducir movimiento» ni en escritorio.
+  ["movil-iman", process.execPath, ["movil-iman.mjs", "--temas", "light,dark"]],
   // Pool del chat (auditoría de la Fase 2): cada escenario llega a su final, con y sin movimiento, sin cortes ni desbordes.
   ["pool-chat", process.execPath, ["pool-chat.mjs", "--salida", path.join(salida, "pool-chat")]],
   ["capturas", process.execPath, ["capturas.mjs", "--tamanos", "escritorio,tablet,tablet768,tabletapaisada,movil", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],

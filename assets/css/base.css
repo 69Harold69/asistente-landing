@@ -927,6 +927,46 @@ strong {
   }
 }
 
+/*
+  Imán de lectura (#122, solo táctil ≤ 1023 px y sin «reducir movimiento»): `iman.js` pone `data-iman` en <html> y
+  coloca un ancla invisible (`.iman`) sobre la tarjeta de cada fase del recorrido, con `scroll-margin-top` = alto de la
+  franja + su degradado. El snap es el del navegador, de PROXIMIDAD: solo atrapa si el gesto termina cerca de un ancla, y
+  lo resuelve dentro de la inercia del propio gesto (no hay un segundo movimiento hecho con JS). Un ancla más alta que la
+  pantalla (chat, «Tu día») deja leerla libre de arriba a abajo. `data-desarmado` apaga el ancla de la que el usuario
+  está saliendo, para que el imán atrape al llegar y nunca jale de regreso. Sin JS, en escritorio o con «reducir
+  movimiento» no hay imán.
+*/
+html[data-iman] {
+  scroll-snap-type: y proximity;
+}
+
+.imanes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 0;
+  pointer-events: none;
+}
+
+.iman {
+  position: absolute;
+  left: 0;
+  width: 1px;
+}
+
+html[data-iman] .iman:not([data-desarmado]) {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+
+/* Un enlace con hash a una fase deja su tarjeta en el mismo punto que el imán (bajo la franja y su degradado), también
+   en las tarjetas más altas que la pantalla, donde el snap deja el scroll libre: borde de la sección + 2 svh de su
+   `padding-top` sobre la franja = tarjeta; se sube el degradado (2.5rem) y el aire del imán (4 px). */
+html[data-iman] .secciones > .seccion {
+  scroll-margin-top: calc(2.5rem + 4px - 2 * var(--vh-pequeno));
+}
+
 @media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
   .seccion:not(.seccion-hero):not(#cta) {
     padding-bottom: var(--space-6);

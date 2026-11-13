@@ -15,6 +15,7 @@ import { inicializarProgreso } from "./progreso.js?v=aa71b9d321";
 import { inicializarMagneticos } from "./magnetico.js?v=aa71b9d321";
 import { inicializarNavRecorrido } from "./nav-recorrido.js?v=aa71b9d321";
 import { inicializarMalla } from "./malla.js?v=aa71b9d321";
+import { inicializarIman } from "./iman.js?v=aa71b9d321";
 
 /**
  * GSAP y ScrollTrigger se inyectan desde aquí, en orden (`async = false`), y no van como `<script defer>`
@@ -94,3 +95,5 @@ inicializarProgreso();
 // Los magnéticos sólo toman los CTA activos (`.button--primary`).
 inicializarMagneticos();
 inicializarNavRecorrido(escenario);
+// Imán de lectura en móvil táctil (#122): solo con la coreografía armada (no en el modo de inspección `?escena=`).
+if (escenario) inicializarIman();
