@@ -497,8 +497,7 @@ Sin JS no hay malla (no hay canvas): las tarjetas quedan con relleno sólido sob
   desvaneciendo la sección entera; mientras su opacidad es < 1 la sección es raíz de fondo y el desenfoque deja de ver la
   malla (queda un relleno translúcido sin desenfoque durante ese desvanecimiento).
 - **Móvil:** la franja del teléfono (`.stage`) sigue siendo opaca (tapa el texto que sube por detrás), pero malla.js pone siempre
-  dentro un segundo canvas (`.malla-franja`) que repinta ahí el trozo de malla que le toca (`drawImage` del
-  canvas principal, también bajo el degradado de abajo), así que la malla es continua de borde a borde. Prueba
+  dentro un segundo canvas (`.malla-franja`) que repinta ahí el trozo de malla que le toca (traza otra vez la misma malla con el origen desplazado: copiar con `drawImage` rasterizaba el canvas principal dentro del cuadro y costaba ~5 ms con CPU ×4; la geometría se lee solo al hacer scroll o cambiar de tamaño; también bajo el degradado de abajo), así que la malla es continua de borde a borde. Prueba
   `vidrio-franja.mjs`. En móvil/tablet solo las tarjetas grandes llevan desenfoque; las pequeñas de una lista, relleno
   `--vidrio-fondo-movil` (relleno + 0.3) sin desenfoque.
 - **Respaldos:** `@supports not (backdrop-filter)`, `prefers-reduced-transparency: reduce` y `prefers-contrast: more` →
