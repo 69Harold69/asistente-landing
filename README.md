@@ -405,11 +405,12 @@ al primer clic en el toggle).
   bloques de texto de la portada (peor píxel con el cursor real barriendo cada uno).
 - **Inclinación y mirada (`tilt.js`, `scenes.css`, `phone.css`, #27, #99):**
   - **Inclinación («te voltea a ver»):** el teléfono gira hacia el cursor hasta **20° a los lados y 10°
-    arriba/abajo** (por defecto), con peso: resortes amortiguados por tiempo (0.28 s al seguir, sin GSAP, un
-    solo rAF que se detiene cuando todo llegó a su objetivo). **Vuelve despacio al centro** (1.1 s) al salir
-    el cursor de la ventana o si no se mueve en 4 s. Durante cada giro/vuelo se apaga rápido (0.18 s) y
-    retoma desde 0 al aterrizar, sin saltos. Va por `--tilt-x/--tilt-y/--tilt-p/--tilt-dx` en `.phone-tilt`
-    (solo `transform`, compuesto; el giro de `.phone` y el vuelo de `.escenario-3d` están en otros envoltorios).
+    arriba/abajo** (decisión de Harold tras compararlo con 15°/8° y 25°/12°), con peso: resortes amortiguados
+    por tiempo (0.28 s al seguir, sin GSAP, un solo rAF que se detiene cuando todo llegó a su objetivo).
+    **Vuelve despacio al centro** (1.1 s) al salir el cursor de la ventana o si no se mueve en 4 s. Durante
+    cada giro/vuelo se apaga rápido (0.18 s) y retoma desde 0 al aterrizar, sin saltos. Va por
+    `--tilt-x/--tilt-y/--tilt-p/--tilt-dx` en `.phone-tilt` (solo `transform`, compuesto; el giro de `.phone`
+    y el vuelo de `.escenario-3d` están en otros envoltorios).
   - **Por qué antes casi no se notaba a los lados (revisión de Harold, #99):** la perspectiva era de 1600 px y
     el trapecio de `rotateY` es proporcional a ancho·sen(θ)/perspectiva; el teléfono es angosto (296 px contra
     641 de alto), así que a 8° los bordes izquierdo y derecho sólo diferían 16 px, mientras 6° arriba/abajo
@@ -423,11 +424,7 @@ al primer clic en el toggle).
     vuelo se ve igual y no hay salto al aterrizar. El recorrido lateral llega al máximo a un 34 % del ancho
     de la ventana (o antes si el borde está más cerca); arriba/abajo, cada lado por su distancia al borde.
     Un desplazamiento lateral leve (hasta 10 px) acompaña el giro. Medidas (1440×900, hero y fases, cursor en
-    el borde): 8°/6° de antes → 16 px laterales contra 12 px verticales; 15°/8° → 54 / 29 px; 20°/10° → 72 /
-    36 px; 25°/12° → 89 / 44 px.
-  - **Variantes para que Harold compare:** `?inclinacion=15` (15° / 8°), `?inclinacion=20` (20° / 10°, la de
-    por defecto) y `?inclinacion=25` (25° / 12°); el envoltorio lleva `data-inclinacion`. No hay botón ni se
-    promociona.
+    el borde): 8°/6° de antes → 16 px laterales contra 12 px verticales; 20°/10° → 72 / 36 px.
   - **Dónde aplica:** `min-width: 1024px` + `hover: hover` + `pointer: fine` + sin reduced-motion. La
     tablet con mouse (768–1023 px) **no** inclina: el teléfono ahí está en la franja del recorrido de una
     columna y la perspectiva lo acercaría al texto vecino.
@@ -437,11 +434,10 @@ al primer clic en el toggle).
     tamaño) y vuelve exacto a su centro en reposo, más **un brillo suave del lado del cursor**: un halo
     (`box-shadow` afuera del círculo, desplazado hacia el cursor; en el Splash en `--color-on-accent`, en la
     espalda en `--color-accent`), con opacidad proporcional a `--mira-r` (0 sin mirada, sin JS, en táctil y
-    con reduced-motion). Es un realce propio de la landing, la app no lo tiene. Para comparar, `?brillo=orilla`
-    lo pinta como realce en la orilla interior del círculo (`inset`). Se aplica con la propiedad `translate`,
-    que se compone con el `transform` de la coreografía y con la respiración sin pisarlos. Se apaga —y vuelve
-    suave al centro— durante los giros, mientras la mascota del hero crece con el scroll (`mascota > 1.02`) y
-    al salir el cursor.
+    con reduced-motion). Es un realce propio de la landing, la app no lo tiene. Se aplica con la propiedad
+    `translate`, que se compone con el `transform` de la coreografía y con la respiración sin pisarlos. Se
+    apaga —y vuelve suave al centro— durante los giros, mientras la mascota del hero crece con el scroll
+    (`mascota > 1.02`) y al salir el cursor.
   - **Líneas finas en los bordes de la caja (#99):** el círculo se mueve a posiciones subpíxel como capa
     compuesta (respira con `transform`) dentro del contexto 3D del teléfono inclinado; un `outline`
     transparente amplía la caja que se rasteriza, así sus bordes nunca quedan pegados a píxeles pintados, y ya
