@@ -325,7 +325,7 @@ al primer clic en el toggle).
   transición; en el hero, «Tu día» (`#cta`) y todo lo que sigue vuelve a 1. API para el vidrio (#100) y la
   demostración: `fijarIntensidadRecorrido(0..1)` / `intensidadRecorrido()` exportadas de `malla.js`, o
   `?malla=pleno|medio|<0..1>` en la URL (solo para comparar niveles). **Rendimiento:** un solo
-  `requestAnimationFrame` (la función `cuadro`), sin asignaciones por cuadro (arreglos tipados reutilizados), un
+  `requestAnimationFrame` (las pruebas cuentan sus cuadros con `canvas.cuadrosAnimados`), sin asignaciones por cuadro (arreglos tipados reutilizados), un
   `beginPath` por nivel de opacidad, **30 fps en reposo y en táctil, 60 fps solo mientras el cursor se mueve**; DPR
   ≤ 2 y ≤ 8 Mpx de canvas; cero cuadros con la pestaña oculta y con `<main>` fuera de pantalla (el pie opaco lo
   cubre todo; `IntersectionObserver`). La malla queda **fija** respecto al viewport (sin parallax con el scroll: lo

@@ -129,6 +129,13 @@ function montar(fasesRecorrido) {
   const mqFino = window.matchMedia(MQ_FINO);
   const mqReducido = window.matchMedia(MQ_REDUCIDO);
   const principal = document.getElementById("contenido");
+  /*
+    Cuadros de animación dibujados, leíbles en `canvas.cuadrosAnimados` (solo lectura). Lo usan las pruebas
+    (scripts/pruebas/malla.mjs) para contar y medir los cuadros de la malla sin depender del nombre de una función
+    ni de los demás rAF de la página (tilt.js, stage.js, progreso.js). Cuesta un incremento por cuadro.
+  */
+  let dibujados = 0;
+  Object.defineProperty(canvas, "cuadrosAnimados", { get: () => dibujados });
   let ancho = 0;
   let alto = 0;
   let dpr = 1;
@@ -363,6 +370,7 @@ function montar(fasesRecorrido) {
     e.fuerza += (objetivo - e.fuerza) * aFuerza;
     if (Math.abs(objetivo - e.fuerza) < 0.003) e.fuerza = objetivo;
     dibujar(t);
+    dibujados++;
     agendar();
   }
 

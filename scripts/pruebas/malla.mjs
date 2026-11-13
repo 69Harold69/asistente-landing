@@ -36,29 +36,29 @@ const ok = (cond, msg) => {
 };
 
 /*
-  Cuenta y mide solo los cuadros que DIBUJAN de la malla. La función de rAF se llama `cuadro` (a 30 fps salta la mitad
-  de las llamadas sin dibujar); un cuadro dibujó si llamó a clearRect sobre el canvas .malla-fondo.
+  Cuenta y mide solo los cuadros que DIBUJAN de la malla. malla.js expone `canvas.cuadrosAnimados` (cuadros de
+  animación dibujados; a 30 fps la mitad de las llamadas de su rAF no dibujan). Se envuelven TODOS los rAF de la página
+  y se atribuye a la malla el callback durante el cual ese contador subió: no depende del nombre de ninguna función ni
+  se confunde con los rAF de tilt.js, stage.js o progreso.js. Los redibujados que no son animación (tema, tamaño,
+  scroll con reduced-motion) no cuentan.
 */
 const CONTADOR = `
   window.__malla = { cuadros: 0, tiempos: [], largas: [] };
-  let dibujo = false;
-  const clear = CanvasRenderingContext2D.prototype.clearRect;
-  CanvasRenderingContext2D.prototype.clearRect = function (...args) {
-    if (this.canvas && this.canvas.className === "malla-fondo") dibujo = true;
-    return clear.apply(this, args);
+  let lienzo = null;
+  const animados = () => {
+    lienzo ??= document.querySelector("canvas.malla-fondo");
+    return lienzo ? lienzo.cuadrosAnimados ?? 0 : 0;
   };
   const raf = window.requestAnimationFrame.bind(window);
   window.requestAnimationFrame = (cb) =>
     raf((t) => {
-      if (cb.name === "cuadro") {
-        dibujo = false;
-        const t0 = performance.now();
-        cb(t);
-        if (dibujo) {
-          window.__malla.tiempos.push(performance.now() - t0);
-          window.__malla.cuadros++;
-        }
-      } else cb(t);
+      const antes = animados();
+      const t0 = performance.now();
+      cb(t);
+      if (animados() > antes) {
+        window.__malla.tiempos.push(performance.now() - t0);
+        window.__malla.cuadros++;
+      }
     });
   try {
     new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__malla.largas.push(e.duration)))
@@ -150,11 +150,12 @@ try {
       if (!c) return null;
       const cs = getComputedStyle(c);
       const r = c.getBoundingClientRect();
-      return { n: lista.length, aria: c.getAttribute("aria-hidden"), pe: cs.pointerEvents, pos: cs.position, z: cs.zIndex, padre: c.parentElement.tagName, ancho: r.width, alto: r.height, vw: innerWidth, vh: innerHeight, tabindex: c.getAttribute("tabindex"), otros: document.querySelectorAll("canvas.malla-hero").length };
+      return { n: lista.length, contador: typeof c.cuadrosAnimados, aria: c.getAttribute("aria-hidden"), pe: cs.pointerEvents, pos: cs.position, z: cs.zIndex, padre: c.parentElement.tagName, ancho: r.width, alto: r.height, vw: innerWidth, vh: innerHeight, tabindex: c.getAttribute("tabindex"), otros: document.querySelectorAll("canvas.malla-hero").length };
     });
     ok(!!info, "el canvas .malla-fondo existe");
     if (info) {
       ok(info.n === 1, `hay UN solo canvas de malla (${info.n})`);
+      ok(info.contador === "number", `expone su contador de cuadros (canvas.cuadrosAnimados: ${info.contador})`);
       ok(info.otros === 0, "ya no hay un canvas por sección (.malla-hero)");
       ok(info.aria === "true", "aria-hidden=\"true\"");
       ok(info.pe === "none", "pointer-events: none");
