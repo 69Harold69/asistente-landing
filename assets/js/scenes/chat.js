@@ -1,11 +1,12 @@
 import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js?v=aa71b9d321";
 
 /**
- * Chat vivo (etapa 5, plan 4.3 y sección 2) — pool de 6 escenarios, uno al
+ * Chat vivo (etapa 5, plan 4.3 y sección 2) — pool de 8 escenarios, uno al
  * azar por entrada a la sección, sin repetir el anterior inmediato.
- * Visual idéntico a `ChatScreen.kt`/`TarjetaElementoChat.kt`: tecleo en el
+ * Visual idéntico a `ChatScreen.kt`/`TarjetaElementoChat.kt` (0.1.6a: barra
+ * «Chat» + «Nuevo chat», :327-335; sin chip de voz, que la app no tiene): tecleo en el
  * input → burbuja del usuario → "Pensando..." → tarjeta rica animada (o
- * Confirmar/Rechazar → se "toca" Confirmar → "Confirmado ✓"). Uno de los 6
+ * Confirmar/Rechazar → se "toca" Confirmar → "Confirmado ✓"). Uno de los 8
  * es un mensaje de voz, como en la app: barra de grabación (papelera,
  * punto rojo, contador, onda) → burbuja de audio con "Transcribiendo…" →
  * transcripción → "Pensando..." → respuesta con su propio reproductor (sólo
@@ -46,17 +47,23 @@ function fechaDeManana() {
   }
 }
 
+/*
+  Las respuestas son las de `construirRespuesta` del backend (`ServicioConversacional.php`, `origin/main`): una
+  creación dice «Listo, ya anoté tu <tipo> «<título>».» (`describirCrearElementoCreado` + `objetoDeParametros`).
+*/
 const ESCENARIOS = [
   {
     id: "lista",
-    texto: "Agrega leche, pan y huevos a mi lista del súper",
-    respuesta: "Listo, armé tu lista del súper.",
+    // Lista nueva (crear_elemento): `describirCrearElementoCreado` → «Listo, ya anoté tu lista «X».». «Agrega … a
+    // mi lista» sobre una lista que ya existe sería `agregar_item_lista`, que exige confirmación: no se muestra así.
+    texto: "Haz mi lista del súper: leche, pan y huevos",
+    respuesta: "Listo, ya anoté tu lista «Súper».",
     tarjeta: { icono: "listas", tipo: "LISTA", titulo: "Súper", detalle: "0 de 3 hechos", accion: "Ver lista" },
   },
   {
     id: "evento",
     texto: "Reunión de diseño mañana a las 10",
-    respuesta: "Agendé la reunión para mañana.",
+    respuesta: "Listo, ya anoté tu evento «Reunión de diseño».",
     tarjeta: {
       icono: "eventos",
       tipo: "EVENTO",
@@ -70,14 +77,35 @@ const ESCENARIOS = [
   {
     id: "habito",
     texto: "Quiero leer 20 minutos diarios",
-    respuesta: "Va, empiezo a seguir tu hábito.",
+    respuesta: "Listo, ya anoté tu hábito «Leer 20 minutos».",
     tarjeta: { icono: "habitos", tipo: "HÁBITO", titulo: "Leer 20 minutos", detalle: "Diario", accion: "Ver hábito" },
   },
   {
     id: "nota",
     texto: "Anota la idea del regalo para mamá",
-    respuesta: "Guardé la idea en tus notas.",
+    respuesta: "Listo, ya anoté tu nota «Idea: regalo para mamá».",
     tarjeta: { icono: "notas", tipo: "NOTA", titulo: "Idea: regalo para mamá", detalle: null, accion: "Ver nota" },
+  },
+  {
+    id: "proyecto",
+    texto: "Crea un proyecto llamado Mudanza",
+    // `describirCrearElementoCreado` (ServicioConversacional.php): «Listo, ya anoté tu proyecto «Mudanza».»
+    // Tarjeta `is Proyecto` de `resumenTarjeta` (TarjetaElementoChat.kt:133-138): sin descripción ni
+    // categoría no hay detalle (el avance no va en la tarjeta).
+    respuesta: "Listo, ya anoté tu proyecto «Mudanza».",
+    tarjeta: { icono: "proyectos", tipo: "PROYECTO", titulo: "Mudanza", detalle: null, accion: "Ver proyecto" },
+  },
+  {
+    id: "pregunta",
+    // Flujo real (captura de la app «05-pregunta-manana-o-noche»): hora sin aclarar → pregunta cerrada → tocas →
+    // sin LLM. Pregunta: `ServicioConversacional.php:4943` («¿A las %d de la mañana o de la noche?»); botones:
+    // `PreguntasCerradas::itemsHora()` (etiquetas «De la mañana» / «De la noche»). Al tocar, la burbuja del
+    // usuario dice la etiqueta. Respuesta: `describirCrearElementoCreado` (título entre «»); tarjeta de tarea con
+    // `formatearFechaObjetivoRelativa` («Mañana · 20:00»), `TarjetaElementoChat.kt:93-99`.
+    texto: "Recuérdame llamar a mi mamá mañana a las 8",
+    pregunta: { texto: "¿A las 8 de la mañana o de la noche?", opciones: ["De la mañana", "De la noche"], elegida: 1 },
+    respuesta: "Listo, ya anoté tu tarea «Llamar a mi mamá».",
+    tarjeta: { icono: "tareas", tipo: "TAREA", titulo: "Llamar a mi mamá", detalle: "Mañana · 20:00", accion: "Ver tarea" },
   },
   {
     id: "confirmar",
@@ -165,7 +193,7 @@ export function mount(contenedor) {
     <div class="escena ps-chat">
       <div class="ps-topbar">
         <span class="ps-topbar-titulo">Chat</span>
-        <span class="ps-topbar-accion">Nueva conversación</span>
+        <span class="ps-topbar-accion">Nuevo chat</span>
       </div>
       <div class="ps-chat-cuerpo"></div>
       <div class="ps-chat-entrada">
@@ -181,7 +209,6 @@ export function mount(contenedor) {
         </div>
         <span class="ps-boton-icono" aria-hidden="true">${iconoMic().replace("<svg ", '<svg class="ps-icono-mic" ')}${iconoEnviar()}</span>
       </div>
-      <span class="ps-chip-voz">Voz · Disponible</span>
     </div>
   `;
   refs = {
@@ -191,14 +218,30 @@ export function mount(contenedor) {
     inputCaja: contenedor.querySelector(".ps-campo"),
     placeholder: contenedor.querySelector(".ps-placeholder"),
     cursor: contenedor.querySelector(".ps-cursor"),
-    chipVoz: contenedor.querySelector(".ps-chip-voz"),
     tiempo: contenedor.querySelector(".ps-grabacion-tiempo"),
     barrasGrabacion: contenedor.querySelectorAll(".ps-grabacion-onda i"),
   };
   escribirEnEntrada("");
+  if (escenarioForzado()) play();
+}
+
+/**
+ * Solo desarrollo: `?escena=chat&escenario=<id>` fuerza un escenario del pool (y, con él, el bucle repite siempre
+ * ese) y arranca solo, porque el modo de inspección no llama a `play()`. Sirve para revisar a mano cada
+ * escenario, que las pruebas automáticas no recorren (ver README, «Modo de inspección»).
+ */
+function escenarioForzado() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("escena") !== "chat") return null;
+  return ESCENARIOS.find((e) => e.id === params.get("escenario")) ?? null;
 }
 
 function elegirEscenario() {
+  const forzado = escenarioForzado();
+  if (forzado) {
+    idEscenarioAnterior = forzado.id;
+    return forzado;
+  }
   // Excluye el último elegido y el último que de verdad quedó en pantalla:
   // si una pausa interrumpió el escenario anterior, no hay que repetir el
   // que ya está en el historial (p. ej. «Leer 20 minutos» dos veces seguidas).
@@ -236,13 +279,35 @@ function crearBurbujaPensando() {
   return el;
 }
 
+/**
+ * Botón «escuchar» de las respuestas de TEXTO (`ChatScreen.kt:921-938`, issue #79): `IconButton` de 48dp a la derecha
+ * del texto, 4dp después, con `IconoEscuchar` de 18dp (`:1259-1297`, dibujado en un `Canvas`: cuerpo, cono y dos
+ * arcos, color `LocalContentColor`). Aquí, la misma figura con las proporciones del `Canvas` en un viewBox de 24.
+ * Las respuestas por voz no lo llevan: muestran su reproductor.
+ */
+const ICONO_ESCUCHAR =
+  '<span class="ps-escuchar" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="ps-escuchar-cuerpo" ' +
+  'd="M1.44 7.92h6.24v8.16H1.44zM7.68 7.92l5.28-3.84v15.84l-5.28-3.84z"/><path class="ps-escuchar-ondas" ' +
+  'd="M15.336 9.624a3.36 3.36 0 0 1 0 4.752M17.372 7.588a6.24 6.24 0 0 1 0 8.824"/></svg></span>';
+
+/** Fila «texto + escuchar» de `BurbujaAsistente` (`Row(verticalAlignment = Top)`, texto con `weight(1f)`). */
+function filaTexto(texto) {
+  const fila = document.createElement("div");
+  fila.className = "ps-burbuja-fila";
+  const span = document.createElement("span");
+  span.className = "ps-burbuja-texto";
+  span.textContent = texto;
+  fila.append(span);
+  fila.insertAdjacentHTML("beforeend", ICONO_ESCUCHAR);
+  return fila;
+}
+
 /** Respuesta del asistente con su tarjeta rica adentro, como `BurbujaAsistente`. */
 function crearTarjeta(escenario) {
   const { tarjeta } = escenario;
   const el = document.createElement("div");
   el.className = "ps-burbuja ps-burbuja--asistente";
   el.innerHTML = `
-    ${escenario.dictado ? "" : escenario.respuesta}
     <div class="ps-tarjeta">
       ${iconoTrazo(tarjeta.icono)}
       <div class="ps-tarjeta-texto">
@@ -261,15 +326,54 @@ function crearTarjeta(escenario) {
     texto.className = "ps-burbuja-pie ps-burbuja-pie--asistente";
     texto.textContent = escenario.respuesta;
     el.prepend(audio, texto);
+  } else {
+    el.prepend(filaTexto(escenario.respuesta));
   }
   return el;
+}
+
+/** `Icons.Filled.Check` de material-icons-core 1.6.8, literal (licencia en `assets/js/LICENSE-iconos.txt`). */
+const ICONO_CHECK =
+  '<svg class="ps-opcion-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+
+/**
+ * Pregunta cerrada del asistente (`PreguntaDelAsistente`, `PreguntaChatUi.kt:94-102`): el texto y, debajo
+ * (`ChatScreen.kt:965-976`), un `FlowRow` de `OutlinedButton` de 48dp con separación de 8dp. La burbuja ocupa
+ * todo el ancho, como toda `BurbujaAsistente` (su `Row` interno lleva el texto con `weight(1f)`).
+ */
+function crearPregunta(pregunta) {
+  const el = document.createElement("div");
+  el.className = "ps-burbuja ps-burbuja--asistente";
+  el.innerHTML = `
+    <div class="ps-opciones">
+      ${pregunta.opciones.map((o) => `<span class="ps-btn ps-btn--contorno ps-opcion">${o}</span>`).join("")}
+    </div>
+  `;
+  el.prepend(filaTexto(pregunta.texto));
+  return el;
+}
+
+/**
+ * La opción tocada pasa a botón lleno con un check de 18dp y las demás quedan deshabilitadas
+ * (`BotonOpcion`, `PreguntaChatUi.kt:116-133`, R305); no aparece «Confirmado ✓».
+ */
+function marcarOpcionElegida(el, indice) {
+  el.querySelectorAll(".ps-opcion").forEach((boton, i) => {
+    if (i === indice) {
+      boton.classList.remove("ps-btn--contorno");
+      boton.classList.add("ps-btn--primario", "ps-opcion--elegida");
+      boton.insertAdjacentHTML("afterbegin", ICONO_CHECK);
+    } else {
+      boton.classList.add("ps-opcion--deshabilitada");
+    }
+  });
 }
 
 /** Respuesta de texto del asistente tras confirmar ("Listo, pospuse…"). */
 function crearBurbujaTexto(texto) {
   const el = document.createElement("div");
   el.className = "ps-burbuja ps-burbuja--asistente";
-  el.textContent = texto;
+  el.append(filaTexto(texto));
   return el;
 }
 
@@ -277,12 +381,12 @@ function crearConfirmacion(pregunta) {
   const el = document.createElement("div");
   el.className = "ps-burbuja ps-burbuja--asistente";
   el.innerHTML = `
-    ${pregunta}
     <div class="ps-confirmar-fila">
       <span class="ps-btn ps-btn--primario">Confirmar</span>
       <span class="ps-btn ps-btn--contorno">Rechazar</span>
     </div>
   `;
+  el.prepend(filaTexto(pregunta));
   return el;
 }
 
@@ -368,7 +472,41 @@ function construirTimeline(espera = 0.9) {
   });
   tl.to({}, { duration: 0.9 });
 
-  if (escenario.confirmar) {
+  if (escenario.pregunta) {
+    const { pregunta } = escenario;
+    let burbujaPregunta;
+    tl.call(() => {
+      burbujaPregunta = crearPregunta(pregunta);
+      reemplazarEnHistorial(pensando, burbujaPregunta);
+      entrar(burbujaPregunta, { y: 4 });
+    });
+    tl.to({}, { duration: 1.3 });
+    // Se "toca" la opción — mismo feedback táctil que Confirmar (achica/vuelve).
+    tl.call(() => {
+      const boton = burbujaPregunta.querySelectorAll(".ps-opcion")[pregunta.elegida];
+      gsap.to(boton, { scale: 0.92, duration: 0.1, yoyo: true, repeat: 1 });
+    });
+    tl.to({}, { duration: 0.35 });
+    tl.call(() => {
+      marcarOpcionElegida(burbujaPregunta, pregunta.elegida);
+      const burbujaUsuario = crearBurbujaUsuario();
+      burbujaUsuario.textContent = pregunta.opciones[pregunta.elegida];
+      entrar(agregarAlHistorial(burbujaUsuario));
+    });
+    tl.to({}, { duration: 0.5 });
+    let pensando2;
+    tl.call(() => {
+      pensando2 = agregarAlHistorial(crearBurbujaPensando());
+      entrar(pensando2, { y: 6 });
+    });
+    tl.to({}, { duration: 0.7 });
+    tl.call(() => {
+      const tarjeta = reemplazarEnHistorial(pensando2, crearTarjeta(escenario));
+      gsap.set(tarjeta, { opacity: 0, y: 10, scale: 0.98, transformOrigin: "left bottom" });
+      gsap.to(tarjeta, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power3.out" });
+    });
+    tl.to({}, { duration: 2.8 });
+  } else if (escenario.confirmar) {
     let burbujaConfirmar;
     tl.call(() => {
       burbujaConfirmar = crearConfirmacion(escenario.confirmar.pregunta);
@@ -430,7 +568,6 @@ function construirTimelineVoz(tl, escenario) {
     pintarGrabacion(0);
     refs.entrada.classList.add("ps-chat-entrada--grabando");
   });
-  tl.to(refs.chipVoz, { opacity: 1, duration: 0.2 }, "<");
   const reloj = { t: 0 };
   tl.to(reloj, { t: DURACION_VOZ + 0.4, duration: DURACION_VOZ + 0.4, ease: "none", onUpdate: () => pintarGrabacion(reloj.t) });
   tl.to({}, { duration: 0.15 });
@@ -443,7 +580,6 @@ function construirTimelineVoz(tl, escenario) {
     agregarAlHistorial(burbuja);
     entrar(burbuja);
   });
-  tl.to(refs.chipVoz, { opacity: 0, duration: 0.2 }, "<");
   tl.to({}, { duration: 1.1 });
   tl.call(() => {
     burbuja.querySelector(".ps-burbuja-pie").textContent = escenario.texto;
@@ -492,7 +628,6 @@ function mostrarEstadoEstatico() {
   refs.cuerpo.innerHTML = "";
   escribirEnEntrada("");
   refs.entrada.classList.remove("ps-chat-entrada--grabando");
-  gsap.set(refs.chipVoz, { opacity: 0 });
   sembrarIntercambio();
 }
 
@@ -502,6 +637,15 @@ function sembrarIntercambio() {
   const burbuja = escenario.dictado ? crearBurbujaVozUsuario(escenario.texto, DURACION_VOZ) : crearBurbujaUsuario();
   if (!escenario.dictado) burbuja.textContent = escenario.texto;
   let respuesta;
+  if (escenario.pregunta) {
+    const pregunta = crearPregunta(escenario.pregunta);
+    marcarOpcionElegida(pregunta, escenario.pregunta.elegida);
+    const eleccion = crearBurbujaUsuario();
+    eleccion.textContent = escenario.pregunta.opciones[escenario.pregunta.elegida];
+    idUltimoEnHistorial = escenario.id;
+    refs.cuerpo.append(burbuja, pregunta, eleccion, crearTarjeta(escenario));
+    return;
+  }
   if (escenario.confirmar) {
     respuesta = crearConfirmacion(escenario.confirmar.pregunta);
     respuesta.querySelector(".ps-confirmar-fila").outerHTML = '<div class="ps-confirmado">Confirmado ✓</div>';

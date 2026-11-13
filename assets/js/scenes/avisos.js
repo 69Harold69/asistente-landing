@@ -2,12 +2,13 @@ import { iconoTrazo, barraDeNavegacion } from "../icons.js?v=aa71b9d321";
 
 /**
  * Avisos — la pestaña Notificaciones de la app, 1:1 de
- * `ui/notificaciones/NotificacionesScreen.kt` (issues #46 y #51 de
- * asistente-android): chips de filtro, "Vencidas · N" en rojo, "Hábitos
+ * `ui/notificaciones/NotificacionesScreen.kt` (android `origin/main`, 0.1.6a): chips de filtro, "Vencidas · N" en rojo, "Hábitos
  * diarios", "Próximos" con Hoy siempre abierto y los demás grupos en
  * acordeón, y la barra inferior con "Notif." activa. Los textos de cada
- * fila son los de `DecisionRecordatorio.kt` ("Tarea pendiente para ahora.",
- * "Empieza en 15 minutos.") y el detalle de vencidas, "Era para …".
+ * fila son los de `DecisionRecordatorio.kt` y `NotificacionesLogica.kt`
+ * ("Tarea pendiente." en Próximos, "Empieza en 15 minutos.") y el detalle de
+ * vencidas, "Era para Hoy · 09:00" (`formatearFechaObjetivoRelativa`). Cada
+ * fila deslizable trae su ⋮ "Más acciones".
  *
  * Coreografía (sólo `transform`/`opacity`): baja el aviso del sistema de la
  * junta (15 minutos antes, como la app), se va, y la fila de "Llamar al
@@ -27,6 +28,9 @@ function prefiereMovimientoReducido() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+// `Icons.Filled.MoreVert` (⋮ «Más acciones de …», `FilaAvisoDeslizable`, NotificacionesScreen.kt).
+const ICONO_MAS = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>`;
+
 const fila = (icono, titulo, detalle, extra = "") => `
   <div class="ps-aviso${extra}">
     <span class="ps-aviso-icono">${iconoTrazo(icono)}</span>
@@ -34,6 +38,7 @@ const fila = (icono, titulo, detalle, extra = "") => `
       <span class="ps-aviso-titulo">${titulo}</span>
       <span class="ps-aviso-detalle">${detalle}</span>
     </span>
+    <span class="ps-aviso-mas">${ICONO_MAS}</span>
   </div>`;
 
 export function mount(contenedor) {
@@ -50,7 +55,7 @@ export function mount(contenedor) {
           <span class="ps-chip">Hábitos</span>
         </div>
         <div class="ps-avisos-seccion ps-avisos-seccion--peligro">Vencidas · 1</div>
-        ${fila("tareas", "Pagar el recibo de luz", "Era para ayer · 20:00")}
+        ${fila("tareas", "Pagar la luz", "Era para Hoy · 09:00")}
         <div class="ps-avisos-seccion">Hábitos diarios</div>
         ${fila("habitos", "Meditar 10 minutos", "Todos los días · 07:30")}
         <div class="ps-avisos-seccion">Próximos</div>
@@ -58,7 +63,7 @@ export function mount(contenedor) {
         ${fila("eventos", "Junta con ventas", "16:45 · Empieza en 15 minutos.")}
         <div class="ps-aviso-deslizable">
           <div class="ps-aviso-fondo"><span>Completar</span></div>
-          ${fila("tareas", "Llamar al doctor", "18:00 · Tarea pendiente para ahora.", " ps-aviso--movil")}
+          ${fila("tareas", "Llamar al doctor", "18:00 · Tarea pendiente.", " ps-aviso--movil")}
         </div>
         <div class="ps-avisos-grupo ps-avisos-grupo--acordeon">
           <span>ESTA SEMANA · 3</span>
@@ -73,6 +78,13 @@ export function mount(contenedor) {
           <span class="ps-aviso-detalle">Empieza en 15 minutos.</span>
         </span>
       </div>
+      <div class="ps-dialogo-fondo">
+        <div class="ps-dialogo">
+          <div class="ps-dialogo-titulo">¿Marcar como hecho?</div>
+          <p>«Llamar al doctor» se marcará como hecha.</p>
+          <div class="ps-dialogo-acciones"><span>Cancelar</span><span class="ps-dialogo-confirmar">Completar</span></div>
+        </div>
+      </div>
       ${barraDeNavegacion("notificaciones")}
     </div>
   `;
@@ -80,6 +92,7 @@ export function mount(contenedor) {
     banner: contenedor.querySelector(".ps-heads-up"),
     movil: contenedor.querySelector(".ps-aviso--movil"),
     fondo: contenedor.querySelector(".ps-aviso-fondo"),
+    dialogo: contenedor.querySelector(".ps-dialogo-fondo"),
   };
 }
 
@@ -87,12 +100,13 @@ function estadoQuieto() {
   gsap.set(refs.banner, { yPercent: -140, opacity: 0 });
   gsap.set(refs.movil, { xPercent: 0 });
   gsap.set(refs.fondo, { opacity: 0 });
+  gsap.set(refs.dialogo, { opacity: 0 });
 }
 
 /**
  * En bucle mientras la sección se lee: el aviso baja (0.5 s), se queda
  * 1.6 s y sube; luego la fila se desliza al 52% con el fondo verde de
- * "Completar" y regresa con un rebote corto.
+ * "Completar", regresa con un rebote corto y aparece el diálogo de confirmación.
  */
 export function play() {
   if (!refs) return null;
@@ -106,6 +120,9 @@ export function play() {
   tl.to(refs.movil, { xPercent: 52, duration: 0.7, ease: "power2.inOut" }, "<");
   tl.to(refs.movil, { xPercent: 0, duration: 0.55, ease: "back.out(1.6)" }, "+=0.5");
   tl.to(refs.fondo, { opacity: 0, duration: 0.2 }, ">-0.1");
+  // El deslizar nunca ejecuta solo: la fila regresa y la app pide confirmar («¿Marcar como hecho?»).
+  tl.to(refs.dialogo, { opacity: 1, duration: 0.25 }, "+=0.15");
+  tl.to(refs.dialogo, { opacity: 0, duration: 0.25 }, "+=1.6");
   return tl;
 }
 

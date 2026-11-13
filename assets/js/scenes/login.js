@@ -1,14 +1,18 @@
+import { logotipo } from "../icons.js?v=aa71b9d321";
+
 /**
- * Login — mezcla (plan, sección 2): textos y orden de campos EXACTOS de
- * `ui/auth/LoginScreen.kt` (la app ya los tiene, sin marca); encabezado con
- * la mascota, estilo del mockup 02 (hueco visual que la app no cubre).
+ * Login — copia de `ui/auth/LoginScreen.kt:104-193` (0.1.6a): logotipo de letras «Yaruki» (`displaySmall`,
+ * `:110`; ya no el círculo de la mascota, android #165), «Iniciar sesión» (`headlineSmall`, `:112`), los dos
+ * campos, «Ingresar», «¿Olvidaste tu contraseña?», «Continuar con Google» y «¿No tienes cuenta? Regístrate»,
+ * en ese orden y con esos textos. La columna va alineada al inicio, no centrada (`Column` sin
+ * `horizontalAlignment`), con los botones a todo el ancho.
  */
 export const id = "login";
 
 export function mount(contenedor) {
   contenedor.innerHTML = `
     <div class="escena ps-login">
-      <span class="ps-dot" aria-hidden="true"></span>
+      ${logotipo(true)}
       <h2 class="ps-titulo">Iniciar sesión</h2>
       <div class="ps-campo"><span class="ps-campo-etiqueta">Correo</span>tú@correo.com</div>
       <div class="ps-campo"><span class="ps-campo-etiqueta">Contraseña</span>••••••••</div>

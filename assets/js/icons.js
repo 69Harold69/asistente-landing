@@ -1,23 +1,43 @@
 /*
-  Yaruki — íconos de trazo para las escenas del teléfono.
-  Los 5 tipos de Elemento son los paths LITERALES de
+  Yaruki — íconos para las escenas del teléfono.
+  Los 6 tipos de Elemento (de trazo; Proyecto es la carpeta de Lucide, `IconosBento.proyectos`) son los paths LITERALES de
   `asistente-android/app/.../ui/common/IconosBento.kt` (viewBox 24, trazo
   1.5/2, extremos y uniones redondeadas) — misma fuente que usa la app para
   la pantalla Elementos y las tarjetas ricas del chat. Los de la barra de
-  navegación son outline genérico estilo Material (equivalentes visuales de
-  los `Icons.Outlined.*` que usa `BottomNavBar.kt`; no hay forma de
-  "importar" un ImageVector de Compose a SVG, así que se redibujan).
+  navegación y del botón del asistente son los de Material (rellenos), ver
+  `MATERIAL` más abajo.
+  Licencias (Lucide ISC, Feather MIT para «calendar», material-icons-core Apache-2.0): `assets/js/LICENSE-iconos.txt`.
 */
 const PATHS = {
   tareas: ["M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", "M9 11l3 3L22 4"],
   habitos: ["M17 2l4 4-4 4", "M3 11v-1a4 4 0 0 1 4-4h14", "M7 22l-4-4 4-4", "M21 13v1a4 4 0 0 1-4 4H3"],
   listas: ["M4 7h16", "M4 12h11", "M4 17h14"],
   notas: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6"],
+  proyectos: ["M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"],
   eventos: ["M7 4h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4z", "M16 2v4", "M8 2v4", "M3 10h18"],
-  home: ["M3 11l9-7 9 7", "M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"],
-  campana: ["M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9", "M13.7 21a2 2 0 0 1-3.4 0"],
-  mas: ["M12 5v14M5 12h14"],
 };
+
+/**
+ * Íconos de Material (rellenos, viewBox 24) de la barra inferior y del botón del asistente. Son los
+ * paths LITERALES de `material-icons-core` 1.6.8 (`Icons.Outlined.Home`, `Icons.AutoMirrored.Outlined.List`,
+ * `Icons.Outlined.Notifications`, `Icons.Outlined.Person`), traducidos de los comandos de `materialPath`
+ * de sus fuentes (`moveTo` → M, `lineToRelative` → l, etc.), y el de `ui/common/IconoChat.kt:21-24`.
+ * No son aproximaciones dibujadas a mano.
+ */
+const MATERIAL = {
+  home: "M12 5.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3Z",
+  lista: "M3 13h2v-2H3v2ZM3 17h2v-2H3v2ZM3 9h2V7H3v2ZM7 13h14v-2H7v2ZM7 17h14v-2H7v2ZM7 7v2h14V7H7Z",
+  notificaciones:
+    "M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2ZM18 16v-5c0-3.07-1.63-5.64-4.5-6.32L13.5 4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2ZM16 17H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6Z",
+  persona:
+    "M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 10c2.7 0 5.8 1.29 6 2H6c.23-.72 3.31-2 6-2m0-12C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4ZM12 14c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4Z",
+  chat: "M20,2H4c-1.1,0 -2,0.9 -2,2v18l4,-4h14c1.1,0 2,-0.9 2,-2V4c0,-1.1 -0.9,-2 -2,-2zM20,16H5.17L4,17.17V4h16v12z",
+};
+
+/** SVG relleno de uno de los íconos de Material de arriba (`currentColor`). */
+export function iconoMaterial(nombre) {
+  return `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="${MATERIAL[nombre]}"/></svg>`;
+}
 
 function trazos(nombre) {
   return (PATHS[nombre] ?? []).map((d) => `<path d="${d}"/>`).join("");
@@ -28,15 +48,6 @@ export function iconoTrazo(nombre) {
   return (
     `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" ` +
     `stroke-linejoin="round" aria-hidden="true">${trazos(nombre)}</svg>`
-  );
-}
-
-/** "Perfil" del navbar — círculo + arco, no entra en el esquema `d` único de arriba. */
-export function iconoPersona() {
-  return (
-    `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" ` +
-    `stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/>` +
-    `<path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>`
   );
 }
 
@@ -103,19 +114,38 @@ export function barraDeEstado() {
 }
 
 /**
- * Barra inferior de `BottomNavBar.kt`: Inicio, Elementos, FAB central "+"
- * (nuevo chat), Notif. y Perfil. `activo` resalta el destino de la escena.
+ * Logotipo de letras «Yaruki» (`ui/common/LogotipoYaruki.kt:16-26`): texto Bold con `letterSpacing 0.5sp` en el
+ * color `primary`. `grande` = `displaySmall` (Login y Registro, `LoginScreen.kt:110`); por defecto
+ * `headlineMedium` (Inicio, `DashboardScreen.kt:204`). Las medidas viven en `.ps-logotipo` (scenes.css).
+ */
+export function logotipo(grande = false) {
+  return `<span class="ps-logotipo${grande ? " ps-logotipo--grande" : ""}">Yaruki</span>`;
+}
+
+/**
+ * Botón extendido del asistente (`BottomNavBar.kt:243-281`, `BotonAsistente`): ícono de burbuja de chat y el
+ * texto «Pídeselo a Yaruki». Lo coloca `.ps-boton-asistente` sobre la barra, centrado (`FabPosition.Center`).
+ */
+export function botonAsistente() {
+  return `<div class="ps-boton-asistente" aria-hidden="true">${iconoMaterial("chat")}<span>Pídeselo a Yaruki</span></div>`;
+}
+
+/**
+ * Barra inferior de `BottomNavBar.kt:129-161`: cuatro destinos (Inicio, Elementos, Notif., Perfil), sin botón
+ * central. `activo` resalta el destino de la escena. Las cuatro pantallas con barra (Inicio, Elementos,
+ * Notificaciones y Perfil) llevan además el botón del asistente (`BotonAsistente(`, slot `floatingActionButton`
+ * de su `Scaffold`), que se dibuja aquí junto con la barra.
  */
 export function barraDeNavegacion(activo) {
   const item = (id, icono, etiqueta) =>
-    `<div class="ps-nav-item${id === activo ? " ps-nav-item--activo" : ""}">${icono}<span>${etiqueta}</span></div>`;
+    `<div class="ps-nav-item${id === activo ? " ps-nav-item--activo" : ""}">${iconoMaterial(icono)}<span>${etiqueta}</span></div>`;
   return (
+    botonAsistente() +
     `<div class="ps-navbar" aria-hidden="true">` +
-    item("inicio", iconoTrazo("home"), "Inicio") +
-    item("elementos", iconoTrazo("listas"), "Elementos") +
-    `<div class="ps-nav-fab">${iconoTrazo("mas")}</div>` +
-    item("notificaciones", iconoTrazo("campana"), "Notif.") +
-    item("perfil", iconoPersona(), "Perfil") +
+    item("inicio", "home", "Inicio") +
+    item("elementos", "lista", "Elementos") +
+    item("notificaciones", "notificaciones", "Notif.") +
+    item("perfil", "persona", "Perfil") +
     `</div>`
   );
 }

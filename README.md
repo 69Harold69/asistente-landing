@@ -86,6 +86,10 @@ pedida una sola vez y fija la cara, estático, igual que en la etapa 2:
   `habitos` · `logro` · `avisos` · `llamada` · `dashboard` (ids de `assets/js/scenes/registro.js`).
 - `cara`: `frente` (por defecto, 0°) · `canto` (80°, ver nota abajo) ·
   `espalda` (180°).
+- `escenario` (solo con `escena=chat`): fuerza un escenario del pool del chat (`lista`, `evento`, `habito`, `nota`,
+  `proyecto`, `pregunta`, `confirmar`, `dictado`) y lo arranca solo, repitiéndolo en bucle (con
+  `prefers-reduced-motion`, su estado final estático). El pool elige al azar y las pruebas automáticas solo ven un
+  escenario, así que esta es la forma de revisar cada uno a mano en los 10 combos.
 - `angulo`: cualquier ángulo en grados (p. ej. `?angulo=120`), gana sobre
   `cara`. Sirve para revisar el canto en ángulos intermedios.
 
@@ -130,8 +134,8 @@ tramo previo al primer vuelo; en móvil/tablet la franja del teléfono entra
 desde abajo del CTA, así que el tramo arranca recién cuando la franja terminó
 de entrar en pantalla (#11: antes el círculo crecía con el teléfono todavía
 cortado por el borde inferior del viewport) y termina antes del primer giro.
-**Avisos (`#fase-avisos`, 2026-10-13):** la pestaña Notificaciones de la app (`scenes/avisos.js`, de `NotificacionesScreen.kt`), entre el logro y la llamada; en bucle baja un aviso del sistema y una fila se desliza a "Completar". Por esta fase, la llamada pasó a la columna derecha (`.seccion--derecha`). **Hábitos → logro (`TRAMOS_LOGRO`):**
-la sección mide 160vh: primero el heatmap quieto, después un cruce de opacidad
+**Avisos (`#fase-avisos`, 2026-10-13):** la pestaña Notificaciones de la app (`scenes/avisos.js`, de `NotificacionesScreen.kt`), entre el logro y la llamada; en bucle baja un aviso del sistema y una fila se desliza a "Completar" y aparece el diálogo de confirmación. Por esta fase, la llamada pasó a la columna derecha (`.seccion--derecha`). **Hábitos → logro (`TRAMOS_LOGRO`):**
+la sección mide 160vh: primero el detalle del hábito quieto, después un cruce de opacidad
 de frente a "logro". **Cierre:** el Dashboard aterriza al centro de la página,
 queda quieto mientras se lee el CTA y sube con la página cuando el sticky se
 suelta (`#cta` mide 150vh en escritorio).
@@ -446,6 +450,19 @@ falta — no quedó ningún `node_modules/`/`package.json` en el repo.
   (idéntico al `LICENSE` de `npm pack canvas-confetti@1.9.4`; el
   `canvas-confetti.min.js` es byte a byte `dist/confetti.browser.js` de ese
   paquete, verificado el 2026-11-10).
+- **Íconos de las escenas** (no son librerías, son paths copiados en `assets/js/icons.js` y `scenes/chat.js`): los de
+  tipo de Elemento vienen de `IconosBento.kt` de la app, que los toma de **Lucide** (ISC; «calendar» deriva de Feather,
+  MIT), y los de la barra inferior, el botón del asistente y el check de las preguntas son paths literales de
+  **material-icons-core 1.6.8** (Apache-2.0). Textos completos en `assets/js/LICENSE-iconos.txt`; `licencias.py` lo
+  verifica.
+
+### Desviaciones deliberadas de la app en las escenas
+
+Las escenas copian la app; estas diferencias son a propósito y se anotaron como hallazgo para android:
+
+- **Etiqueta del destino activo de la barra inferior** (`.ps-nav-item--activo span`): `acentoTexto` en vez de
+  `primary`. Con `primary` sobre la barra (surface + 8.2 % de primary por `tonalElevation 3.dp`) mide 4.46:1 en claro
+  y 4.45:1 en oscuro, bajo AA para texto de 11sp; con `acentoTexto`, 4.85:1 y 5.27:1. El ícono sigue en `primary`.
 
 ## Fuentes autoalojadas
 
