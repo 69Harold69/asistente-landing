@@ -41,7 +41,7 @@ asistente-landing/
 │   │   ├── progreso.js  Pista "Desliza para descubrir"
 │   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
 │   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
-│   │   ├── tilt.js      Inclinación del teléfono con el mouse (8° a los lados / 6° arriba-abajo, con inercia) y mirada de la mascota
+│   │   ├── tilt.js      Inclinación del teléfono con el mouse (20° a los lados / 10° arriba-abajo por defecto, con inercia) y mirada de la mascota
 │   │   ├── malla.js     Malla de fondo continua de la portada (un canvas fijo: onda en reposo + cursor)
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
@@ -353,31 +353,55 @@ al primer clic en el toggle).
   `scripts/pruebas/malla.mjs` mide todo lo anterior, incluido el contraste en píxeles renderizados de todos los
   bloques de texto de la portada (peor píxel con el cursor real barriendo cada uno).
 - **Inclinación y mirada (`tilt.js`, `scenes.css`, `phone.css`, #27, #99):**
-  - **Inclinación:** el teléfono se inclina hacia el cursor hasta **8° a los lados y 6° arriba/abajo**
-    (antes ±4°), con peso. Son resortes amortiguados por tiempo (constante de 0.28 s al seguir, sin GSAP, un
-    solo rAF que se detiene cuando todo llegó a su objetivo). Cada lado se normaliza por la distancia del
-    teléfono a ese borde de la ventana, así las cuatro esquinas llegan al máximo aunque el teléfono viva en
-    una columna. **Vuelve despacio al centro** (constante de 1.1 s) al salir el cursor de la ventana o si no
-    se mueve en 4 s. Durante cada giro/vuelo se apaga rápido (0.18 s) y retoma desde 0 al aterrizar, sin
-    saltos. Va por `--tilt-x/--tilt-y` en `.phone-tilt` (solo `transform`, compuesto; el giro de `.phone` y
-    el vuelo de `.escenario-3d` están en otros envoltorios).
-  - **Variante para comparar en la demostración:** `?inclinacion=mayor` sube a 11° / 8° (el envoltorio
-    lleva `data-inclinacion`). Por defecto, 8° / 6°; no hay botón ni se promociona.
+  - **Inclinación («te voltea a ver»):** el teléfono gira hacia el cursor hasta **20° a los lados y 10°
+    arriba/abajo** (por defecto), con peso: resortes amortiguados por tiempo (0.28 s al seguir, sin GSAP, un
+    solo rAF que se detiene cuando todo llegó a su objetivo). **Vuelve despacio al centro** (1.1 s) al salir
+    el cursor de la ventana o si no se mueve en 4 s. Durante cada giro/vuelo se apaga rápido (0.18 s) y
+    retoma desde 0 al aterrizar, sin saltos. Va por `--tilt-x/--tilt-y/--tilt-p/--tilt-dx` en `.phone-tilt`
+    (solo `transform`, compuesto; el giro de `.phone` y el vuelo de `.escenario-3d` están en otros envoltorios).
+  - **Por qué antes casi no se notaba a los lados (revisión de Harold, #99):** la perspectiva era de 1600 px y
+    el trapecio de `rotateY` es proporcional a ancho·sen(θ)/perspectiva; el teléfono es angosto (296 px contra
+    641 de alto), así que a 8° los bordes izquierdo y derecho sólo diferían 16 px, mientras 6° arriba/abajo
+    (que actúan sobre el lado largo) cambiaban el ancho un 4 % contra un 2.6 %: se leía más el vertical.
+    Además el lado izquierdo se normalizaba por toda la distancia al borde de la ventana (~1000 px en el
+    hero): con el cursor sobre el titular la inclinación era de 2–3°. Nada anulaba el `rotateY` (la cadena
+    `.escenario-3d` → `.phone-tilt` → `.phone` conserva el 3D; los orígenes coinciden al centro).
+  - **Arreglo:** perspectiva **efectiva de 900 px** para la inclinación sin tocar la del giro de 360°: la
+    inclinación suma `perspective(--tilt-p)` a su transform (las perspectivas se suman en 1/d:
+    1/1600 + 1/2057 = 1/900) y esa fuerza sigue un resorte que vale 0 en reposo y durante los giros, así el
+    vuelo se ve igual y no hay salto al aterrizar. El recorrido lateral llega al máximo a un 34 % del ancho
+    de la ventana (o antes si el borde está más cerca); arriba/abajo, cada lado por su distancia al borde.
+    Un desplazamiento lateral leve (hasta 10 px) acompaña el giro. Medidas (1440×900, hero y fases, cursor en
+    el borde): 8°/6° de antes → 16 px laterales contra 12 px verticales; 15°/8° → 54 / 29 px; 20°/10° → 72 /
+    36 px; 25°/12° → 89 / 44 px.
+  - **Variantes para que Harold compare:** `?inclinacion=15` (15° / 8°), `?inclinacion=20` (20° / 10°, la de
+    por defecto) y `?inclinacion=25` (25° / 12°); el envoltorio lleva `data-inclinacion`. No hay botón ni se
+    promociona.
   - **Dónde aplica:** `min-width: 1024px` + `hover: hover` + `pointer: fine` + sin reduced-motion. La
     tablet con mouse (768–1023 px) **no** inclina: el teléfono ahí está en la franja del recorrido de una
-    columna y a 8° la perspectiva lo acerca al texto vecino.
-  - **Mirada de la mascota:** la mascota de la app es un punto sin rasgos (`ic_launcher_foreground.xml`), así
-    que no hay ojos: la «mirada» es el desplazamiento del punto hacia el cursor (Splash
+    columna y la perspectiva lo acercaría al texto vecino.
+  - **Mirada de la mascota:** la mascota de la app es un círculo liso, sin rasgos (`ic_launcher_foreground.xml`):
+    **no hay pupila ni ojo**. «Mirar» es que **el círculo completo** se corre hacia el cursor (Splash
     `.ps-splash .ps-dot`, hasta 16 dp = 1/6 de su diámetro; espalda `.phone-mascota-halo`, hasta 16 % de su
-    tamaño) más **un brillo pequeño del lado del cursor** (`::after`, solo CSS y tokens; es un realce propio
-    de la landing, la app no lo tiene). Sin mirada (reposo, sin JS) el brillo tiene opacidad 0. Se aplica con
-    la propiedad `translate`, que se compone con el `transform` de la coreografía y con la respiración sin
-    pisarlos. Se apaga —y vuelve suave al centro— durante los giros, mientras la mascota del hero crece con
-    el scroll (`mascota > 1.02`) y al salir el cursor; no existe en táctil ni con reduced-motion.
+    tamaño) y vuelve exacto a su centro en reposo, más **un brillo suave del lado del cursor**: un halo
+    (`box-shadow` afuera del círculo, desplazado hacia el cursor; en el Splash en `--color-on-accent`, en la
+    espalda en `--color-accent`), con opacidad proporcional a `--mira-r` (0 sin mirada, sin JS, en táctil y
+    con reduced-motion). Es un realce propio de la landing, la app no lo tiene. Para comparar, `?brillo=orilla`
+    lo pinta como realce en la orilla interior del círculo (`inset`). Se aplica con la propiedad `translate`,
+    que se compone con el `transform` de la coreografía y con la respiración sin pisarlos. Se apaga —y vuelve
+    suave al centro— durante los giros, mientras la mascota del hero crece con el scroll (`mascota > 1.02`) y
+    al salir el cursor.
+  - **Líneas finas en los bordes de la caja (#99):** el círculo se mueve a posiciones subpíxel como capa
+    compuesta (respira con `transform`) dentro del contexto 3D del teléfono inclinado; un `outline`
+    transparente amplía la caja que se rasteriza, así sus bordes nunca quedan pegados a píxeles pintados, y ya
+    no hay `::after` (la pupila de #112, una segunda caja que se movía con `left/top`). `mirada.mjs` revisa en
+    píxeles reales, con la mascota en movimiento, las esquinas de su caja lejos del brillo (claro y oscuro,
+    ×1 y ×2). En Chromium sin pantalla el artefacto no se reproduce (ni con GPU): confírmalo con un mouse real.
   - **Pendiente (opcional del Notion):** el punto del logo del header también mirando al cursor.
   - **Prueba:** `scripts/pruebas/mirada.mjs` espera por estado (rAF dentro de la página), no por tiempo
-    (#88); verifica ángulos en las cuatro esquinas, la variante, el regreso al centro, el apagado durante
-    el giro y el brillo del lado correcto.
+    (#88); verifica ángulos de las tres variantes en las cuatro esquinas, lateral mayor que vertical en
+    píxeles proyectados, el regreso al centro exacto, el apagado durante el giro, que no haya pupila, el
+    brillo del lado correcto y los bordes de la caja sin líneas.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
   magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del

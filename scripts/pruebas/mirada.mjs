@@ -1,18 +1,25 @@
 #!/usr/bin/env node
 /*
-  mirada: prueba de la mirada de la mascota (assets/js/tilt.js, issue #27).
-  La mascota de Yaruki es un punto sin rasgos (ic_launcher_foreground.xml), así que la «mirada» es un
-  desplazamiento pequeño de ese punto hacia el cursor, en el Splash (`.ps-splash .ps-dot`) y en la espalda
-  del teléfono (`.phone-mascota-halo`).
+  mirada: prueba de la mirada de la mascota y de la inclinación del teléfono (assets/js/tilt.js, #27, #99).
+  La mascota de Yaruki es un círculo liso, sin rasgos (ic_launcher_foreground.xml), así que la «mirada» es que
+  el círculo COMPLETO se desplaza un poco hacia el cursor, en el Splash (`.ps-splash .ps-dot`) y en la espalda
+  del teléfono (`.phone-mascota-halo`), con un brillo suave del lado del cursor. Sin pupila ni ojo.
     - con el mouse real de Playwright en 4 esquinas, el punto se desplaza en la dirección correcta y dentro del tope;
     - la espalda (que está en espejo por rotateY(180deg)) también mira hacia el cursor EN PANTALLA;
     - al sacar el cursor vuelve al centro;
     - durante un giro/vuelo de la coreografía no hay saltos ni se pisa el `transform` de la coreografía
       (la mirada va por la propiedad `translate`) y al terminar el teléfono queda de frente (0°);
     - con prefers-reduced-motion y en táctil no se mueve;
-    - la inclinación del teléfono llega a 8° a los lados y 6° arriba/abajo en las esquinas (#99), con la variante
-      `?inclinacion=mayor` a 11°/8°, vuelve despacio al centro al salir el cursor y también si se queda quieto;
-    - un brillo pequeño del lado del cursor acompaña la mirada;
+    - la inclinación llega al máximo de cada variante en las esquinas (#99, revisión de Harold): por defecto
+      20° a los lados y 10° arriba/abajo, `?inclinacion=15` → 15°/8°, `?inclinacion=25` → 25°/12°; vuelve
+      despacio al centro al salir el cursor y también si se queda quieto;
+    - en píxeles proyectados, el giro lateral se nota más que el vertical (diferencia de alto entre los bordes
+      izquierdo y derecho > diferencia de ancho entre arriba y abajo), en las tres variantes;
+    - no hay elemento de pupila (ni `::after` en el Splash ni en la espalda) y el brillo es suave, afuera del
+      círculo y del lado del cursor; sin mirada es transparente;
+    - al salir el cursor el círculo vuelve EXACTO a su centro;
+    - mientras la mascota se mueve, junto a los bordes de su caja (fuera del círculo y lejos del brillo) los
+      píxeles reales son los del fondo del Splash: sin líneas finas (#99);
     - en cada esquina la mascota recorre al menos la mitad de su tope (la mirada se nota);
     - consola limpia.
   Uso: node mirada.mjs [--url http://...] [--salida DIR]   (sale con 1 si algo falla)
@@ -64,6 +71,16 @@ const centro = (page, selector) =>
     if (!el) return null;
     const r = el.getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2, d: r.width };
+  }, selector);
+
+/* Mirada en px locales: el `translate` calculado del círculo y su diámetro sin transformar. */
+const local = (page, selector) =>
+  page.evaluate((s) => {
+    const el = document.querySelector(s);
+    const t = getComputedStyle(el).translate;
+    // Los porcentajes de `translate` son del tamaño propio del elemento (la espalda usa %).
+    const v = t === "none" ? [0, 0] : t.split(" ").map((x, i) => (x.endsWith("%") ? (parseFloat(x) * (i ? el.offsetHeight : el.offsetWidth)) / 100 : parseFloat(x)));
+    return { x: v[0] || 0, y: v[1] || 0, d: el.offsetWidth };
   }, selector);
 
 /* El diámetro medido en pantalla incluye la respiración (scale 1 → 1.06 cada 3 s): el tope se mide con 7 % de holgura. */
@@ -133,23 +150,147 @@ const esperarTilt = (page, { cuadros = 24, max = MAX_ESPERA } = {}) =>
     { cuadros, max }
   );
 
-/* Desplazamiento (en px de pantalla) del centro del brillo respecto del centro del punto. */
+/* Brillo: la sombra suave del círculo (`box-shadow`, afuera, no inset), su desplazamiento y su opacidad. Además,
+   que no exista ningún elemento de pupila: ni `::after` ni hijos dentro del círculo. */
 const brillo = (page, selector) =>
   page.evaluate((s) => {
     const el = document.querySelector(s);
-    const r = el.getBoundingClientRect();
-    const cs = getComputedStyle(el, "::after");
-    const w = parseFloat(cs.width);
+    const bs = getComputedStyle(el).boxShadow;
+    const px = [...bs.matchAll(/(-?[\d.]+)px/g)].map((m) => parseFloat(m[1]));
+    const alfa = bs === "none" ? 0 : /\/\s*([\d.]+)\)/.test(bs) ? parseFloat(bs.match(/\/\s*([\d.]+)\)/)[1]) : /rgba\([^)]*,\s*([\d.]+)\)/.test(bs) ? parseFloat(bs.match(/rgba\([^)]*,\s*([\d.]+)\)/)[1]) : 1;
     return {
-      dx: parseFloat(cs.left) + w / 2 - r.width / 2,
-      dy: parseFloat(cs.top) + w / 2 - r.height / 2,
-      opacidad: parseFloat(cs.opacity),
-      ancho: w,
-      d: r.width,
+      dx: px[0] ?? 0,
+      dy: px[1] ?? 0,
+      opacidad: alfa,
+      inset: /inset/.test(bs),
+      pupila: getComputedStyle(el, "::after").content !== "none" || el.children.length > 0,
     };
   }, selector);
 
-async function probarCara(nombre, ruta, selector, tope, { query = "", maxX = 6, maxY = 8, etiqueta = "" } = {}) {
+/* Esquinas del teléfono proyectadas en pantalla (marcadores de 0×0 en las 4 esquinas de #telefono, que heredan
+   la transformación 3D): diferencia de alto entre el borde izquierdo y el derecho (giro lateral) y de ancho
+   entre el borde de arriba y el de abajo (giro vertical), en px reales. */
+const proyeccion = (page) =>
+  page.evaluate(() => {
+    const t = document.getElementById("telefono");
+    if (!t.querySelector("[data-esquina]")) {
+      for (const [n, l, a] of [["tl", 0, 0], ["tr", 100, 0], ["bl", 0, 100], ["br", 100, 100]]) {
+        const m = document.createElement("i");
+        m.dataset.esquina = n;
+        m.style.setProperty("position", "absolute");
+        m.style.setProperty("left", `${l}%`);
+        m.style.setProperty("top", `${a}%`);
+        t.appendChild(m);
+      }
+    }
+    const g = (n) => {
+      const r = t.querySelector(`[data-esquina="${n}"]`).getBoundingClientRect();
+      return [r.left, r.top];
+    };
+    const [tl, tr, bl, br] = ["tl", "tr", "bl", "br"].map(g);
+    const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+    return { lateral: Math.abs(d(tl, bl) - d(tr, br)), vertical: Math.abs(d(tl, tr) - d(bl, br)) };
+  });
+
+/*
+  Líneas finas en los bordes de la caja de la mascota (#99): con el círculo en movimiento (sin esperar a que se
+  asiente), en varias posiciones subpíxel, se captura la zona y se miran, en píxeles reales, las dos esquinas
+  de su caja que quedan LEJOS del cursor (fuera del círculo y del brillo, que va del lado del cursor): ahí todo
+  debe ser el fondo del Splash. Una línea de 1 px en el borde de la caja (o de su `::after`) cambia esos píxeles.
+  Devuelve la mayor diferencia por canal encontrada (0–255) y la posición.
+*/
+async function lineasEnCaja(page, analizador, selector, dpr) {
+  let peor = { dif: 0, donde: "" };
+  let validas = 0;
+  const trayectos = [[[60, 60], [1380, 860]], [[1380, 60], [60, 860]], [[60, 860], [1380, 60]], [[1380, 860], [60, 60]]];
+  for (const [desde, hasta] of trayectos) {
+    await page.mouse.move(...desde, { steps: 4 });
+    for (let i = 1; i <= 6; i++) {
+      const f = i / 6;
+      await page.mouse.move(desde[0] + (hasta[0] - desde[0]) * f, desde[1] + (hasta[1] - desde[1]) * f, { steps: 2 });
+      const caja = await page.evaluate((s) => {
+        const r = document.querySelector(s).getBoundingClientRect();
+        const e = document.getElementById("tilt-telefono");
+        const m = (n) => parseFloat(e.style.getPropertyValue(n)) || 0;
+        return { x: r.left, y: r.top, w: r.width, h: r.height, mx: m("--mira-x"), my: m("--mira-y") };
+      }, selector);
+      const m = Math.ceil(caja.w * 0.4) + 2;
+      const clip = { x: Math.floor(caja.x - m), y: Math.floor(caja.y - m), width: Math.ceil(caja.w + 2 * m), height: Math.ceil(caja.h + 2 * m) };
+      const png = (await page.screenshot({ clip })).toString("base64");
+      // Lado hacia donde mira la mascota en ese cuadro (ahí va el brillo); se revisa la esquina opuesta.
+      const sx = caja.mx >= 0 ? 1 : -1;
+      const sy = caja.my >= 0 ? 1 : -1;
+      const r = await analizador.evaluate(
+        async ({ png, caja, clip, sx, sy, dpr }) => {
+          const img = new Image();
+          img.src = "data:image/png;base64," + png;
+          await img.decode();
+          const c = document.createElement("canvas");
+          c.width = img.width;
+          c.height = img.height;
+          const g = c.getContext("2d");
+          g.drawImage(img, 0, 0);
+          const d = g.getImageData(0, 0, c.width, c.height).data;
+          // Tamaño real de la captura en px CSS (puede ser 1 px menor que el recorte pedido).
+          const W = img.width / dpr;
+          const H = img.height / dpr;
+          const px = (x, y) => {
+            const xi = Math.min(img.width - 1, Math.max(0, Math.round(x * dpr)));
+            const yi = Math.min(img.height - 1, Math.max(0, Math.round(y * dpr)));
+            const i = (yi * c.width + xi) * 4;
+            return [d[i], d[i + 1], d[i + 2]];
+          };
+          const dif = (p, q) => Math.max(...p.map((v, k) => Math.abs(v - q[k])));
+          // Fondo de referencia para ubicar el círculo: el píxel de la esquina lejana de la captura.
+          const fondo = px(sx > 0 ? 1 : W - 2, sy > 0 ? 1 : H - 2);
+          // El círculo se ubica en los píxeles (no en el DOM: entre la lectura y la captura siguió moviéndose):
+          // sus bordes del lado LEJANO (el brillo va del otro lado), con un umbral alto (contorno macizo).
+          let xf = sx > 0 ? Infinity : -Infinity;
+          let yf = sy > 0 ? Infinity : -Infinity;
+          for (let y = 0; y < H; y += 0.5) {
+            for (let x = 0; x < W; x += 0.5) {
+              if (dif(px(x, y), fondo) < 100) continue;
+              xf = sx > 0 ? Math.min(xf, x) : Math.max(xf, x);
+              yf = sy > 0 ? Math.min(yf, y) : Math.max(yf, y);
+            }
+          }
+          // Contorno pegado al borde de la captura: el círculo se salió, la muestra no vale.
+          if (!Number.isFinite(xf) || !Number.isFinite(yf) || Math.min(xf, yf, W - xf, H - yf) < 12) return { peor: -1, donde: "" };
+          const rad = caja.w / 2;
+          const cx = xf + sx * rad;
+          const cy = yf + sy * rad;
+          let peor = 0;
+          let donde = "";
+          // Franjas de ±3 px sobre los dos bordes de la caja del lado lejano, en el cuadrante lejano y fuera del
+          // círculo (a más de 4 px de su contorno: cubre la respiración). Cada píxel se compara con el que está
+          // 8 px más afuera en perpendicular al borde (así un degradado suave del fondo no cuenta; una línea sí).
+          for (let y = 0; y < H; y += 0.5) {
+            for (let x = 0; x < W; x += 0.5) {
+              const enV = Math.abs(x - xf) <= 3;
+              const enH = Math.abs(y - yf) <= 3;
+              const lejano = (x - cx) * sx < 0 && (y - cy) * sy < 0;
+              if ((!enV && !enH) || !lejano || Math.hypot(x - cx, y - cy) < rad + 4) continue;
+              const ref = enV ? px(xf - sx * 8, y) : px(x, yf - sy * 8);
+              const dd = dif(px(x, y), ref);
+              if (dd > peor) {
+                peor = dd;
+                donde = `${x.toFixed(1)},${y.toFixed(1)}`;
+              }
+            }
+          }
+          return { peor, donde };
+        },
+        { png, caja, clip, sx, sy, dpr }
+      );
+      if (r.peor < 0) continue;
+      validas++;
+      if (r.peor > peor.dif) peor = { dif: r.peor, donde: r.donde };
+    }
+  }
+  return { ...peor, validas };
+}
+
+async function probarCara(nombre, ruta, selector, tope, { query = "", maxX = 10, maxY = 20, etiqueta = "" } = {}) {
   console.log(`\n== ${nombre}${etiqueta}`);
   const { ctx, page } = await abrir({ ruta: ruta + query, etiqueta: `mirada ${nombre}${etiqueta}` });
   await esperarQuieto(page, "#telefono");
@@ -159,22 +300,29 @@ async function probarCara(nombre, ruta, selector, tope, { query = "", maxX = 6, 
   await esperarTilt(page);
   await esperarQuieto(page, selector);
   const base = await centro(page, selector);
+  const caraSel = nombre === "espalda" ? ".phone-espalda" : "#pantalla-telefono";
+  const caraBase = await centro(page, caraSel);
   ok(!!base, `${nombre}: existe el punto (${selector})`);
   if (!base) return ctx.close();
   for (const [esq, x, y, sx, sy] of ESQUINAS) {
     await page.mouse.move(x, y, { steps: 12 });
     ok(await esperarTilt(page), `${nombre} ${esq}: la inclinación y la mirada se asientan`);
+    // En pantalla, respecto del centro de su cara (la inclinación de 20° también mueve la cara entera).
     const c = await centro(page, selector);
-    const dx = c.x - base.x;
-    const dy = c.y - base.y;
-    ok(Math.sign(Math.round(dx)) === sx && Math.sign(Math.round(dy)) === sy, `${nombre} ${esq}: se desplaza hacia el cursor (dx ${dx.toFixed(1)}, dy ${dy.toFixed(1)})`);
-    ok(Math.abs(dx) <= tope(base.d) * 1.07 + 0.6 && Math.abs(dy) <= tope(base.d) * 1.07 + 0.6, `${nombre} ${esq}: dentro del tope (${tope(base.d).toFixed(1)} px)`);
-    ok(Math.abs(dx) >= tope(base.d) * 0.5 && Math.abs(dy) >= tope(base.d) * 0.5, `${nombre} ${esq}: la mirada se nota (≥ la mitad del tope)`);
+    const cara = await centro(page, caraSel);
+    const dx = c.x - cara.x - (base.x - caraBase.x);
+    const dy = c.y - cara.y - (base.y - caraBase.y);
+    ok(Math.sign(Math.round(dx)) === sx && Math.sign(Math.round(dy)) === sy, `${nombre} ${esq}: el círculo completo se desplaza hacia el cursor (dx ${dx.toFixed(1)}, dy ${dy.toFixed(1)})`);
+    // Tope en px locales (antes de la perspectiva), con el `translate` calculado y el diámetro sin transformar.
+    const l = await local(page, selector);
+    ok(Math.abs(l.x) <= tope(l.d) + 0.05 && Math.abs(l.y) <= tope(l.d) + 0.05, `${nombre} ${esq}: dentro del tope (${l.x.toFixed(1)}, ${l.y.toFixed(1)} de ${tope(l.d).toFixed(1)} px locales)`);
+    ok(Math.abs(l.x) >= tope(l.d) * 0.5 && Math.abs(l.y) >= tope(l.d) * 0.5, `${nombre} ${esq}: la mirada se nota (≥ la mitad del tope)`);
     const t = await leerTilt(page);
     ok(Math.abs(t.ry) >= maxY * 0.97 && Math.abs(t.ry) <= maxY + 0.01 && Math.sign(t.ry) === sx, `${nombre} ${esq}: ${maxY}° a los lados (${t.ry.toFixed(2)}°)`);
     ok(Math.abs(t.rx) >= maxX * 0.97 && Math.abs(t.rx) <= maxX + 0.01 && Math.sign(t.rx) === -sy, `${nombre} ${esq}: ${maxX}° arriba/abajo (${t.rx.toFixed(2)}°)`);
     const b = await brillo(page, selector);
-    ok(b.opacidad > 0.9 && Math.sign(Math.round(b.dx)) === sx && Math.sign(Math.round(b.dy)) === sy && b.ancho < b.d * 0.3, `${nombre} ${esq}: el brillo está del lado del cursor (${b.dx.toFixed(1)}, ${b.dy.toFixed(1)} px, opacidad ${b.opacidad})`);
+    ok(!b.pupila, `${nombre} ${esq}: sin pupila (ni \`::after\` ni hijos dentro del círculo)`);
+    ok(!b.inset && b.opacidad > 0.5 && Math.sign(Math.round(b.dx)) === sx && Math.sign(Math.round(b.dy)) === sy, `${nombre} ${esq}: el brillo es suave, afuera del círculo y del lado del cursor (${b.dx.toFixed(1)}, ${b.dy.toFixed(1)} px, opacidad ${b.opacidad})`);
     if (esq === "arriba-izquierda") await page.screenshot({ path: path.join(salida, `mirada-${nombre}-arriba-izquierda.png`) });
     if (esq === "abajo-derecha") await page.screenshot({ path: path.join(salida, `mirada-${nombre}-abajo-derecha.png`) });
   }
@@ -183,10 +331,12 @@ async function probarCara(nombre, ruta, selector, tope, { query = "", maxX = 6, 
   await esperarTilt(page);
   const fin = await centro(page, selector);
   ok(Math.hypot(fin.x - base.x, fin.y - base.y) < 0.8, `${nombre}: al salir el cursor vuelve al centro (${Math.hypot(fin.x - base.x, fin.y - base.y).toFixed(2)} px)`);
+  const tr = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).translate, selector);
+  ok(tr === "none" || tr.split(" ").every((v) => parseFloat(v) === 0), `${nombre}: en reposo el círculo queda en su centro exacto (translate ${tr})`);
   const t0 = await leerTilt(page);
   ok(Math.abs(t0.rx) < 0.05 && Math.abs(t0.ry) < 0.05, `${nombre}: la inclinación vuelve a 0° (${t0.rx.toFixed(2)}, ${t0.ry.toFixed(2)})`);
   const b0 = await brillo(page, selector);
-  ok(b0.opacidad < 0.05, `${nombre}: sin mirada el brillo no se ve (opacidad ${b0.opacidad})`);
+  ok(b0.opacidad < 0.02, `${nombre}: sin mirada el brillo no se ve (opacidad ${b0.opacidad})`);
   // Vuelta despacio: tras salir desde la esquina no llega al centro de golpe (se mide en la cara del Splash).
   if (nombre === "splash" && !query) {
     await page.mouse.move(4, 4, { steps: 8 });
@@ -205,12 +355,12 @@ async function probarCara(nombre, ruta, selector, tope, { query = "", maxX = 6, 
           requestAnimationFrame(paso);
         })
     );
-    ok(medio > 3, `splash: la vuelta al centro es despacio (a los 300 ms aún quedan ${medio.toFixed(1)}° de 8°)`);
+    ok(medio > 3, `splash: la vuelta al centro es despacio (a los 300 ms aún quedan ${medio.toFixed(1)}° de ${maxY}°)`);
     // Quieto un rato: el cursor se queda en la esquina sin moverse y la inclinación vuelve sola al centro.
     await page.mouse.move(4, 4, { steps: 4 });
     await esperarTilt(page);
     const antes = await leerTilt(page);
-    ok(Math.abs(antes.ry) > 7, `splash: con el cursor quieto en la esquina la inclinación se mantiene al inicio (${antes.ry.toFixed(1)}°)`);
+    ok(Math.abs(antes.ry) > maxY * 0.9, `splash: con el cursor quieto en la esquina la inclinación se mantiene al inicio (${antes.ry.toFixed(1)}°)`);
     const volvio = await page.evaluate(
       () =>
         new Promise((resolver) => {
@@ -235,8 +385,64 @@ try {
   // espalda, 16 % de su tamaño (≈ 1/6).
   await probarCara("splash", "/?escena=splash", ".ps-splash .ps-dot", (d) => d / 6);
   await probarCara("espalda", "/?escena=splash&cara=espalda", ".phone-mascota-halo", (d) => d * 0.16);
-  // Variante para comparar en video (#99): 11° a los lados y 8° arriba/abajo.
-  await probarCara("splash", "/?escena=splash", ".ps-splash .ps-dot", (d) => d / 6, { query: "&inclinacion=mayor", maxX: 8, maxY: 11, etiqueta: " (?inclinacion=mayor)" });
+  // Variantes para que Harold compare (#99): 15°/8° y 25°/12° (la de 20°/10° es la de por defecto, arriba).
+  await probarCara("splash", "/?escena=splash", ".ps-splash .ps-dot", (d) => d / 6, { query: "&inclinacion=15", maxX: 8, maxY: 15, etiqueta: " (?inclinacion=15)" });
+  await probarCara("splash", "/?escena=splash", ".ps-splash .ps-dot", (d) => d / 6, { query: "&inclinacion=25", maxX: 12, maxY: 25, etiqueta: " (?inclinacion=25)" });
+
+  /* ---- el giro lateral se nota más que el vertical, en píxeles proyectados (tres variantes) ---- */
+  console.log("\n== lateral contra vertical (px proyectados)");
+  for (const [v, minimoLateral] of [["15", 40], ["20", 55], ["25", 70]]) {
+    const { ctx, page } = await abrir({ ruta: `/?inclinacion=${v}`, etiqueta: `mirada proyeccion ${v}` });
+    await esperarQuieto(page, "#telefono");
+    const tel = await centro(page, "#telefono");
+    const medir = async (x, y) => {
+      await page.mouse.move(x, y, { steps: 10 });
+      await esperarTilt(page);
+      return proyeccion(page);
+    };
+    const izq = await medir(4, tel.y);
+    const der = await medir(1436, tel.y);
+    const arr = await medir(tel.x, 4);
+    const aba = await medir(tel.x, 896);
+    const lat = Math.min(izq.lateral, der.lateral);
+    const ver = Math.max(arr.vertical, aba.vertical);
+    ok(lat >= minimoLateral, `?inclinacion=${v}: el giro lateral se ve (diferencia de alto entre bordes ${izq.lateral.toFixed(1)} / ${der.lateral.toFixed(1)} px ≥ ${minimoLateral})`);
+    ok(lat > ver * 1.5, `?inclinacion=${v}: lateral claramente mayor que vertical (${lat.toFixed(1)} px contra ${ver.toFixed(1)} px)`);
+    await ctx.close();
+  }
+
+  /* ---- sin líneas finas en los bordes de la caja de la mascota mientras se mueve (#99) ---- */
+  console.log("\n== bordes de la caja de la mascota (píxeles reales, en movimiento)");
+  {
+    const analizador = await (await navegador.newContext()).newPage();
+    for (const tema of ["light", "dark"]) {
+      for (const [cara, ruta, sel] of [["splash", "/?escena=splash", ".ps-splash .ps-dot"], ["espalda", "/?escena=splash&cara=espalda", ".phone-mascota-halo"]]) {
+        for (const dpr of [1, 2]) {
+          const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: tema, deviceScaleFactor: dpr });
+          const page = await ctx.newPage();
+          guardia.instalar(page, `mirada lineas ${cara} ${tema} x${dpr}`);
+          await page.addInitScript(scriptInicial({ tema }));
+          await page.goto(srv.url + ruta, { waitUntil: "load" });
+          await esperarCarga(page, { portada: true });
+          await esperarQuieto(page, "#telefono");
+          // El brillo (`box-shadow` difuminado alrededor del círculo) y la onda del halo de la espalda (`::before`,
+          // crece a 1.55× con opacidad 0.18) son contenido legítimo alrededor del círculo: se apagan para mirar
+          // sólo los bordes de la caja de la mascota (el movimiento, la respiración y el contorno siguen igual).
+          // (CSSOM, no `<style>`: la CSP no permite estilos en línea.)
+          await page.evaluate((s) => {
+            const hoja = [...document.styleSheets].find((h) => h.href);
+            hoja.insertRule(`${s}{box-shadow:none!important}`);
+            hoja.insertRule(".phone-mascota-halo::before{animation:none!important;opacity:0!important}");
+          }, sel);
+          const p = await lineasEnCaja(page, analizador, sel, dpr);
+          ok(p.validas >= 12, `${cara} ${tema} ×${dpr}: muestras válidas en movimiento (${p.validas} de 24)`);
+          ok(p.dif <= 10, `${cara} ${tema} ×${dpr}: junto a los bordes de la caja sólo hay fondo (máx. diferencia ${p.dif}/255${p.donde ? " en " + p.donde : ""})`);
+          await ctx.close();
+        }
+      }
+    }
+    await analizador.context().close();
+  }
 
   /* ---- coreografía: sin saltos, sin pisar el transform, termina de frente ---- */
   console.log("\n== coreografía (giro de 360°)");
@@ -301,7 +507,8 @@ try {
       saltoTilt = Math.max(saltoTilt, (Math.hypot(muestras[i].rx - muestras[i - 1].rx, muestras[i].ry - muestras[i - 1].ry) / dt) * 16.7);
     }
     ok(salto < 3.7, `la mirada no da saltos entre cuadros de la coreografía (máx ${salto.toFixed(2)} px por cuadro)`);
-    ok(saltoTilt < 1.2, `la inclinación no da saltos al entrar ni al salir del giro (máx ${saltoTilt.toFixed(2)}° por cuadro)`);
+    // Mismo criterio relativo que con 8° (1.2° por cuadro = 15 % del máximo): 15 % de los 20° por defecto.
+    ok(saltoTilt < 20 * 0.15, `la inclinación no da saltos al entrar ni al salir del giro (máx ${saltoTilt.toFixed(2)}° por cuadro, tope ${(20 * 0.15).toFixed(1)}°)`);
     // La inclinación se apaga durante el vuelo: pasados 700 ms de giro ya está en ~0.
     const giroTilt = [];
     let inicioGiro = null;
