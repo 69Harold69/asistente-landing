@@ -51,7 +51,7 @@ const pasos = [
   // Reglas de las páginas-guía (Article, FAQ visible, sitemap): defectos sembrados que validar debe atrapar (#50).
   ["guias-pruebas", "python3", ["-I", "test_guias.py"]],
   ["portada-pruebas", "python3", ["-I", "test_portada.py"]],
-  // Malla del hero (#26): pausas, reduced-motion, costo por cuadro y contraste AA en píxeles reales.
+  // Malla de fondo continua (#98): onda en reposo, cursor, táctil, pausas, reduced-motion, intensidad, costo por cuadro y contraste AA por sección.
   ["malla", process.execPath, ["malla.mjs", "--salida", path.join(salida, "malla")]],
   // Mirada de la mascota (#27): dirección y tope, giros, transform intacto, reduced-motion y táctil.
   ["mirada", process.execPath, ["mirada.mjs", "--salida", path.join(salida, "mirada")]],

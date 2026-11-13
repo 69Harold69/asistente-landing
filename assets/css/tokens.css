@@ -78,12 +78,15 @@
      de alto el teléfono (proporción 9:19.5) tiene que entrar completo. */
   --phone-width: min(clamp(216px, 62vw, 296px), (100vh - 8rem) * 0.4615);
 
-  /* Malla del hero (malla.js): opacidades de las líneas y puntos en reposo (color
-     --color-border-card) y encendidos por el cursor (color --color-accent). */
+  /* Malla de fondo (malla.js): opacidades de las líneas y puntos en reposo (color
+     --color-border-card) y encendidos por el cursor (color --color-accent). El claro es
+     más tenue que el oscuro (el fondo crema necesita menos). */
   --malla-linea-reposo: 0.4;
-  --malla-linea-activa: 0.05;
+  --malla-linea-activa: 0.12;
   --malla-punto-reposo: 0.25;
-  --malla-punto-activo: 0.09;
+  --malla-punto-activo: 0.14;
+  /* Intensidad (0..1) de la malla mientras una fase del teléfono ocupa la pantalla. */
+  --malla-recorrido: 0.5;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -107,9 +110,9 @@
     --shadow-color: 0deg 0% 0%;
     --color-on-accent-ui: #151322;
     --malla-linea-reposo: 0.9;
-    --malla-linea-activa: 0.2;
+    --malla-linea-activa: 0.28;
     --malla-punto-reposo: 1;
-    --malla-punto-activo: 0.36;
+    --malla-punto-activo: 0.3;
   }
 }
 
@@ -140,9 +143,9 @@
   --shadow-color: 0deg 0% 0%;
   --color-on-accent-ui: #151322;
   --malla-linea-reposo: 0.9;
-  --malla-linea-activa: 0.2;
+  --malla-linea-activa: 0.28;
   --malla-punto-reposo: 1;
-  --malla-punto-activo: 0.36;
+  --malla-punto-activo: 0.3;
 }
 
 :root[data-theme="light"] {
@@ -165,7 +168,7 @@
   --shadow-color: 25deg 30% 20%;
   --color-on-accent-ui: #ffffff;
   --malla-linea-reposo: 0.4;
-  --malla-linea-activa: 0.05;
+  --malla-linea-activa: 0.12;
   --malla-punto-reposo: 0.25;
-  --malla-punto-activo: 0.09;
+  --malla-punto-activo: 0.14;
 }
