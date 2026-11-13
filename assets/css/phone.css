@@ -139,10 +139,17 @@
   }
 }
 
-/* Inclinación sutil con el mouse (tilt.js), compuesta aparte del giro. */
+/*
+  Inclinación con el mouse (tilt.js, #99), compuesta aparte del giro. `--tilt-p` es la perspectiva EXTRA de la
+  inclinación: se suma (en 1/d) a la de `.escenario-3d` hasta una efectiva de 900 px mientras el teléfono sigue
+  al cursor, y vale «infinito» (1e7 px) en reposo y en los giros, así el giro de 360° conserva sus 1600 px.
+  Origen al centro (el del envoltorio coincide con el de `.escenario-3d`, así las dos perspectivas se suman).
+*/
 .phone-tilt {
   transform-style: preserve-3d;
-  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transform-origin: 50% 50%;
+  transform: translateX(var(--tilt-dx, 0px)) perspective(var(--tilt-p, 10000000px)) rotateX(var(--tilt-x, 0deg))
+    rotateY(var(--tilt-y, 0deg));
 }
 
 /*
@@ -465,24 +472,20 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--color-accent);
-  /* Mirada (tilt.js, #27/#99): hasta 16 % de su propio tamaño (~1/6 del diámetro) hacia el cursor, por
-     `translate` (se compone con la respiración, que usa `transform`). A 180° la espalda queda sin
-     espejo en pantalla (giro del teléfono + rotateY de la cara), así que no se invierte. */
+  /* Mirada (tilt.js, #27/#99): el círculo completo se corre hasta 16 % de su tamaño (~1/6 del diámetro)
+     hacia el cursor, por `translate` (se compone con la respiración, que usa `transform`). A 180° la espalda
+     queda sin espejo en pantalla (giro del teléfono + rotateY de la cara), así que no se invierte. Brillo
+     suave del lado del cursor, afuera del círculo y en su propio color (sobre la espalda clara u oscura);
+     contorno transparente por lo mismo que en el Splash (scenes.css): sin bordes de caja pegados a lo pintado. */
+  outline: 0.5rem solid transparent;
   translate: calc(var(--mira-x, 0) * 16%) calc(var(--mira-y, 0) * 16%);
+  box-shadow: calc(var(--mira-x, 0) * 0.25rem) calc(var(--mira-y, 0) * 0.25rem) 0.9rem -0.1rem
+    color-mix(in oklab, var(--color-accent) calc(var(--mira-r, 0) * 75%), transparent);
 }
 
-/* Brillo pequeño del lado del cursor (#99), igual que en el Splash. */
-.phone-mascota-halo::after {
-  content: "";
-  position: absolute;
-  width: 22%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--color-on-accent);
-  opacity: min(1, max(var(--mira-x, 0), var(--mira-y, 0), calc(var(--mira-x, 0) * -1), calc(var(--mira-y, 0) * -1)));
-  left: calc(50% + var(--mira-x, 0) * 30% - 11%);
-  top: calc(50% + var(--mira-y, 0) * 30% - 11%);
-  pointer-events: none;
+[data-brillo="orilla"] .phone-mascota-halo {
+  box-shadow: inset calc(var(--mira-x, 0) * -0.45rem) calc(var(--mira-y, 0) * -0.45rem) 0.55rem -0.2rem
+    color-mix(in oklab, var(--color-on-accent) calc(var(--mira-r, 0) * 60%), transparent);
 }
 
 .phone-mascota-halo::before {
