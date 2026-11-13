@@ -29,6 +29,8 @@ function recolectar() {
   const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
   const out = [];
   const els = [...document.querySelectorAll("main *, .site-header *")];
+  const stage = document.getElementById("stage");
+  const stageAbajo = stage && matchMedia("(max-width: 1023px)").matches ? stage.getBoundingClientRect().bottom : 0;
   els.forEach((el, idx) => {
     if (el.closest(SALTAR)) return;
     const nodos = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim().length);
@@ -44,6 +46,12 @@ function recolectar() {
       for (const q of r.getClientRects()) if (q.width > 2 && q.height > 2) rects.push([q.left, q.top, q.right, q.bottom]);
     }
     if (!rects.length) return;
+    // En una píldora (kicker, significado, pista) la caja de línea del texto llega a rozar su aro luminoso del borde; el aro es
+    // decoración, no está bajo las letras: se mide la zona de las letras (3 px menos arriba y abajo).
+    if (el.matches(".fase-kicker, .hero-significado, .pista-scroll")) for (const q of rects) { q[1] += 3; q[3] -= 3; }
+    // En móvil/tablet la franja del teléfono (`#stage`, opaca salvo la malla) tapa lo que sube por detrás: lo que queda
+    // bajo ella no se ve, así que no se mide ahí (se medirá en otra posición del scroll, ya por debajo de la franja).
+    if (stageAbajo > 0 && rects.some((q) => q[1] < stageAbajo - 1)) return;
     const px = parseFloat(cs.fontSize);
     const w = Number(cs.fontWeight);
     const grande = px >= 24 || (px >= 18.66 && w >= 700);
