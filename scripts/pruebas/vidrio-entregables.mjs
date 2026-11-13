@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
   vidrio-entregables (#100): genera las láminas y los videos que revisa el dueño. Herramienta manual (no es una prueba).
-    node vidrio-entregables.mjs laminas  --base RAIZ_ANTES [--salida DIR]      antes (sin vidrio) / después (?vidrio=1), 4 combos
+    node vidrio-entregables.mjs laminas  --base RAIZ_ANTES [--salida DIR] [--solo-movil]      antes (sin vidrio) / después (?vidrio=1), 4 combos
     node vidrio-entregables.mjs barrido  [--rellenos 0.25,0.30,...] [--id fase-chat]  la misma sección a varios rellenos
     node vidrio-entregables.mjs formas                                         separada | única, lado a lado
     node vidrio-entregables.mjs respaldos                                      reduced-transparency y sin backdrop-filter
@@ -21,7 +21,7 @@ const salida = carpetaSalida(a.salida, "~/Pictures/yaruki-landing-2026-11/v2/vid
 const SECCIONES = ["hero", "fase-chat", "fase-elementos", "fase-habitos", "fase-avisos", "fase-llamada", "cta", "como-funciona", "lo-que-viene", "preguntas", "quien-esta-detras"];
 const TAM = { escritorio: { w: 1440, h: 900, movil: false }, movil: { w: 390, h: 844, movil: true } };
 const TEMA = { claro: "light", oscuro: "dark" };
-const COMBOS = [["claro", "escritorio"], ["oscuro", "escritorio"], ["claro", "movil"], ["oscuro", "movil"]];
+const COMBOS = [["claro", "escritorio"], ["oscuro", "escritorio"], ["claro", "movil"], ["oscuro", "movil"]].filter(([, tam]) => !a["solo-movil"] || tam === "movil");
 
 const nav = await lanzarChromium();
 const srv = await iniciarServidor();
@@ -118,7 +118,7 @@ if (modo === "respaldos") {
     "sin-backdrop-filter": { rutaCss: (css) => css.replaceAll("@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))", "@supports (nunca-existe: 1)") },
     "contraste-mas": { cdpMedia: [{ name: "prefers-contrast", value: "more" }] },
   };
-  for (const [nombre, v] of Object.entries(variantes)) for (const [tema, tam] of [["claro", "escritorio"], ["oscuro", "escritorio"], ["claro", "movil"], ["oscuro", "movil"]]) for (const id of ["fase-chat", "preguntas"]) {
+  for (const [nombre, v] of Object.entries(variantes)) for (const [tema, tam] of COMBOS) for (const id of ["fase-chat", "preguntas"]) {
     const { ctx, page } = await abrir(`${srv.url}/?vidrio=1`, { tema, tam, ...v });
     await irA(page, id, tam);
     const filtro = await page.evaluate((id) => getComputedStyle(document.getElementById(id), "::after").backdropFilter, id);
@@ -131,7 +131,7 @@ if (modo === "respaldos") {
 if (modo === "videos") {
   const dirV = path.join(salida, "_v"); fs.mkdirSync(dirV, { recursive: true });
   const alto = (page) => page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
-  for (const [tema, tam, mouse] of [["claro", "escritorio", false], ["oscuro", "escritorio", false], ["claro", "escritorio", true], ["oscuro", "escritorio", true], ["claro", "movil", false], ["oscuro", "movil", false]]) {
+  for (const [tema, tam, mouse] of [["claro", "escritorio", false], ["oscuro", "escritorio", false], ["claro", "escritorio", true], ["oscuro", "escritorio", true], ["claro", "movil", false], ["oscuro", "movil", false]].filter(([, tam]) => !a["solo-movil"] || tam === "movil")) {
     const nombre = `recorrido-${tema}-${tam}${tam === "escritorio" ? (mouse ? "-con-mouse" : "-quieto") : "-tactil"}`;
     const dir = path.join(dirV, nombre); fs.mkdirSync(dir, { recursive: true });
     const { ctx, page } = await abrir(`${srv.url}/?vidrio=1`, { tema, tam, video: dir });
