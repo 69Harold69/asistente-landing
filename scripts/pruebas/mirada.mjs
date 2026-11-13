@@ -322,7 +322,8 @@ async function probarCara(nombre, ruta, selector, tope, { query = "", maxX = 10,
     ok(Math.abs(t.rx) >= maxX * 0.97 && Math.abs(t.rx) <= maxX + 0.01 && Math.sign(t.rx) === -sy, `${nombre} ${esq}: ${maxX}° arriba/abajo (${t.rx.toFixed(2)}°)`);
     const b = await brillo(page, selector);
     ok(!b.pupila, `${nombre} ${esq}: sin pupila (ni \`::after\` ni hijos dentro del círculo)`);
-    ok(!b.inset && b.opacidad > 0.5 && Math.sign(Math.round(b.dx)) === sx && Math.sign(Math.round(b.dy)) === sy, `${nombre} ${esq}: el brillo es suave, afuera del círculo y del lado del cursor (${b.dx.toFixed(1)}, ${b.dy.toFixed(1)} px, opacidad ${b.opacidad})`);    if (esq === "arriba-izquierda") await page.screenshot({ path: path.join(salida, `mirada-${nombre}-arriba-izquierda.png`) });
+    ok(!b.inset && b.opacidad > 0.5 && Math.sign(Math.round(b.dx)) === sx && Math.sign(Math.round(b.dy)) === sy, `${nombre} ${esq}: el brillo es suave, afuera del círculo y del lado del cursor (${b.dx.toFixed(1)}, ${b.dy.toFixed(1)} px, opacidad ${b.opacidad})`);
+    if (esq === "arriba-izquierda") await page.screenshot({ path: path.join(salida, `mirada-${nombre}-arriba-izquierda.png`) });
     if (esq === "abajo-derecha") await page.screenshot({ path: path.join(salida, `mirada-${nombre}-abajo-derecha.png`) });
   }
   // El cursor sale: vuelve despacio al centro (y el brillo se apaga).
@@ -525,7 +526,27 @@ try {
     const enMovimiento = giro.filter((m) => Math.hypot(m.x, m.y) > 2.5).length;
     ok(giro.length > 5 && enMovimiento / giro.length < 0.15, `durante los giros la mirada se apaga (${enMovimiento}/${giro.length} muestras con desplazamiento > 2.5 px)`);
     ok(e.angulo !== null && (e.angulo < 0.6 || e.angulo > 359.4) && e.escena === "splash", `al regresar arriba el teléfono queda de frente en splash (${e.angulo?.toFixed(2)}°, ${e.escena})`);
-    const despues = await page.evaluate(() => document.querySelector(".ps-dot-escala")?.style.transform ?? "");
+    /* La escala de la mascota la suaviza stage.js con el scroll: con la máquina cargada sigue bajando un rato después
+       de que el estado «reposa» (corrida 10/10 de la auditoría del control 1: «scale(1.06503)»). Se espera por ESTADO
+       (#88) a que vuelva a la de antes o deje de cambiar; la aserción no cambia: debe quedar igual que antes. */
+    const despues = await page.evaluate(
+      ({ antes, max }) =>
+        new Promise((resolver) => {
+          const leer = () => document.querySelector(".ps-dot-escala")?.style.transform ?? "";
+          let previo = leer();
+          let quietos = 0;
+          const t0 = performance.now();
+          const paso = () => {
+            const v = leer();
+            quietos = v === previo ? quietos + 1 : 0;
+            previo = v;
+            if (v === antes || quietos >= 60 || performance.now() - t0 > max) return resolver(v);
+            requestAnimationFrame(paso);
+          };
+          requestAnimationFrame(paso);
+        }),
+      { antes, max: MAX_ESPERA }
+    );
     const pisadas = await page.evaluate(() => window.__mira.pisadas);
     ok(antes === despues && pisadas.length === 0, `[antes="${antes}" despues="${despues}"] el \`transform\` de la coreografía sobre la mascota no fue pisado por la mirada (${pisadas.length} cuadros pisados${pisadas.length ? ": " + pisadas[0] : ""})`);
     await ctx.close();
