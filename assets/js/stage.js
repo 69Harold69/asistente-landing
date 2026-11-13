@@ -286,6 +286,19 @@ function cruceDeLectura(previa, nueva, desde, hasta, zonaTexto, vh) {
   return (desde + hasta) / 2;
 }
 
+/*
+  Retención de la tarjeta en móvil (#122). Una tarjeta que CABE entre la franja del teléfono y el borde inferior sube
+  con el scroll, así que solo está «entera» mientras recorre ese hueco (decenas de px). Para darle un tramo cómodo
+  (`LECTURA_MIN` = 25 % del alto visible) la sección se queda quieta, con el borde de arriba pegado a la franja,
+  `--ret-largo` px de scroll, y después sigue su camino. Lo hace una animación CSS ligada al scroll del documento
+  (`animation-timeline: scroll(root)`, base.css): corre en el compositor, sin JS por cuadro, y mueve la sección entera
+  (kicker, título, párrafos y la tarjeta de vidrio con su aro) como un solo bloque. Aquí solo se calculan, en px, dónde
+  empieza (`--ret-ini`, el scroll al que el borde de arriba toca la franja) y cuánto dura (`--ret-largo`). Si la tarjeta
+  no cabe, no hay retención: sube normal y el giro espera por el padding de la sección (base.css).
+*/
+const LECTURA_MIN = 0.25;
+const MARGEN_LECTURA = 24; // 1.5rem de aire sobre el borde inferior
+
 const arco = (p) => Math.sin(p * Math.PI);
 const entradaYSalida = (p) => (p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2);
 const limitar01 = (v) => Math.min(Math.max(v, 0), 1);
@@ -328,6 +341,53 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   let ultimo = null;
 
   const calcularModo = () => (mqReducido.matches ? "reducido" : mqEscritorio.matches ? "escritorio" : "movil");
+
+  /** Calcula `--ret-ini` y `--ret-largo` de cada fase que cabe (ver LECTURA_MIN); quita la retención donde no aplica. */
+  function fijarRetencion(vh) {
+    const secs = FASES.filter((f) => !f.cierre).map((f) => document.getElementById(f.seccion)).filter(Boolean);
+    const franja = stageEl ? stageEl.offsetHeight : 0;
+    const corto = window.matchMedia("(orientation: landscape) and (max-height: 520px)").matches;
+    const activa = modo === "movil" && !corto && franja > 0;
+    const degradado = stageEl ? parseFloat(getComputedStyle(stageEl, "::after").height) || 0 : 0;
+    const zonaTop = franja + degradado;
+    for (const sec of secs) {
+      const hijos = sec.children;
+      let largo = 0;
+      let ini = 0;
+      if (activa && hijos.length) {
+        const primero = hijos[0];
+        const ultimo = hijos[hijos.length - 1];
+        const margen = document.documentElement.hasAttribute("data-vidrio") ? parseFloat(getComputedStyle(ultimo).marginBottom) || 0 : 0;
+        const bt = topDoc(primero);
+        const alto = topDoc(ultimo) + ultimo.offsetHeight + margen - bt;
+        if (alto <= vh - zonaTop - MARGEN_LECTURA) {
+          // Tramo libre: de que la última línea asoma (con margen) a que el borde de arriba toca la franja.
+          ini = bt - zonaTop - 2; // 2 px por debajo del degradado: el redondeo de offsetTop no la deja un píxel bajo la franja
+          const libre = ini - (bt + alto - (vh - MARGEN_LECTURA));
+          largo = Math.max(0, LECTURA_MIN * vh - libre);
+        }
+      }
+      if (largo > 0.5) {
+        const nuevoIni = ini.toFixed(1);
+        const nuevoLargo = largo.toFixed(1);
+        if (sec.style.getPropertyValue("--ret-ini") !== nuevoIni || sec.style.getPropertyValue("--ret-largo") !== nuevoLargo) {
+          // Chrome no reubica el rango de una animación ya en marcha cuando cambian estas variables (quedaba el del
+          // primer cálculo, hecho antes de que el layout se asentara): se reinicia quitándola y poniéndola de nuevo.
+          if (sec.dataset.retencion !== undefined) {
+            delete sec.dataset.retencion;
+            void sec.offsetWidth;
+          }
+          sec.style.setProperty("--ret-ini", nuevoIni);
+          sec.style.setProperty("--ret-largo", nuevoLargo);
+        }
+        sec.dataset.retencion = "";
+      } else {
+        sec.style.removeProperty("--ret-ini");
+        sec.style.removeProperty("--ret-largo");
+        delete sec.dataset.retencion;
+      }
+    }
+  }
 
   function medir() {
     modo = calcularModo();
@@ -449,6 +509,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       }),
       max: Math.max(0, document.documentElement.scrollHeight - vh),
     };
+    fijarRetencion(vh);
     anchoMedido = window.innerWidth;
     altoMedido = vh;
     altoDocMedido = document.documentElement.scrollHeight;

@@ -927,6 +927,32 @@ strong {
   }
 }
 
+/*
+  Retención (#122): stage.js marca con `data-retencion` las fases cuya tarjeta cabe bajo la franja y les da `--ret-ini` (el
+  scroll en px al que el borde de arriba toca la franja) y `--ret-largo` (cuánto se queda quieta). La animación va ligada
+  al scroll del documento: transform en el compositor, sin JS por cuadro; mueve la sección entera (texto, tarjeta y aro).
+  Sin soporte de `animation-timeline`, con «reducir movimiento» o sin JS no hay retención: la tarjeta sube normal y el
+  padding de arriba sigue dando su tramo de lectura.
+*/
+@keyframes retener-tarjeta {
+  to {
+    transform: translateY(calc(var(--ret-largo) * 1px));
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
+    .secciones > .seccion[data-retencion] {
+      animation-name: retener-tarjeta;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(root block);
+      animation-range: calc(var(--ret-ini) * 1px) calc((var(--ret-ini) + var(--ret-largo)) * 1px);
+    }
+  }
+}
+
 @media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
   .seccion:not(.seccion-hero):not(#cta) {
     padding-bottom: var(--space-6);

@@ -130,9 +130,19 @@ teléfono empiece a girar hacia la fase siguiente. Cómo está resuelto, sin toc
   la vista, con 1.5rem de margen sobre el borde inferior, al menos el 25 % del alto visible de scroll antes del giro
   (1.5rem + (25 % − 8 %)). El espacio va DESPUÉS del bloque, así que se adapta solo a la altura real de cada tarjeta, y
   si la tarjeta no cabe entera bajo la franja el texto sube normal mientras el teléfono espera en su escena.
-- *«Entero a la vista».* Un bloque de 400 px en una zona útil de 430 px se mueve 1:1 con el scroll: quieto no está nunca,
-  así que «entero visible durante el 25 %» solo es posible si zona − bloque − 1.5rem ≥ 25 %. La prueba pide lo que de hecho
-  cabe (`min(25 %, zona − bloque − 1.5rem)`) y, aparte, el 25 % con la última línea a la vista.
+- *Retención de la tarjeta.* Un bloque que cabe entre la franja y el borde inferior sube con el scroll, así que solo
+  está «entero» mientras recorre ese hueco (decenas de px): para darle el 25 % del alto visible, la sección se queda
+  quieta con el borde de arriba pegado a la franja (2 px bajo el degradado) `--ret-largo` px de scroll y después sigue.
+  `stage.js` (`fijarRetencion`) calcula, en px y al medir, `--ret-ini` (scroll al que el borde toca la franja) y
+  `--ret-largo` (`25 % × alto visible − tramo libre`) y marca la sección con `data-retencion`; la animación es CSS pura
+  ligada al scroll (`animation-timeline: scroll(root block)` + `animation-range`, bloque «Retención» de `base.css`):
+  transform en el compositor, sin JS por cuadro, y mueve la sección entera (texto, tarjeta y aro) como un bloque. No
+  añade scroll: va dentro del `padding-bottom` de arriba. Sin soporte de `animation-timeline`, con «reducir movimiento»
+  o sin JS no hay retención (la tarjeta sube normal). Chrome no reubica el rango de una animación en marcha cuando
+  cambian las variables: por eso se quita y se vuelve a poner `data-retencion` al cambiar. Si la tarjeta no cabe
+  (p. ej. el chat, ~504 px) no hay retención: sube normal y el giro espera por el padding.
+  Al entrar por hash el navegador alinea la caja con el `transform` ya aplicado y la tarjeta aterriza ~20 px bajo
+  el borde superior ideal (como antes: el hash ya dejaba el borde de arriba bajo el degradado).
 - *Alto visible.* `--vh-pequeno` (`tokens.css`) es `1svh` (con respaldo `1vh`): la franja (44 / 50 svh), el `padding-top`
   y el `min-height` de las secciones, y `stage.js` (una sonda `.sonda-alto` de `100svh`, no `innerHeight`) usan el viewport
   PEQUEÑO, el de las barras de Chrome a la vista, que no cambia al esconderlas: el layout no salta y el cálculo de «cabe /

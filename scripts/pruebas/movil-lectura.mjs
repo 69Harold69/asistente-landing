@@ -137,20 +137,43 @@ for (const [w, h0] of tamanos) {
       const zonaTop = dom.franja + dom.grad;
       const zonaAlto = dom.vh - zonaTop;
       const vh = dom.vh;
-      FASES.forEach((id, i) => {
+      for (let i = 0; i < FASES.length; i++) {
+        const id = FASES[i];
         const b = dom.bloques[id];
-        if (!b) return;
+        if (!b) continue;
         const H = b.bb - b.bt;
         const giroSig = i + 1 < FASES.length ? giros[i + 1] : null; // el giro i+1 es la salida de la fase i
         const cabe = H <= zonaAlto - MARGEN_PX;
         const desde = b.bb - (vh - MARGEN_PX);   // y a partir del cual el bloque termina por abajo dentro del alto visible (con margen)
         const hasta = b.bt - zonaTop;            // y hasta el cual el bloque empieza por debajo de la zona útil
         const limite = giroSig ?? Infinity;
-        const entero = cabe ? Math.max(0, Math.min(limite, hasta) - desde) : 0;
+        // «Entero»: se mide de verdad, rectángulo en mano: cada 10 px de scroll, hasta el arranque del giro, cuenta si el
+        // primer y el último elemento (con el margen de la tarjeta) caben entre la zona útil y el borde inferior. Así
+        // cuenta también la retención (la tarjeta pegada a la franja), que no se deduce del layout.
+        const entero = cabe
+          ? await page.evaluate(async ({ id, desde, hasta, zonaTop, vh, margen }) => {
+              const paso = 10;
+              const sec = document.getElementById(id);
+              const hijos = [...sec.children];
+              const mb = document.documentElement.hasAttribute("data-vidrio") ? parseFloat(getComputedStyle(hijos[hijos.length - 1]).marginBottom) || 0 : 0;
+              let n = 0;
+              // La entrada de las piezas (revelar.js, 0.8 s) termina quieta: se espera antes de contar.
+              scrollTo(0, Math.max(0, desde - 20));
+              await new Promise((r) => setTimeout(r, 1300));
+              for (let y = Math.max(0, desde - 20); y < hasta; y += paso) {
+                scrollTo(0, y);
+                await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r))));
+                const a = hijos[0].getBoundingClientRect();
+                const z = hijos[hijos.length - 1].getBoundingClientRect();
+                if (a.top >= zonaTop - 1 && z.bottom + mb <= vh - margen + 1) n++;
+              }
+              return n * paso;
+            }, { id, desde, hasta: Math.min(limite, desde + 0.9 * vh), zonaTop, vh, margen: MARGEN_PX })
+          : 0;
         const ultima = giroSig === null ? null : giroSig - (b.bb - (vh - MARGEN_PX));
         const posible = Math.max(0, zonaAlto - H - MARGEN_PX);
         filas.push({ etiqueta, w, h, tema, conBarras, id, H: Math.round(H), zonaAlto: Math.round(zonaAlto), cabe, giro: giroSig, ultima: ultima === null ? null : Math.round(ultima), entero: Math.round(entero), posible: Math.round(posible), vh, total: dom.total - vh, bt: Math.round(b.bt), bb: Math.round(b.bb), zonaTop: Math.round(zonaTop) });
-      });
+      }
       // (iii) nada del bloque queda bajo la franja: con el bloque dentro de la zona útil, el punto del centro de su primer y
       // último elemento pertenece a la sección (no a la franja del teléfono).
       for (const id of FASES) {
@@ -195,13 +218,13 @@ if (!soloMedir) {
   for (const f of filas) {
     if (f.giro === null) {
       // cierre: solo se afirma que, si cabe, queda entero en la zona útil (hay posición de scroll con el bloque entero)
-      if (f.cabe && f.posible <= 0) fallas.push(`${f.etiqueta} ${f.id}: el cierre cabe pero nunca queda entero en la zona útil`);
+      if (f.cabe && f.entero <= 0) fallas.push(`${f.etiqueta} ${f.id}: el cierre cabe pero nunca queda entero en la zona útil`);
       continue;
     }
     const minimo = DWELL * f.vh;
     if (f.cabe) {
-      const pide = Math.min(minimo, f.posible);
-      if (f.entero < pide - 2) fallas.push(`${f.etiqueta} ${f.id}: (i) cabe (${f.H} ≤ ${f.zonaAlto}) y solo ${f.entero} px de scroll con el bloque entero antes del giro (mínimo ${Math.round(pide)})`);
+      const pide = minimo; // 25 % del alto visible, con el bloque ENTERO a la vista (la retención lo hace posible)
+      if (f.entero < pide - 12) fallas.push(`${f.etiqueta} ${f.id}: (i) cabe (${f.H} ≤ ${f.zonaAlto}) y solo ${f.entero} px de scroll con el bloque entero antes del giro (mínimo ${Math.round(pide)})`);
     }
     if (f.ultima < minimo - 2) fallas.push(`${f.etiqueta} ${f.id}: (${f.cabe ? "i" : "ii"}) la última línea lleva ${f.ultima} px de scroll visible cuando empieza el giro (mínimo ${Math.round(minimo)})`);
   }
