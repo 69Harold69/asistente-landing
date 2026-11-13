@@ -988,6 +988,43 @@ html[data-malla-recorrido] {
   }
 }
 
+/* Modo de diagnóstico de la malla (`?malla-diagnostico=1`, malla-diagnostico.js): solo existe con el parámetro. */
+.malla-diagnostico {
+  position: fixed;
+  left: 8px;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index: 1000;
+  max-width: calc(100vw - 16px);
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
+  font: 12px/1.35 ui-monospace, monospace;
+  opacity: 0.9;
+}
+
+.malla-diagnostico pre {
+  margin: 0;
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+.malla-diagnostico p {
+  margin: 6px 0 0;
+}
+
+.malla-diagnostico a {
+  color: #c9c2ff;
+  padding: 4px 6px;
+  display: inline-block;
+}
+
+.malla-diagnostico a[aria-current] {
+  color: #111;
+  background: #c9c2ff;
+  border-radius: 4px;
+}
+
 .hero-significado {
   font-family: var(--font-display);
   font-weight: 600;

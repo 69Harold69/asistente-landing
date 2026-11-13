@@ -79,6 +79,10 @@ inicializarTilt();
 // La malla (un canvas fijo para toda la portada) arranca sola tras `load` + idle: nunca retrasa el titular (LCP).
 // Las fases del recorrido bajan su intensidad mientras ocupan la pantalla (`--malla-recorrido`, tokens.css).
 inicializarMalla([...document.querySelectorAll('.secciones > section[id^="fase-"]')]);
+// Diagnóstico de la malla para medirla en un teléfono real (`?malla-diagnostico=1`): sin el parámetro no se descarga.
+if (new URLSearchParams(location.search).has("malla-diagnostico")) {
+  import(`./malla-diagnostico.js${new URL(import.meta.url).search}`).then((m) => m.iniciarDiagnostico()).catch(() => {});
+}
 
 /*
   Botón "Únete a la beta": ya es un enlace real en el HTML (`href` al Google

@@ -54,6 +54,20 @@ const FRAME_REPOSO = 1000 / 30; // en reposo y en táctil se dibuja a 30 fps
 const MOVIMIENTO_RECIENTE = 900; // ms desde el último movimiento del cursor que cuentan como «interactuando»
 
 /*
+  Táctil (sin hover/puntero fino), donde el teléfono de gama media es el que sufre. Tres variantes, elegibles con
+  `?malla-movil=normal|ligera|pausa-scroll` (para comparar en un teléfono real con `?malla-diagnostico=1`):
+  - normal: 30 fps, canvas a DPR ≤ 2;
+  - ligera: 30 fps, canvas a DPR 1 (un cuarto de píxeles que rasterizar en un teléfono de DPR 2–3);
+  - pausa-scroll: como normal, pero no dibuja mientras el dedo hace scroll (la malla es fija: se queda quieta
+    y vuelve a ondular PAUSA_SCROLL ms después del último evento de scroll).
+  En escritorio no aplica. La que va por defecto se eligió midiendo con CPU ×4 (README).
+*/
+const VARIANTES_MOVIL = ["normal", "ligera", "pausa-scroll"];
+const MOVIL_POR_DEFECTO = "normal";
+const DPR_MAX_LIGERA = 1;
+const PAUSA_SCROLL = 180;
+
+/*
   Texto en color de acento (el kicker de cada fase y los enlaces en línea). Es el único texto cuyo contraste base es
   casi el mínimo (4.6:1 en claro, 5.4:1 en oscuro): cualquier línea de la malla detrás, aun en reposo, lo bajaría de
   4.5:1. El resto del texto (primario y secundario) se protege con las opacidades de `--malla-*` (tokens.css). Detrás de
@@ -95,6 +109,15 @@ export function fijarIntensidadRecorrido(valor) {
 }
 
 /** `?malla=pleno|medio|0.35`: solo para comparar niveles en el punto de control. */
+function varianteMovilDeUrl() {
+  try {
+    const v = new URLSearchParams(location.search).get("malla-movil");
+    return VARIANTES_MOVIL.includes(v) ? v : MOVIL_POR_DEFECTO;
+  } catch {
+    return MOVIL_POR_DEFECTO;
+  }
+}
+
 function aplicarParametro() {
   let p = null;
   try {
@@ -136,6 +159,14 @@ function montar(fasesRecorrido) {
   */
   let dibujados = 0;
   Object.defineProperty(canvas, "cuadrosAnimados", { get: () => dibujados });
+  const varianteMovil = varianteMovilDeUrl();
+  const tactil = () => !mqFino.matches;
+  let enScroll = false; // pausa-scroll: el dedo está haciendo scroll
+  let finScroll = 0;
+  // Estado para el modo de diagnóstico (`?malla-diagnostico=1`, malla-diagnostico.js) y las pruebas.
+  Object.defineProperty(canvas, "mallaInfo", {
+    get: () => ({ variante: tactil() ? varianteMovil : "escritorio", dpr, ancho, alto, cuadros: dibujados, pausadaPorScroll: enScroll }),
+  });
   let ancho = 0;
   let alto = 0;
   let dpr = 1;
@@ -203,7 +234,8 @@ function montar(fasesRecorrido) {
     const nuevoAncho = canvas.clientWidth;
     const nuevoAlto = canvas.clientHeight;
     if (nuevoAncho < 1 || nuevoAlto < 1) return;
-    const nuevoDpr = Math.min(window.devicePixelRatio || 1, DPR_MAX, Math.sqrt(PIXELES_MAX / (nuevoAncho * nuevoAlto)));
+    const dprMax = tactil() && varianteMovil === "ligera" ? DPR_MAX_LIGERA : DPR_MAX;
+    const nuevoDpr = Math.min(window.devicePixelRatio || 1, dprMax, Math.sqrt(PIXELES_MAX / (nuevoAncho * nuevoAlto)));
     if (nuevoAncho === ancho && nuevoAlto === alto && nuevoDpr === dpr) return;
     ancho = nuevoAncho;
     alto = nuevoAlto;
@@ -329,7 +361,7 @@ function montar(fasesRecorrido) {
   }
 
   const reduce = () => mqReducido.matches;
-  const puedeAnimar = () => !reduce() && visible && !document.hidden && ancho > 0;
+  const puedeAnimar = () => !reduce() && visible && !document.hidden && !enScroll && ancho > 0;
   const reacciona = () => mqFino.matches && !reduce();
 
   function agendar() {
@@ -436,7 +468,28 @@ function montar(fasesRecorrido) {
     { passive: true },
   );
   mqReducido.addEventListener?.("change", aplicarModo);
-  mqFino.addEventListener?.("change", () => agendar());
+  mqFino.addEventListener?.("change", () => {
+    medir(); // la variante ligera cambia la resolución del canvas
+    agendar();
+  });
+  if (varianteMovil === "pausa-scroll") {
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!tactil() || reduce()) return;
+        if (!enScroll) {
+          enScroll = true;
+          parar();
+        }
+        clearTimeout(finScroll);
+        finScroll = setTimeout(() => {
+          enScroll = false;
+          agendar();
+        }, PAUSA_SCROLL);
+      },
+      { passive: true },
+    );
+  }
   document.addEventListener("visibilitychange", () => (document.hidden ? parar() : agendar()));
   // <main> fuera de pantalla (el pie, opaco, lo cubre todo): no hay nada que ver ni que animar.
   if (principal) {
