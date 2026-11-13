@@ -448,6 +448,19 @@ falta — no quedó ningún `node_modules/`/`package.json` en el repo.
   (idéntico al `LICENSE` de `npm pack canvas-confetti@1.9.4`; el
   `canvas-confetti.min.js` es byte a byte `dist/confetti.browser.js` de ese
   paquete, verificado el 2026-11-10).
+- **Íconos de las escenas** (no son librerías, son paths copiados en `assets/js/icons.js` y `scenes/chat.js`): los de
+  tipo de Elemento vienen de `IconosBento.kt` de la app, que los toma de **Lucide** (ISC; «calendar» deriva de Feather,
+  MIT), y los de la barra inferior, el botón del asistente y el check de las preguntas son paths literales de
+  **material-icons-core 1.6.8** (Apache-2.0). Textos completos en `assets/js/LICENSE-iconos.txt`; `licencias.py` lo
+  verifica.
+
+### Desviaciones deliberadas de la app en las escenas
+
+Las escenas copian la app; estas diferencias son a propósito y se anotaron como hallazgo para android:
+
+- **Etiqueta del destino activo de la barra inferior** (`.ps-nav-item--activo span`): `acentoTexto` en vez de
+  `primary`. Con `primary` sobre la barra (surface + 8.2 % de primary por `tonalElevation 3.dp`) mide 4.46:1 en claro
+  y 4.45:1 en oscuro, bajo AA para texto de 11sp; con `acentoTexto`, 4.85:1 y 5.27:1. El ícono sigue en `primary`.
 
 ## Fuentes autoalojadas
 

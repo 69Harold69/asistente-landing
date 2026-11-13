@@ -6,6 +6,7 @@
   la pantalla Elementos y las tarjetas ricas del chat. Los de la barra de
   navegación y del botón del asistente son los de Material (rellenos), ver
   `MATERIAL` más abajo.
+  Licencias (Lucide ISC, Feather MIT para «calendar», material-icons-core Apache-2.0): `assets/js/LICENSE-iconos.txt`.
 */
 const PATHS = {
   tareas: ["M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", "M9 11l3 3L22 4"],

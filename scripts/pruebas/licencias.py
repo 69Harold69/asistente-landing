@@ -80,5 +80,24 @@ if sha(V / "gsap.min.js") != "92bb9a96476f983d212a2bc4f54c889039c1696dd4461d40a7
 if sha(V / "ScrollTrigger.min.js") != "b0b14d67b55b0c43c756ac0b106cfcb09d0879945f6ead64451065b0672916a2":
     falla("ScrollTrigger.min.js no es el de gsap@3.15.0 de npm")
 
+# Íconos copiados (Lucide/Feather de IconosBento.kt y Material de material-icons-core): auditoría de la Fase 2.
+iconos = RAIZ / "assets/js/LICENSE-iconos.txt"
+if not iconos.exists():
+    falla("assets/js/LICENSE-iconos.txt: falta la licencia de los íconos de las escenas")
+else:
+    t = iconos.read_text(encoding="utf-8")
+    for frase in (
+        "Copyright (c) 2026 Lucide Icons and Contributors",
+        "Copyright (c) 2013-present Cole Bemis",
+        "Copyright 2024 The Android Open Source Project",
+        "Apache License",
+        "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION",
+    ):
+        if frase not in t:
+            falla(f"LICENSE-iconos.txt: falta «{frase}»")
+    js = (RAIZ / "assets/js/icons.js").read_text(encoding="utf-8")
+    if "LICENSE-iconos.txt" not in js:
+        falla("icons.js: el encabezado no remite a LICENSE-iconos.txt")
+
 print("OK" if not FALLAS else f"{len(FALLAS)} falla(s)")
 sys.exit(1 if FALLAS else 0)
