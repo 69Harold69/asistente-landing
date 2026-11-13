@@ -2139,6 +2139,20 @@ html[data-vidrio] :is(#hero, .secciones > .seccion) > :is(.fase-titulo, .titular
   html[data-vidrio] #hero > .titular-hero {
     margin-bottom: var(--space-2);
   }
+
+  /* Con el subtítulo de #73 (un renglón más a 320 px) el botón bajaba a 584 px de 568: se quita aire alrededor de
+     la tarjeta y entre el subtítulo y los botones (auditoría #100), no letra ni texto. */
+  html[data-vidrio] #hero {
+    padding-top: var(--space-2);
+  }
+
+  html[data-vidrio] #hero > .subtitulo-hero {
+    margin-bottom: var(--space-1);
+  }
+
+  html[data-vidrio] #hero > .cta-row {
+    padding-top: 0.25rem;
+  }
 }
 
 /* La tarjeta (relleno + desenfoque) y su aro luminoso: items de la rejilla en las mismas filas. */
