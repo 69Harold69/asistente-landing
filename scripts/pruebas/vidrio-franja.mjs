@@ -31,6 +31,9 @@ for (const [w, h] of [[390, 844], [360, 800]]) for (const tema of ["light", "dar
   await page.evaluate((y) => scrollTo(0, y), y0);
   await dormir(1500);
   const info = await page.evaluate(() => { const r = document.getElementById("stage").getBoundingClientRect(); const p = document.getElementById("telefono").getBoundingClientRect(); return { stage: [r.top, r.bottom], phone: [p.left, p.top, p.right, p.bottom], ph: innerHeight }; });
+  // Regresión: un anillo de píldora sin `position: relative` se anclaba al viewport (outline gigante en móvil).
+  const grandes = await page.evaluate(() => [...document.querySelectorAll(".fase-kicker, .hero-significado, .pista-scroll")].map((el) => [el.className, getComputedStyle(el, "::after")]).filter(([, cs]) => cs.content !== "none" && (parseFloat(cs.height) > 120 || parseFloat(cs.width) > 360)).map(([c, cs]) => `${c} ${cs.width}x${cs.height}`));
+  if (grandes.length) { console.log("FALLA: anillo de píldora enorme:", grandes.join(" | ")); fallo = true; }
   const A = await page.screenshot({ path: `${out}/${w}-${tema}-normal.png` });
   await page.evaluate(() => { const s = document.createElement("style"); }).catch(() => {});
   await page.evaluate(() => { const h = new CSSStyleSheet(); h.replaceSync("#stage{visibility:hidden!important} main *{color:transparent!important;background:transparent!important;box-shadow:none!important;border-color:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important} main *::before,main *::after{opacity:0!important}"); document.adoptedStyleSheets = [h]; });
