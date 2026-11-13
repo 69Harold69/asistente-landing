@@ -303,9 +303,23 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   // Tablet vertical: la franja del teléfono mide 50vh (base.css), no 44vh: la zona de texto sigue su alto real.
   const mqTabletVertical = window.matchMedia("(min-width: 768px) and (max-width: 1023px) and (orientation: portrait)");
 
+  /*
+    Alto visible para la geometría en móvil/tablet: el viewport PEQUEÑO (`100svh`, barras de Chrome a la vista), el mismo
+    que usa el CSS de la franja y las secciones (`--vh-pequeno`). Se lee de una sonda con ese alto (no de `innerHeight`,
+    que en Android sube y baja al esconder la barra de direcciones y movería toda la geometría con cada scroll). En
+    escritorio y sin soporte de `svh` es `innerHeight`, como siempre.
+  */
+  const sonda = document.createElement("div");
+  sonda.className = "sonda-alto";
+  sonda.setAttribute("aria-hidden", "true");
+  document.body.append(sonda);
+  const altoVisible = () => (mqEscritorio.matches ? window.innerHeight : sonda.offsetHeight || window.innerHeight);
+
   let modo = null; // "escritorio" | "movil" | "reducido"
   let geo = null;
   let anchoMedido = 0;
+  let altoMedido = 0;
+  let altoDocMedido = 0;
   let ancla = null;
   let redimensionando = false;
   let interactuo = false;
@@ -317,7 +331,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
 
   function medir() {
     modo = calcularModo();
-    const vh = window.innerHeight;
+    const vh = altoVisible();
     const tr = mqEscritorio.matches ? TRAMOS.escritorio : TRAMOS.movil;
     const pos = (id, pct) => {
       const el = document.getElementById(id);
@@ -436,6 +450,8 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       max: Math.max(0, document.documentElement.scrollHeight - vh),
     };
     anchoMedido = window.innerWidth;
+    altoMedido = vh;
+    altoDocMedido = document.documentElement.scrollHeight;
     ultimo = null;
   }
 
@@ -634,6 +650,9 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
 
   let rafResize = 0;
   function alRedimensionar() {
+    // Esconder o mostrar la barra de direcciones de Chrome dispara `resize` sin cambiar nada de lo medido (el alto es
+    // `svh`): no se re-mide ni se reacomoda el scroll por eso.
+    if (modo && calcularModo() === modo && window.innerWidth === anchoMedido && altoVisible() === altoMedido) return;
     redimensionando = true;
     cancelAnimationFrame(rafResize);
     rafResize = requestAnimationFrame(reacomodar);
@@ -662,16 +681,14 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   mqReducido.addEventListener?.("change", alRedimensionar);
   // Cambios de alto del documento sin resize (fuentes, reveals): re-medir.
   if ("ResizeObserver" in window) {
-    let primero = true;
     new ResizeObserver(() => {
-      if (primero) {
-        primero = false;
-        return;
-      }
-      if (!redimensionando) {
-        medir();
-        aplicar(estadoEn(virtual));
-      }
+      // La primera notificación llega justo al empezar a observar y ya trae lo que cambió DESPUÉS de `medir()` (el vidrio
+      // pone `data-vidrio` y sus tarjetas, y las fuentes cambian los renglones, en el mismo arranque): saltarla dejaba
+      // la geometría ~100 px corta para siempre, y el giro hacia la fase siguiente arrancaba antes de lo que dice el
+      // layout. Se compara con el alto del documento que se midió: si es el mismo, no hay nada que re-medir.
+      if (redimensionando || document.documentElement.scrollHeight === altoDocMedido) return;
+      medir();
+      aplicar(estadoEn(virtual));
     }).observe(document.body);
   }
 

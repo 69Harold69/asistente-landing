@@ -48,7 +48,7 @@
 
 @media (max-width: 1023px) {
   .stage {
-    height: var(--franja-alto, 44vh);
+    height: var(--franja-alto, calc(44 * var(--vh-pequeno)));
     background: var(--color-bg);
   }
 
@@ -88,7 +88,7 @@
      el enlace en el borde de arriba, detrás de la franja. Con este margen lo
      deja debajo de la franja y de su difuminado (prueba `foco-visible.mjs`). */
   .secciones :is(a, button) {
-    scroll-margin-top: calc(var(--franja-alto, 44vh) + 2.5rem);
+    scroll-margin-top: calc(var(--franja-alto, calc(44 * var(--vh-pequeno))) + 2.5rem);
   }
 }
 
@@ -181,9 +181,23 @@
    (×19.5/9), con aire de sobra dentro de los 44vh en los 2 tamaños de
    prueba (390×844 y 360×740). */
 @media (max-width: 1023px) {
+  /* El ancho es el de siempre (`18vh`, tope 170 px); `min` con lo que cabe en la franja (ahora en `svh`) solo lo achica
+     cuando, con las barras de Chrome a la vista, la franja no alcanzaría para el teléfono: sin barras no cambia. */
   .escenario-3d {
-    --phone-width: clamp(120px, 18vh, 170px);
+    --phone-width: min(clamp(120px, 18vh, 170px), calc((var(--franja-alto, calc(44 * var(--vh-pequeno))) - 1rem) * 0.4615));
   }
+
+}
+
+/* Sonda de alto: mide en px cuánto es 100svh para stage.js (alto visible pequeño, estable con las barras). */
+.sonda-alto {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: calc(100 * var(--vh-pequeno));
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* Tablet vertical: el teléfono llena la franja de 50vh (base.css) en vez de quedarse en 170px. */

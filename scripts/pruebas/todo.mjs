@@ -60,6 +60,8 @@ const pasos = [
   // Vidrio (#100): contraste AA en píxeles con la malla encendida sin huecos (títulos grandes 3:1, texto pequeño sobre el vidrio 4.5:1), claro/oscuro × escritorio/móvil, en las secciones que cubren todos los tipos de tarjeta.
   ["vidrio-contraste", process.execPath, ["vidrio-contraste.mjs", "--solo", "hero,fase-chat,cta,lo-que-viene,preguntas", "--salida", path.join(salida, "vidrio-contraste")]],
   ["vidrio-franja", process.execPath, ["vidrio-franja.mjs", "--salida", path.join(salida, "vidrio-franja")]],
+  // Lectura en móvil (#122): el texto de cada fase se alcanza a leer antes de que el teléfono gire hacia la siguiente (360×740, 390×844, 407×904 y con barras de Chrome, claro y oscuro).
+  ["movil-lectura", process.execPath, ["movil-lectura.mjs"]],
   // Pool del chat (auditoría de la Fase 2): cada escenario llega a su final, con y sin movimiento, sin cortes ni desbordes.
   ["pool-chat", process.execPath, ["pool-chat.mjs", "--salida", path.join(salida, "pool-chat")]],
   ["capturas", process.execPath, ["capturas.mjs", "--tamanos", "escritorio,tablet,tablet768,tabletapaisada,movil", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],

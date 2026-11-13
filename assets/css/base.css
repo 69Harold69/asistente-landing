@@ -901,16 +901,33 @@ strong {
 */
 @media (max-width: 1023px) {
   .seccion:not(.seccion-hero) {
-    padding-top: calc(var(--franja-alto, 44vh) + 2vh);
-    min-height: 100vh;
+    padding-top: calc(var(--franja-alto, calc(44 * var(--vh-pequeno))) + 2 * var(--vh-pequeno));
+    min-height: calc(100 * var(--vh-pequeno));
   }
 
   #fase-habitos {
-    min-height: 160vh;
+    min-height: calc(160 * var(--vh-pequeno));
+  }
+
+  /*
+    Ritmo de lectura (#122, móvil y tablet): el giro del teléfono hacia la fase siguiente arranca cuando el borde superior
+    de la sección siguiente llega al 92 % del alto visible (`TRAMOS.movil.ini`, stage.js). Para que la última línea de
+    esta fase lleve a la vista al menos el 25 % del alto visible de scroll antes de ese arranque (con 1.5rem de margen
+    sobre el borde inferior), debajo del último elemento tiene que quedar: 1.5rem + (25 % − 8 %) del alto visible
+    = 1.5rem + 17 svh (+ 0.25rem de holgura). Como va DESPUÉS del bloque, se adapta sola a la altura real de cada
+    tarjeta (una tarjeta alta alarga su fase, una baja no): no hay alturas por fase. El cierre (#cta) no tiene fase
+    siguiente y no lo lleva. Prueba: `movil-lectura.mjs`.
+  */
+  .seccion:not(.seccion-hero):not(#cta) {
+    padding-bottom: max(var(--space-6), calc(17 * var(--vh-pequeno) + 1.75rem));
   }
 }
 
 @media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
+  .seccion:not(.seccion-hero):not(#cta) {
+    padding-bottom: var(--space-6);
+  }
+
   .seccion:not(.seccion-hero) {
     padding-top: var(--space-5);
     display: flex;
@@ -1923,7 +1940,7 @@ main > .bloque:last-child {
 */
 @media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
   .layout-con-stage {
-    --franja-alto: 50vh;
+    --franja-alto: calc(50 * var(--vh-pequeno));
   }
 
   .seccion {
@@ -2163,6 +2180,37 @@ html[data-vidrio-forma="unica"] :is(.fase-kicker, .hero-significado) {
 
 html[data-vidrio-forma="unica"] :is(.fase-kicker, .hero-significado)::after {
   content: none;
+}
+
+/* ---- Tarjetas compactas, solo móvil (≤ 767 px; #122) --------------------------------------------------------------
+   Una tarjeta de fase de ~570 px (las cuatro piezas del chat) casi no cabía entre la franja del teléfono y el borde
+   inferior. Aquí se le quita aire (no letra): el párrafo sigue en --text-base (17 px) y el título no cambia de tamaño.
+   Antes → ahora:  interlineado del párrafo 1.65 → 1.5 · separación entre párrafos 14 → 10 px · relleno de la tarjeta
+   16 → 12 px · separación bajo el título 24 → 14 px · píldora del kicker 0.3em 0.95em → 0.2em 0.8em y separación bajo
+   ella 14 → 8 px. Las reglas con id igualan la especificidad de las del vidrio de arriba (`:is(#hero, …)` cuenta el id)
+   y van después. La tablet (≥ 768 px) y el escritorio no cambian. */
+@media (max-width: 767px) {
+  .secciones > .seccion .fase-texto:not(:last-child) {
+    line-height: 1.5;
+    margin-bottom: 0.625rem;
+  }
+
+  .secciones > .seccion .fase-texto:last-child {
+    line-height: 1.5;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) {
+    --vidrio-pad: 0.75rem;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-titulo {
+    margin-bottom: var(--space-2);
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-kicker {
+    margin-bottom: var(--space-1);
+    padding: 0.2em 0.8em;
+  }
 }
 
 /* «Desliza para descubrir» va en el flujo de la rejilla (debajo de la tarjeta), no absoluta al pie del hero: así no se

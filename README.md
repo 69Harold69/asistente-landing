@@ -122,6 +122,31 @@ de la franja). Como franja y texto se mueven juntos, los tramos (`TRAMOS.movil`)
 teléfono compartan el primer pantallazo, y las secciones se centran en un bloque de 38rem. Tablet apaisada de 768–1023 px
 sigue en la rama móvil de siempre.
 
+**Lectura en móvil (#122, `movil-lectura.mjs`):** en móvil el texto de cada fase tiene que alcanzar a leerse antes de que el
+teléfono empiece a girar hacia la fase siguiente. Cómo está resuelto, sin tocar la coreografía:
+- *Duración por fase según su tarjeta.* El giro hacia la fase siguiente arranca cuando el borde superior de su sección llega
+  al 92 % del alto visible (`TRAMOS.movil.ini`). Cada sección (menos el hero y el cierre) lleva debajo del último elemento
+  `padding-bottom: max(5.5rem, 17 svh + 1.75rem)` (`base.css`, bloque «Ritmo de lectura»): con eso la última línea lleva a
+  la vista, con 1.5rem de margen sobre el borde inferior, al menos el 25 % del alto visible de scroll antes del giro
+  (1.5rem + (25 % − 8 %)). El espacio va DESPUÉS del bloque, así que se adapta solo a la altura real de cada tarjeta, y
+  si la tarjeta no cabe entera bajo la franja el texto sube normal mientras el teléfono espera en su escena.
+- *«Entero a la vista».* Un bloque de 400 px en una zona útil de 430 px se mueve 1:1 con el scroll: quieto no está nunca,
+  así que «entero visible durante el 25 %» solo es posible si zona − bloque − 1.5rem ≥ 25 %. La prueba pide lo que de hecho
+  cabe (`min(25 %, zona − bloque − 1.5rem)`) y, aparte, el 25 % con la última línea a la vista.
+- *Alto visible.* `--vh-pequeno` (`tokens.css`) es `1svh` (con respaldo `1vh`): la franja (44 / 50 svh), el `padding-top`
+  y el `min-height` de las secciones, y `stage.js` (una sonda `.sonda-alto` de `100svh`, no `innerHeight`) usan el viewport
+  PEQUEÑO, el de las barras de Chrome a la vista, que no cambia al esconderlas: el layout no salta y el cálculo de «cabe /
+  no cabe» es el del peor caso. Un `resize` que solo cambia `innerHeight` (la barra) no vuelve a medir. El ancho del
+  teléfono sigue siendo `clamp(120px, 18vh, 170px)`; solo se achica (`min`) si la franja no alcanzara a contenerlo.
+  Escritorio no cambia (`innerHeight`).
+- *Tarjetas compactas (solo ≤ 767 px).* Bloque «Tarjetas compactas» de `base.css`: interlineado del párrafo 1.65 → 1.5,
+  separación entre párrafos 14 → 10 px, relleno de la tarjeta 16 → 12 px, separación bajo el título 24 → 14 px y píldora
+  del kicker 0.3em 0.95em → 0.2em 0.8em; la letra (17 px) y el título no cambian.
+- *Prueba.* `movil-lectura.mjs` recorre el scroll con el teléfono en 360×740, 390×844 y 407×904 (y cada uno 128 px más bajo:
+  «con barras»), claro y oscuro, observa el arranque de cada giro por `yaruki:estado` y mide el bloque de cada fase. Con
+  `YARUKI_RAIZ=` mide otra versión del sitio y con `--solo-medir` solo imprime la tabla. Límite: Playwright no emula las
+  barras de Chrome que se esconden al hacer scroll; el alto «con barras» es otro viewport.
+
 **Sincronía texto ↔ teléfono (`TRAMOS`):** cada sección mide al menos una
 pantalla y cada vuelo termina ANTES de que su texto llegue al centro
 (escritorio: `top 55%`→`top 5%`; móvil: `top 85%`→`top 25%`, y el primer

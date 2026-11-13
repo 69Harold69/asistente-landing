@@ -218,3 +218,20 @@
   --vidrio-sombra: 0 1px 2px hsl(var(--shadow-color) / 0.05), 0 18px 40px -22px hsl(var(--shadow-color) / 0.3);
   --vidrio-sombra-chica: 0 1px 2px hsl(var(--shadow-color) / 0.06);
 }
+
+/*
+  Alto visible «pequeño» (barras del navegador a la vista) para la franja del teléfono y el ritmo de lectura en
+  móvil. `vh` en Chrome de Android es el viewport GRANDE (barras escondidas): con la barra de direcciones a la vista la
+  franja y las secciones medían más de lo que se ve. `svh` no cambia al esconder o mostrar las barras, así que el layout no
+  salta, y es el peor caso (el que debe caber). Sin soporte de `svh` se queda `vh`. stage.js lee el mismo valor con una
+  sonda (`.sonda-alto`, phone.css).
+*/
+:root {
+  --vh-pequeno: 1vh;
+}
+
+@supports (height: 1svh) {
+  :root {
+    --vh-pequeno: 1svh;
+  }
+}
