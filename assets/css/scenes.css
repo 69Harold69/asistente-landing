@@ -936,8 +936,9 @@
   margin: 0 0 calc(24 * var(--dp));
   font-size: calc(11 * var(--dp));
   line-height: calc(16 / 11);
-  /* `MaterialTheme.colorScheme.secondary` es el violeta de acento de la app (capturas de la 0.1.6a). */
-  color: var(--ps-acento-texto);
+  /* `MaterialTheme.colorScheme.secondary` = `LightAccent`/`DarkAccent` (Theme.kt: `secondary = …Accent`), no
+     `acentoTexto`; pasa AA igual (4.58:1 en claro y 5.28:1 en oscuro sobre el fondo, medido en píxeles). */
+  color: var(--color-accent);
 }
 
 .ps-habitos .ps-btn {
@@ -1008,7 +1009,7 @@
 .ps-fila-textos .ps-fila-sub {
   font-weight: 400;
   font-size: calc(12 * var(--dp));
-  color: var(--ps-acento-texto);
+  color: var(--color-accent);
 }
 
 /* Switch de M3: pista 52×32dp; apagado = contorno + perilla chica de 16dp,
