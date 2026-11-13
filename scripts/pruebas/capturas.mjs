@@ -234,6 +234,9 @@ async function otrasPaginas(combo, dir, nombreCombo) {
         // (p. ej. el chat vacio). Los estados animados se capturan en `portada-seccion-*`.
         await dormir(500);
         const tel = page.locator("#escenario-3d");
+        // En móvil la franja del teléfono va debajo del hero (en el flujo) y puede quedar fuera de la pantalla: se baja hasta ella.
+        await tel.scrollIntoViewIfNeeded().catch(() => {});
+        await dormir(250);
         const caja = await tel.boundingBox();
         const opciones = caja ? { clip: { x: Math.max(0, caja.x - 12), y: Math.max(0, caja.y - 12), width: caja.width + 24, height: Math.min(caja.height + 24, TAMANOS[combo.tam].viewport.height) } } : {};
         await foto(page, dir, `escena-${escena}-${cara}`, opciones);

@@ -573,7 +573,9 @@ try {
       ]],
       ["fase Chat", "fase-chat", [["etiqueta", "#fase-chat .fase-kicker"], ["título", "#fase-chat .fase-titulo"], ["párrafo 1", "#fase-chat .fase-texto"], ["párrafo 4", "#fase-chat .fase-texto:nth-of-type(4)"]]],
       ["fase Hábitos", "fase-habitos", [["etiqueta", "#fase-habitos .fase-kicker"], ["título", "#fase-habitos .fase-titulo"], ["párrafo", "#fase-habitos .fase-texto"]]],
-      ["Tu día", "cta", [["etiqueta", "#cta .fase-kicker"], ["título", "#cta .fase-titulo"], ["párrafo", "#cta .fase-texto"], ["enlace del paso 1", "#cta .pasos-beta li:nth-child(1) a"], ["paso 1", "#cta .pasos-beta li:nth-child(1) span:last-child"], ["paso 2", "#cta .pasos-beta li:nth-child(2) span:last-child"]]],
+      ["Tu día", "cta", [["etiqueta", "#cta .fase-kicker"], ["título", "#cta .fase-titulo"], ["párrafo", "#cta .fase-texto"]]],
+      // Con el vidrio la sección es más alta que la pantalla: los pasos se miden centrados en su propia lista.
+      ["Tu día (pasos)", "cta", [["enlace del paso 1", "#cta .pasos-beta li:nth-child(1) a"], ["paso 1", "#cta .pasos-beta li:nth-child(1) span:last-child"], ["paso 2", "#cta .pasos-beta li:nth-child(2) span:last-child"]], "#cta .pasos-beta"],
       ["Cómo funciona", "como-funciona", [["título", "#como-funciona .fase-titulo"], ["intro", "#como-funciona .bloque-intro"], ["paso 1", "#como-funciona li:nth-child(1) h3"], ["texto 1", "#como-funciona li:nth-child(1) p"], ["enlace del texto 1", "#como-funciona li:nth-child(1) p a"], ["enlace del texto 2", "#como-funciona li:nth-child(2) p a"], ["texto 3", "#como-funciona li:nth-child(3) p"]]],
       ["Lo que viene", "lo-que-viene", [["título", "#lo-que-viene .fase-titulo"], ["intro", "#lo-que-viene .bloque-intro"], ["tarjeta", "#lo-que-viene .tarjeta-viene h3"]]],
       ["Preguntas", "preguntas", [["título", "#preguntas .fase-titulo"], ["intro", "#preguntas .bloque-intro"], ["enlace de la intro", "#preguntas .bloque-intro a"], ["pregunta", "#preguntas summary"]]],
@@ -590,12 +592,12 @@ try {
       await esperarCarga(page, { portada: true });
       await page.waitForSelector("canvas.malla-fondo", { state: "attached", timeout: 6000 }).catch(() => {});
       await dormir(600);
-      for (const [nombreSeccion, id, bloquesDef] of SECCIONES) {
-        await ruedaHasta(page, Math.round(await page.evaluate((id) => {
-          const r = document.getElementById(id).getBoundingClientRect();
+      for (const [nombreSeccion, id, bloquesDef, ancla] of SECCIONES) {
+        await ruedaHasta(page, Math.round(await page.evaluate(([id, ancla]) => {
+          const r = (ancla ? document.querySelector(ancla) : document.getElementById(id)).getBoundingClientRect();
           const alto = Math.min(r.height, innerHeight);
           return id === "hero" ? 0 : Math.max(0, window.scrollY + r.top - (innerHeight - alto) / 2);
-        }, id)));
+        }, [id, ancla])));
         await dormir(1600);
         for (let i = 0; i < 20; i++) {
           const ocultos = await page.evaluate((B) => B.some(([, s]) => {

@@ -97,7 +97,7 @@
   --vidrio-fondo-movil: rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) + 0.3));
   --vidrio-fondo-solido: #ffffff;
   --vidrio-texto-secundario: #4c473f;
-  --vidrio-texto-acento: #4638a8;
+  --vidrio-texto-acento: #40349b;
   --vidrio-desenfoque: 2px;
   --vidrio-saturacion: 1.5;
   --vidrio-luz: rgb(255 255 255 / 0.9);
@@ -203,7 +203,7 @@
   --vidrio-fondo-movil: rgb(var(--vidrio-tinte) / calc(var(--vidrio-relleno) + 0.3));
   --vidrio-fondo-solido: #ffffff;
   --vidrio-texto-secundario: #4c473f;
-  --vidrio-texto-acento: #4638a8;
+  --vidrio-texto-acento: #40349b;
   --vidrio-desenfoque: 2px;
   --vidrio-saturacion: 1.5;
   --vidrio-luz: rgb(255 255 255 / 0.9);

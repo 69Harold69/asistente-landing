@@ -743,7 +743,7 @@ strong {
 @property --color-border { syntax: "<color>"; inherits: true; initial-value: #ece6dd; }
 @property --color-border-card { syntax: "<color>"; inherits: true; initial-value: #ddd4c7; }
 @property --vidrio-texto-secundario { syntax: "<color>"; inherits: true; initial-value: #4c473f; }
-@property --vidrio-texto-acento { syntax: "<color>"; inherits: true; initial-value: #4638a8; }
+@property --vidrio-texto-acento { syntax: "<color>"; inherits: true; initial-value: #40349b; }
 @property --color-canto { syntax: "<color>"; inherits: true; initial-value: #d3c9bb; }
 
 :root.tema-fundido {
@@ -2114,6 +2114,17 @@ html[data-vidrio] :is(#hero, .secciones > .seccion) > :is(.fase-kicker, .hero-si
 
 html[data-vidrio] :is(#hero, .secciones > .seccion) > :is(.fase-titulo, .titular-hero) {
   margin-bottom: var(--space-3);
+}
+
+/* Pantallas bajas (320×568): menos aire entre píldora, título y tarjeta para que el primer botón siga a la vista (el aire de dentro de la tarjeta no cambia). */
+@media (max-width: 1023px) and (max-height: 600px) {
+  html[data-vidrio] #hero > .hero-significado {
+    margin-bottom: var(--space-1);
+  }
+
+  html[data-vidrio] #hero > .titular-hero {
+    margin-bottom: var(--space-2);
+  }
 }
 
 /* La tarjeta (relleno + desenfoque) y su aro luminoso: items de la rejilla en las mismas filas. */

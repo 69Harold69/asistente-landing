@@ -30,7 +30,7 @@ function recolectar() {
   const out = [];
   const els = [...document.querySelectorAll("main *, .site-header *")];
   const stage = document.getElementById("stage");
-  const stageAbajo = stage && matchMedia("(max-width: 1023px)").matches ? stage.getBoundingClientRect().bottom : 0;
+  const movilStage = stage && matchMedia("(max-width: 1023px)").matches ? stage.getBoundingClientRect() : null;
   els.forEach((el, idx) => {
     if (el.closest(SALTAR)) return;
     const nodos = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim().length);
@@ -51,7 +51,7 @@ function recolectar() {
     if (el.matches(".fase-kicker, .hero-significado, .pista-scroll")) for (const q of rects) { q[1] += 3; q[3] -= 3; }
     // En móvil/tablet la franja del teléfono (`#stage`, opaca salvo la malla) tapa lo que sube por detrás: lo que queda
     // bajo ella no se ve, así que no se mide ahí (se medirá en otra posición del scroll, ya por debajo de la franja).
-    if (stageAbajo > 0 && rects.some((q) => q[1] < stageAbajo - 1)) return;
+    if (movilStage && el.closest("main") && !el.closest("#stage") && rects.some((q) => q[3] > movilStage.top + 1 && q[1] < movilStage.bottom - 1)) return;
     const px = parseFloat(cs.fontSize);
     const w = Number(cs.fontWeight);
     const grande = px >= 24 || (px >= 18.66 && w >= 700);

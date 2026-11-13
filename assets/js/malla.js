@@ -174,6 +174,7 @@ function montar(fasesRecorrido) {
     franja. Solo existe en móvil/tablet (en escritorio `.stage` no tiene fondo).
   */
   const stage = document.getElementById("stage");
+  const esEscritorio = window.matchMedia("(min-width: 1024px)");
   let franja = null;
   let franjaCtx = null;
   if (stage) {
@@ -395,57 +396,81 @@ function montar(fasesRecorrido) {
       }
     }
 
-    ctx.lineWidth = GROSOR_LINEA;
-    ctx.lineCap = "round";
+    usadosUltimo = usados;
+    trazar(ctx, usados);
+    pintarFranja();
+  }
+
+  /* Traza las líneas y los puntos de la última posición calculada (`px`/`py`) en el contexto `g`. */
+  function trazar(g, usados) {
+    g.lineWidth = GROSOR_LINEA;
+    g.lineCap = "round";
     const n = cols * filas;
     for (let nivel = 0; nivel <= NIVELES; nivel++) {
       if (!(usados & (1 << nivel))) continue;
       // Líneas de este nivel en un solo trazo.
-      ctx.strokeStyle = estilos[nivel].linea;
-      ctx.beginPath();
+      g.strokeStyle = estilos[nivel].linea;
+      g.beginPath();
       for (let k = 0; k < n; k++) {
         if (nivelH[k] === nivel) {
-          ctx.moveTo(px[k], py[k]);
-          ctx.lineTo(px[k + 1], py[k + 1]);
+          g.moveTo(px[k], py[k]);
+          g.lineTo(px[k + 1], py[k + 1]);
         }
         if (nivelV[k] === nivel) {
-          ctx.moveTo(px[k], py[k]);
-          ctx.lineTo(px[k + cols], py[k + cols]);
+          g.moveTo(px[k], py[k]);
+          g.lineTo(px[k + cols], py[k + cols]);
         }
       }
-      ctx.stroke();
+      g.stroke();
     }
     for (let nivel = 0; nivel <= NIVELES; nivel++) {
       if (!(usados & (1 << nivel))) continue;
-      ctx.fillStyle = estilos[nivel].punto;
-      ctx.beginPath();
+      g.fillStyle = estilos[nivel].punto;
+      g.beginPath();
       for (let k = 0; k < n; k++) {
         if (nivelPunto[k] !== nivel) continue;
-        ctx.moveTo(px[k] + radioPunto[k], py[k]);
-        ctx.arc(px[k], py[k], radioPunto[k], 0, 6.283185307179586);
+        g.moveTo(px[k] + radioPunto[k], py[k]);
+        g.arc(px[k], py[k], radioPunto[k], 0, 6.283185307179586);
       }
-      ctx.fill();
+      g.fill();
     }
-    copiarFranja();
   }
 
-  /* Repinta en la franja del teléfono el trozo de malla que queda debajo de ella (coordenadas del viewport). */
-  function copiarFranja() {
-    if (!franja || !ancho) return;
-    const w = franja.clientWidth;
-    const h = franja.clientHeight;
-    if (!w || !h) return; // escritorio: oculta
+  let usadosUltimo = 1;
+  let geoFranja = null;
+  function leerFranja() {
+    if (!franja) return;
     const r = stage.getBoundingClientRect();
+    geoFranja = { left: r.left, top: r.top, bottom: r.bottom, w: franja.clientWidth, h: franja.clientHeight };
+  }
+
+  /*
+    Repinta en la franja del teléfono el trozo de malla que queda debajo de ella (coordenadas del viewport): la misma
+    malla, trazada otra vez en el canvas de la franja con el origen desplazado. (Copiar con `drawImage` desde el
+    canvas principal obligaba a rasterizarlo dentro del cuadro: ~5 ms con la CPU ×4; trazar de nuevo cuesta una fracción.)
+  */
+  function pintarFranja() {
+    if (!franja || !ancho || esEscritorio.matches || !cols) return; // escritorio: la franja está oculta
+    // La geometría se lee solo al hacer scroll o cambiar de tamaño (`leerFranja`): leerla en cada cuadro obliga al
+    // navegador a recalcular el layout.
+    if (!geoFranja) leerFranja();
+    const r = geoFranja;
     if (r.bottom < -80 || r.top > alto) return; // fuera de pantalla
+    const w = r.w;
+    const h = r.h;
+    if (!w || !h) return;
     const pw = Math.max(1, Math.round(w * dpr));
     const ph = Math.max(1, Math.round(h * dpr));
     if (franja.width !== pw || franja.height !== ph) {
       franja.width = pw;
       franja.height = ph;
     }
+    franjaCtx.setTransform(1, 0, 0, 1, 0, 0);
     franjaCtx.clearRect(0, 0, pw, ph);
-    franjaCtx.drawImage(canvas, r.left * dpr, r.top * dpr, w * dpr, h * dpr, 0, 0, pw, ph);
+    franjaCtx.setTransform(dpr, 0, 0, dpr, -r.left * dpr, -r.top * dpr);
+    trazar(franjaCtx, usadosUltimo);
   }
+
 
   const reduce = () => mqReducido.matches;
   const puedeAnimar = () => !reduce() && visible && !document.hidden && !enScroll && ancho > 0;
@@ -568,6 +593,14 @@ function montar(fasesRecorrido) {
   oscuro.addEventListener?.("change", repintar);
 
   new ResizeObserver(medir).observe(canvas);
+  if (franja) {
+    // El teléfono cambia de alto o de lugar sin scroll (fuentes, rotación, coreografía): se vuelve a leer la geometría.
+    new ResizeObserver(() => {
+      leerFranja();
+      pintarFranja();
+    }).observe(stage);
+    window.addEventListener("resize", () => (geoFranja = null), { passive: true });
+  }
   window.addEventListener("pointermove", alCursor, { passive: true });
   raiz.addEventListener("pointerleave", () => {
     raton = null;
@@ -582,7 +615,8 @@ function montar(fasesRecorrido) {
         if (scrollPendiente) return;
         scrollPendiente = requestAnimationFrame(() => {
           scrollPendiente = 0;
-          copiarFranja();
+          leerFranja();
+          pintarFranja();
         });
       },
       { passive: true },
