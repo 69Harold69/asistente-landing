@@ -366,12 +366,17 @@ al primer clic en el toggle).
     transparente amplía la caja que se rasteriza, así sus bordes nunca quedan pegados a píxeles pintados, y no
     hay `::after` (la pupila de #112, una segunda caja que se movía con `left/top`). `mirada.mjs` revisa en
     píxeles reales, con la mascota en movimiento, las esquinas de su caja lejos del brillo (claro y oscuro,
-    ×1 y ×2). En Chromium sin pantalla el artefacto no se reproduce (ni con GPU).
+    ×1 y ×2). En Chromium sin pantalla el artefacto no se reproduce (ni con GPU). Con colores forzados (alto
+    contraste) el contorno se quita: el navegador lo pintaría como un aro.
   - **Pendiente (opcional del Notion):** el punto del logo del header también mirando al cursor.
   - **Prueba:** `scripts/pruebas/mirada.mjs` espera por estado (rAF dentro de la página), no por tiempo
     (#88); verifica los ángulos en las cuatro esquinas, lateral mayor que vertical en píxeles proyectados, el
     regreso al centro exacto, el apagado durante el giro, que no haya pupila, el brillo del lado correcto y los
-    bordes de la caja sin líneas.
+    bordes de la caja sin líneas. Los saltos se miden en cada paso del resorte (un `MutationObserver` sobre el
+    `style` del envoltorio), no en el rAF de stage.js: muestrear en otro rAF mezclaba fases y duplicaba el salto.
+  - **Al medir la mirada en pantalla,** la referencia es el cursor sobre el centro del teléfono: con el cursor al
+    centro de la ventana la mascota ya mira a la izquierda (≈ −15 px en el hero a 1440×900) y las esquinas dan
+    −8 / +38 px, una asimetría que es de la referencia y no de la mirada (auditoría de #99).
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
   magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del

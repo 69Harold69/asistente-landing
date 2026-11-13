@@ -473,7 +473,9 @@ try {
         const t = d ? getComputedStyle(d).translate : "none";
         const v = t === "none" ? [0, 0] : t.split(" ").map(parseFloat);
         const g = (n) => parseFloat(env.style.getPropertyValue(n)) || 0;
-        r.pasos.push({ t: performance.now(), x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
+        // Tiempo del CUADRO (el mismo que recibe el rAF de tilt.js), no la hora del callback: con carga, dos pasos
+        // seguidos pueden correr a 8 ms de reloj aunque sus cuadros estén a 33 ms, y eso duplicaba el salto.
+        r.pasos.push({ t: document.timeline.currentTime ?? performance.now(), x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
       }).observe(env, { attributes: true, attributeFilter: ["style"] });
       // Muestreo independiente en cada cuadro: nadie más que stage.js escribe el `transform` del envoltorio
       // de la mascota (sólo "" o scale(n)) y la mascota no tiene `transform` en línea (la mirada va por `translate`).
