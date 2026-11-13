@@ -91,24 +91,11 @@ const NIVELES_DEGRADACION = [
 ];
 
 /*
-  Texto en color de acento (el kicker de cada fase y los enlaces en línea). Es el único texto cuyo contraste base es
-  casi el mínimo (4.6:1 en claro, 5.4:1 en oscuro): cualquier línea de la malla detrás, aun en reposo, lo bajaría de
-  4.5:1. El resto del texto (primario y secundario) se protege con las opacidades de `--malla-*` (tokens.css). Detrás de
-  estos renglones la malla no se pinta (un hueco de 5 px alrededor de cada línea de texto). Los botones y chips llevan
-  fondo propio y no cuentan.
+  PROTOTIPO `?malla=referencia` (y `?vidrio=1`, que la incluye): la malla más encendida, cerca de la referencia (del
+  acento: líneas 0.10 → 0.30 y puntos 0.28 → 0.56, igual en claro y oscuro) y a plena intensidad también detrás de las
+  fases. La malla se dibuja DETRÁS de todo, sin huecos bajo el texto (#100): el contraste del párrafo lo da el vidrio
+  y el de los títulos grandes se mide con la malla debajo (3:1).
 */
-const SEL_TEXTO_ACENTO = "main a:not(.button):not(.link-card), .pie a:not(.link-card), .fase-kicker";
-const MARGEN_HUECO = 5;
-
-/*
-  PROTOTIPO `?malla=referencia` (punto de control 1; rama claude/landing-v2-control-1-vidrio, NO se mergea): la malla
-  más encendida, cerca de la referencia (del acento: líneas 0.10 → 0.30 y puntos 0.28 → 0.56, igual en claro y oscuro)
-  y a plena intensidad también detrás de las fases. Para que
-  el texto siga en AA, la malla abre hueco bajo TODO el texto de la portada (no solo el de acento), salvo el que va
-  sobre la tarjeta de vidrio (`?vidrio=1`, #fase-chat), que se protege con la propia tarjeta.
-*/
-const SEL_TEXTO_TODO =
-  "main :is(h1, h2, h3, p, summary, dd, dt, .pista-scroll, .button, .pasos-beta li span):not(.stage *), .pie :is(h2, h3, p, li), .site-header .wordmark";
 const REFERENCIA = { lineaReposo: 0.1, puntoReposo: 0.28, lineaActiva: 0.3, puntoActivo: 0.56 };
 let referencia = false;
 let vidrio = false;
@@ -173,6 +160,7 @@ function aplicarParametro() {
     vidrio = new URLSearchParams(location.search).get("vidrio") === "1";
   } catch {}
   raiz.toggleAttribute("data-vidrio", vidrio);
+  if (vidrio && !p) p = "referencia";
   if (!p) return;
   if (p === "referencia") {
     referencia = true;
@@ -295,14 +283,6 @@ function montar(fasesRecorrido) {
   let nivelH = new Uint8Array(0);
   let nivelV = new Uint8Array(0);
   let radioPunto = new Float32Array(0);
-  // Texto en acento: todos los elementos y, aparte, los que están cerca del viewport (se miden en cada cuadro porque
-  // las revelaciones y el recorrido los mueven con `transform`).
-  let textoAcento = [...document.querySelectorAll(referencia ? `${SEL_TEXTO_ACENTO}, ${SEL_TEXTO_TODO}` : SEL_TEXTO_ACENTO)];
-  // Con la tarjeta de vidrio, su texto no lleva hueco: lo protege la tarjeta.
-  if (referencia && vidrio) textoAcento = textoAcento.filter((el) => !el.closest("#fase-chat"));
-  const textoAcentoCerca = new Set();
-  const rangoHueco = document.createRange();
-
   function leerTokens() {
     const cs = getComputedStyle(raiz);
     const num = (n, d) => {
@@ -455,22 +435,6 @@ function montar(fasesRecorrido) {
       }
       ctx.fill();
     }
-    // Huecos de texto en acento: se miden ahora (no se cachean: las revelaciones y el recorrido mueven el texto).
-    if (textoAcentoCerca.size) {
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
-      for (const el of textoAcentoCerca) {
-        rangoHueco.selectNodeContents(el);
-        const rects = rangoHueco.getClientRects();
-        for (let i = 0; i < rects.length; i++) {
-          const q = rects[i];
-          if (q.width >= 2 && q.height >= 2) ctx.rect(q.left - MARGEN_HUECO, q.top - MARGEN_HUECO, q.width + 2 * MARGEN_HUECO, q.height + 2 * MARGEN_HUECO);
-        }
-      }
-      ctx.fill();
-      ctx.globalCompositeOperation = "source-over";
-    }
   }
 
   const reduce = () => mqReducido.matches;
@@ -594,33 +558,11 @@ function montar(fasesRecorrido) {
   oscuro.addEventListener?.("change", repintar);
 
   new ResizeObserver(medir).observe(canvas);
-  // Solo se miden los renglones en acento que están (casi) en pantalla.
-  const observadorAcento = new IntersectionObserver(
-    (entradas) => {
-      for (const en of entradas) en.isIntersecting ? textoAcentoCerca.add(en.target) : textoAcentoCerca.delete(en.target);
-      if (ancho && !pendiente) dibujar(tOnda); // estático (reduced-motion) o pausado: se actualizan los huecos
-    },
-    { rootMargin: "120px 0px" },
-  );
-  textoAcento.forEach((el) => observadorAcento.observe(el));
   window.addEventListener("pointermove", alCursor, { passive: true });
   raiz.addEventListener("pointerleave", () => {
     raton = null;
     agendar();
   });
-  // Estática (reduced-motion): no hay bucle, así que el scroll pide un solo redibujado para mover los huecos del texto.
-  let scrollPendiente = 0;
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (!reduce() || scrollPendiente) return;
-      scrollPendiente = requestAnimationFrame(() => {
-        scrollPendiente = 0;
-        dibujar(tOnda);
-      });
-    },
-    { passive: true },
-  );
   mqReducido.addEventListener?.("change", aplicarModo);
   mqFino.addEventListener?.("change", () => {
     medir(); // la variante ligera cambia la resolución del canvas
