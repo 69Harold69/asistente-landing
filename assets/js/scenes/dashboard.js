@@ -53,7 +53,7 @@ export function mount(contenedor) {
         <span class="ps-seccion-titulo">Vencidas</span>
         <span class="ps-seccion-accion">Pasar todo a hoy</span>
       </div>
-      <div class="ps-pendientes">${fila("Cobrar")}</div>
+      <div class="ps-pendientes">${fila("Pagar la luz")}</div>
       <div class="ps-seccion"><span class="ps-seccion-titulo">Hoy</span></div>
       <div class="ps-pendientes">${fila("Llamar al doctor")}${fila("Enviar el reporte de ventas")}</div>
       ${barraDeNavegacion("inicio")}

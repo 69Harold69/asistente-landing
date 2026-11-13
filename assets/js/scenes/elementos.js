@@ -11,10 +11,11 @@ import { contar, detener } from "./contar.js?v=aa71b9d321";
  * de 4 y el botón «Pídeselo a Yaruki» de `BottomNavBar.kt`.
  *
  * Datos de ejemplo representativos (no vienen de ninguna cuenta real):
- * Tareas 2/5 hoy (40%), Hábitos 2/3 hoy (67%), 3 listas activas, 4 notas,
- * 2 proyectos activos (`textoProyectosActivos`, :347-352; sin `data-contar`: contar de 0 a 2 pasaría por «1 activos»), 2 próximos
+ * Tareas 2/4 hoy (50%), Hábitos 2/3 hoy (67%), 3 listas activas, 4 notas,
+ * 1 proyecto activo (`textoProyectosActivos`, :347-352; sin `data-contar`, que no pluraliza), 2 próximos
  * eventos — mismos rótulos y redondeo de progreso que
- * `ElementosViewModel`/`InicioScreen.kt`.
+ * `ElementosViewModel`/`InicioScreen.kt`, y los mismos que el Dashboard (2/4 tareas de hoy, 2/3 hábitos y el
+ * proyecto «Mudanza»): las dos pantallas leen los mismos datos.
  */
 export const id = "elementos";
 
@@ -57,11 +58,11 @@ export function mount(contenedor) {
         <span class="ps-elementos-accion">Métricas</span>
       </div>
       <div class="ps-elementos-grid">
-        ${tile("TAREAS", "tareas", `${n(2)}/5 hoy`, 0.4)}
+        ${tile("TAREAS", "tareas", `${n(2)}/4 hoy`, 0.5)}
         ${tile("HÁBITOS", "habitos", `${n(2)}/3 hoy`, 0.67)}
         ${tile("LISTAS", "listas", `${n(3)} activas`, null)}
         ${tile("NOTAS", "notas", `${n(4)} notas`, null)}
-        ${ancha("PROYECTOS", "proyectos", "2 activos")}
+        ${ancha("PROYECTOS", "proyectos", "1 activo")}
         ${ancha("PRÓXIMOS EVENTOS", "eventos", `${n(2)} en puerta`)}
       </div>
       ${barraDeNavegacion("elementos")}
