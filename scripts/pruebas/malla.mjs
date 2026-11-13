@@ -335,7 +335,7 @@ try {
     const { ctx, page } = await abrir({ tema: "dark", ancho: 390, alto: 844, movil: true });
     page.on("request", (r) => pedidos.push(r.url()));
     const i0 = await info(page);
-    ok(i0 && i0.variante === "ligera" && i0.dpr === 1, `móvil por defecto: variante ligera a DPR 1 (${JSON.stringify(i0)})`);
+    ok(i0 && i0.variante === "normal" && i0.dpr === 2 && i0.nivel === 0, `móvil por defecto: variante normal a DPR 2, sin degradar (${JSON.stringify(i0)})`);
     const diag0 = await page.evaluate(() => !!document.querySelector(".malla-diagnostico"));
     const mods = await page.evaluate(() => performance.getEntriesByType("resource").some((e) => /malla-diagnostico/.test(e.name)));
     ok(!diag0 && !mods && !pedidos.some((u) => /malla-diagnostico/.test(u)), "sin ?malla-diagnostico no hay medidor ni se descarga su módulo");
@@ -376,16 +376,97 @@ try {
       ok(despues > 12, `pausa-scroll: al soltar vuelve a ondular (${despues} cuadros en 1 s)`);
       await ctx.close();
     }
-    // Diagnóstico: medidor visible, con fps y la variante; enlaces para cambiar de variante.
+    // Diagnóstico: panel inequívoco (pantalla vs malla, reposo vs scroll, costo por dibujo), plegable, con "Copiar resultados".
     {
       const { ctx, page } = await abrir({ tema: "light", ancho: 390, alto: 844, movil: true, query: "?malla-diagnostico=1&malla-movil=ligera" });
-      await dormir(2500);
-      const d = await page.evaluate(() => {
+      await ctx.grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => {});
+      const cdp = await ctx.newCDPSession(page);
+      await dormir(6500); // al menos unos segundos de reposo completos
+      const leer = () => page.evaluate(() => {
         const el = document.querySelector(".malla-diagnostico");
-        return el ? { texto: el.textContent, enlaces: el.querySelectorAll("a").length, visible: el.getBoundingClientRect().height > 20 } : null;
+        return el ? { texto: el.innerText, enlaces: [...el.querySelectorAll("a")].map((x) => x.textContent), visible: el.getBoundingClientRect().height > 20, alto: el.getBoundingClientRect().height, vh: innerHeight } : null;
       });
-      ok(!!d && d.visible && /malla: ligera/.test(d.texto) && /fps página/.test(d.texto) && d.enlaces === 4, `?malla-diagnostico=1: medidor visible con variante, fps y 4 enlaces (${d ? d.texto.split("\n").slice(0, 3).join(" | ") : "no existe"})`);
+      let d = await leer();
+      ok(!!d && d.visible && /Malla: ligera/.test(d.texto) && /Pantalla: máx\. visto \d+ Hz/.test(d.texto) && /En reposo \(últimos 5 s sin tocar\): \d+ fps/.test(d.texto), `?malla-diagnostico=1: panel con variante, tasa de la pantalla y bloque «En reposo» (${d ? d.texto.split("\n").slice(0, 5).join(" | ") : "no existe"})`);
+      ok(!!d && /Malla: \d+ dibujos\/s \(tope: 30 en táctil/.test(d.texto) && /Costo de la malla por dibujo: p50 [\d.]+ \/ p95 [\d.]+ ms/.test(d.texto) && /Cuadros largos \(> 50 ms\): \d+ · Tareas largas: \d+/.test(d.texto), "el panel separa «Malla: N dibujos/s (tope)» de la pantalla y muestra el costo por dibujo p50/p95 y los cuadros/tareas largas");
+      ok(!!d && /Durante el scroll \(último gesto\): haz scroll/.test(d.texto), "antes de tocar, «Durante el scroll» pide hacer un gesto");
+      ok(!!d && ["apagada", "normal", "ligera", "pausa-scroll", "ligera-pausa"].every((v) => d.enlaces.includes(v)), `enlaces a las variantes y a «apagada» (${d?.enlaces.join(", ")})`);
+      ok(!!d && d.alto < d.vh * 0.6, `el panel no tapa media pantalla (${d?.alto.toFixed(0)} de ${d?.vh} px)`);
+      // Un gesto de scroll rellena «Durante el scroll» y lo conserva al soltar.
+      for (let k = 0; k < 3; k++) await cdp.send("Input.synthesizeScrollGesture", { x: 195, y: 600, yDistance: -500, speed: 600, gestureSourceType: "touch" });
+      await dormir(900);
+      d = await leer();
+      ok(!!d && /Durante el scroll \(último gesto, [\d.]+ s\): \d+ fps · mín \d+ · peor cuadro \d+ ms/.test(d.texto), `tras un scroll, «Durante el scroll» muestra fps, mínimo y peor cuadro (${d ? (d.texto.match(/Durante el scroll[^\n]*/) || [""])[0] : ""})`);
+      // Copiar: texto plano con variante, navegador, DPR, aceleración y avisos.
+      await page.evaluate(() => [...document.querySelectorAll(".malla-diagnostico button")].find((b) => /Copiar/.test(b.textContent)).click());
+      await dormir(400);
+      const copiado = await page.evaluate(() => navigator.clipboard.readText().catch(() => null));
+      ok(!!copiado && /Variante: ligera/.test(copiado) && /Navegador:/.test(copiado) && /DPR/.test(copiado) && /Gráficos:/.test(copiado) && /ahorro de batería/i.test(copiado) && /En reposo/.test(copiado), `«Copiar resultados» deja el texto plano en el portapapeles (${copiado ? copiado.split("\n").length : 0} líneas)`);
       await page.screenshot({ path: path.join(salida, "malla-diagnostico-movil.png") });
+      // Plegar: el cuerpo se oculta y queda la línea de resumen.
+      await page.evaluate(() => [...document.querySelectorAll(".malla-diagnostico button")].find((b) => /Plegar/.test(b.textContent)).click());
+      const plegado = await page.evaluate(() => ({ h: document.querySelector(".malla-diagnostico").getBoundingClientRect().height, resumen: document.querySelector(".malla-diagnostico-barra span").textContent, abierto: document.querySelector(".malla-diagnostico-barra button").getAttribute("aria-expanded") }));
+      ok(plegado.h < 100 && plegado.abierto === "false" && /Pantalla \d+ fps · malla \d+\/s/.test(plegado.resumen), `plegado: solo la línea de resumen (${plegado.h.toFixed(0)} px: «${plegado.resumen}»)`);
+      await page.screenshot({ path: path.join(salida, "malla-diagnostico-movil-plegado.png") });
+      await ctx.close();
+    }
+    // ?malla=apagada: la página sola, sin canvas ni bucle; el panel sigue midiendo.
+    {
+      const { ctx, page } = await abrir({ tema: "dark", ancho: 390, alto: 844, movil: true, query: "?malla-diagnostico=1&malla=apagada" });
+      await dormir(2500);
+      const r = await page.evaluate(() => ({
+        canvas: !!document.querySelector("canvas.malla-fondo"),
+        titular: document.getElementById("titular").getBoundingClientRect().height,
+        desborde: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        panel: document.querySelector(".malla-diagnostico")?.innerText ?? "",
+        actual: document.querySelector(".malla-diagnostico a[aria-current]")?.textContent,
+      }));
+      ok(!r.canvas && r.titular > 40 && !r.desborde, "?malla=apagada: no hay canvas, la página queda bien y sin desborde");
+      ok(/APAGADA/.test(r.panel) && /En reposo \(últimos 5 s sin tocar\): \d+ fps/.test(r.panel) && /Malla: sin bucle/.test(r.panel) && r.actual === "apagada", "?malla=apagada: el panel sigue midiendo la pantalla y dice que la malla está apagada");
+      const dibujos = await page.evaluate(() => window.__malla?.cuadros ?? 0);
+      ok(dibujos === 0, `?malla=apagada: la malla no dibuja nada (${dibujos})`);
+      await ctx.close();
+    }
+    // Degradación por software: forzable con ?malla-forzar=software (nivel 2: 15 fps, cuadrícula de 192 px); sigue ondulando.
+    {
+      const { ctx, page } = await abrir({ tema: "dark", query: "?malla-diagnostico=1&malla-forzar=software" });
+      const i = await page.evaluate(() => document.querySelector("canvas.malla-fondo").mallaInfo);
+      ok(i.nivel === 2 && i.fpsTope === 15 && i.sep === 192 && /forzado/.test(i.motivo), `?malla-forzar=software: degradación nivel 2 (${JSON.stringify({ nivel: i.nivel, fps: i.fpsTope, sep: i.sep })})`);
+      const c0 = await cuadros(page);
+      const h0 = await huellaTotal(page);
+      await dormir(3000);
+      const fps = ((await cuadros(page)) - c0) / 3;
+      const h1 = await huellaTotal(page);
+      ok(fps > 8 && fps < 20, `degradada: dibuja ~15 cuadros/s, no se ve congelada (${fps.toFixed(1)}/s)`);
+      ok(h0 !== h1, "degradada: la onda sigue moviéndose");
+      const px = await pixeles(page);
+      ok(px && px.n > 1000, `degradada: pinta (${px?.n} píxeles)`);
+      const panel = await page.evaluate(() => document.querySelector(".malla-diagnostico").innerText);
+      ok(/Degradación: nivel 2 \(forzado/.test(panel), "el diagnóstico muestra que está degradada y por qué");
+      await ctx.close();
+      // ?malla-forzar=normal: nivel 0 y no baja nunca.
+      const { ctx: c2, page: p2 } = await abrir({ tema: "dark", query: "?malla-forzar=normal" });
+      const i2 = await p2.evaluate(() => document.querySelector("canvas.malla-fondo").mallaInfo);
+      ok(i2.nivel === 0 && i2.fpsTope === 30, "?malla-forzar=normal: sin degradación");
+      await c2.close();
+    }
+    // Degradación automática: un teléfono lento (CPU ×8) con la variante por defecto baja solo de nivel y sigue ondulando.
+    {
+      const { ctx, page } = await abrir({ tema: "dark", ancho: 390, alto: 844, movil: true });
+      const cdp = await ctx.newCDPSession(page);
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: 8 });
+      await dormir(7000);
+      const i = await page.evaluate(() => document.querySelector("canvas.malla-fondo").mallaInfo);
+      ok(i.nivel >= 1 && /costo/.test(i.motivo), `teléfono muy lento (CPU ×8): la malla baja sola de nivel (${JSON.stringify({ nivel: i.nivel, motivo: i.motivo, p50: +i.costoP50.toFixed(1) })})`);
+      const c0 = await cuadros(page);
+      await dormir(2000);
+      const fps = ((await cuadros(page)) - c0) / 2;
+      ok(fps >= 8, `degradada sola: sigue dibujando (${fps.toFixed(1)} cuadros/s)`);
+      // Recuperación: al volver a un equipo rápido, a los ~30 s prueba el nivel anterior y se queda si cuesta poco.
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+      await dormir(40000);
+      const j = await page.evaluate(() => document.querySelector("canvas.malla-fondo").mallaInfo);
+      ok(j.nivel < i.nivel, `al bajar el costo se recupera sola (nivel ${i.nivel} -> ${j.nivel}, p50 ${j.costoP50.toFixed(1)} ms)`);
       await ctx.close();
     }
   }
