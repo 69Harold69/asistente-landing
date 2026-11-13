@@ -139,7 +139,9 @@ teléfono empiece a girar hacia la fase siguiente. Cómo está resuelto, sin toc
   varias fases después. Si la tarjeta es más alta que lo que queda de pantalla (chat, «Tu día»), el ancla cubre la
   pantalla y el scroll queda libre dentro de ella. El rango de proximidad de Chrome es 1/3 del alto de la pantalla:
   para que el imán atrape al llegar y nunca jale de regreso, al empezar un gesto (toque, rueda o tecla) en reposo sobre
-  un ancla, esa ancla se desarma (`data-desarmado`) hasta que el scroll termina fuera de su rango. No hay imán en el
+  un ancla, esa ancla se desarma (`data-desarmado`) hasta que el scroll termina fuera de su rango. La rueda y las
+  teclas avanzan a saltos que terminan cada uno por separado: con ellas se desarman todas las anclas cuyo rango contiene
+  la posición (si no, la rueda se quedaba pegada en una fase), y atrapa la que se alcanza desde fuera. No hay imán en el
   hero, la parte final ni el pie (no tienen anclas), ni en escritorio, ni sin JS, ni en el teléfono en horizontal. Un
   hash a una fase cae en el mismo punto (`scroll-margin-top` de la sección). Las pruebas que miden con `scrollTo`
   apagan el imán en la página (`scroll-snap-type: none` en línea), porque Chrome también ajusta al ancla un

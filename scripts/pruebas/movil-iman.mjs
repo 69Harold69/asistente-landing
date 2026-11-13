@@ -16,11 +16,13 @@
     (e) gesto fuerte desde Elementos: pasa de largo al menos dos fases (termina más allá del punto de Avisos − rango);
     (f) fuera del recorrido (hero, «Cómo funciona», preguntas, pie) un arrastre suave termina donde lo dejó el dedo;
     (g) hash a una fase deja la tarjeta en su punto; el punto «Inicio» de la navegación lleva a 0; teclado: Flecha
-        abajo desde una fase avanza 40 px (no regresa), Fin y Inicio llegan a los extremos;
+        abajo desde una fase avanza 40 px (no regresa), Fin y Inicio llegan a los extremos; 70 saltos de rueda de 60 px
+        desde arriba pasan de Hábitos (la rueda no se queda pegada en ninguna fase);
     (h) con «reducir movimiento» no hay imán (sin `data-iman`): el arrastre suave cerca de una fase termina donde lo
         dejó el dedo, sin deslizamiento;
     (i) escritorio (1440×900, ratón): sin `data-iman`.
-  Mutación (README de pruebas): sin `inicializarIman()` fallan (b) y (c); sin desarmar al empezar el gesto, falla (d).
+  Mutación (README de pruebas): sin `inicializarIman()` fallan (b) y (c); sin desarmar al empezar el gesto, falla (d);
+  sin desarmar con rueda todas las anclas cuyo rango contiene la posición, falla la rueda de (g).
 
   Uso: node movil-iman.mjs [--tamanos 360x740,390x844,407x904] [--temas light,dark] [--video DIR] [--estricto]
 */
@@ -255,6 +257,17 @@ for (const [w, h] of tamanos) {
       await page.keyboard.press("Home");
       const finHome = await quieto(page);
       if (finHome !== 0) falla(`${etiqueta}: (g) Inicio (tecla) dejó el scroll en ${finHome}`);
+    }
+    // (g) rueda (ratón en un equipo táctil): avanza a saltos de 60 px sin quedarse pegada en ninguna fase.
+    {
+      await ir(page, 0);
+      await page.mouse.move(Math.round(w / 2), Math.round(h * 0.7));
+      for (let i = 0; i < 70; i++) {
+        await page.mouse.wheel(0, 60);
+        await dormir(35);
+      }
+      const fin = await quieto(page);
+      if (fin < punto["fase-habitos"].p + 200) falla(`${etiqueta}: (g) 70 saltos de rueda de 60 px desde arriba solo llegaron a ${fin} (Hábitos está en ${punto["fase-habitos"].p}): la rueda se queda pegada en una fase`);
     }
     await ctx.close();
   }

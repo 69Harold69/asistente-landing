@@ -95,11 +95,17 @@ export function inicializarIman() {
     else a.el.dataset.desarmado = "";
   }
 
-  /** Empieza un gesto: el ancla sobre la que se está en reposo no puede jalar de regreso al soltar. */
-  function alEmpezarGesto() {
+  /**
+   * Empieza un gesto: el ancla sobre la que se está en reposo no puede jalar de regreso al soltar. Con el dedo, es la
+   * que está justo en su punto (o dentro de su tarjeta alta). La rueda y las teclas avanzan a saltos cortos y cada salto
+   * termina por separado: un salto que termina a 60 px del ancla volvería a ella y la rueda no saldría nunca. Por eso,
+   * con rueda o tecla se desarman todas las anclas cuyo rango contiene la posición: atrapa la que se alcanza desde fuera.
+   */
+  function alEmpezarGesto(ev) {
     if (!activo()) return;
     const y = window.scrollY;
-    for (const a of anclas) if (y >= a.ini - 3 && y <= finDe(a) + 3) armar(a, false);
+    const margen = ev.type === "touchstart" ? 3 : window.innerHeight * RANGO + HOLGURA;
+    for (const a of anclas) if (y >= a.ini - margen && y <= finDe(a) + margen) armar(a, false);
   }
 
   /** Terminó el scroll: se rearman las anclas de las que ya se está lejos (fuera de su rango de proximidad). */
