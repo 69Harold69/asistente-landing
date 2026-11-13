@@ -296,20 +296,33 @@ if (modo === "traza") {
 }
 
 if (modo === "rendimiento") {
+  /* Antes (`--base RAIZ`, otra copia del sitio sin vidrio) contra después (esta rama con `?vidrio=1`), intercalados.
+     `--movil-variante normal` fija la variante de malla en táctil; `--cpus escritorio:1,escritorio:4,movil:4,movil:6`. */
+  const { iniciarServidor } = await import("./lib/servidor.mjs");
+  const sa = await iniciarServidor({ raiz: path.resolve(String(a.base)) });
+  const sd = await iniciarServidor();
+  process.on("exit", () => { sa.cerrar(); sd.cerrar(); });
   const nav = await lanzarChromium();
   const n = Number(a.corridas ?? 5);
   const salidaJson = {};
-  for (const [tam, cpu, etiqueta] of [["escritorio", 1, "escritorio"], ["movil", 4, "móvil, CPU x4"]]) for (const tema of ["claro", "oscuro"]) {
+  const combos = String(a.cpus ?? "escritorio:1,escritorio:4,movil:4,movil:6").split(",").map((x) => x.split(":"));
+  const mv = a["movil-variante"] ? `&malla-movil=${a["movil-variante"]}` : "";
+  for (const [tam, cpu] of combos) for (const tema of ["claro", "oscuro"]) {
     const res = { antes: [], despues: [] };
-    for (let i = 0; i < n; i++) for (const [k, url] of [["antes", a.antes], ["despues", a.despues]]) res[k].push(await recorrerYMedir(nav, url, { tam, cpu, tema }));
+    const q = tam === "movil" ? mv : "";
+    for (let i = 0; i < n; i++) for (const [k, url, qq] of [["antes", sa.url, q ? "?" + q.slice(1) : ""], ["despues", sd.url, "?vidrio=1" + q]]) {
+      a.query = qq;
+      res[k].push(await recorrerYMedir(nav, url, { tam, cpu: Number(cpu), tema }));
+    }
     const med = (k, campo) => +mediana(res[k].map((r) => r[campo])).toFixed(1);
-    console.log(`\n== ${etiqueta}, ${tema} (mediana de ${n}, intercalado antes/después) ==`);
+    console.log(`\n== ${tam} CPU x${cpu}, ${tema} (mediana de ${n}, intercalado antes/después) ==`);
     console.log("métrica".padEnd(16), "antes".padStart(9), "después".padStart(9));
     for (const c of ["fps", "intervaloMed", "intervaloP95", "intervaloMax", "largos33", "tarea", "estilo", "layout", "raster", "dibujo", "cuadrosDibujados"]) console.log(c.padEnd(16), String(med("antes", c)).padStart(9), String(med("despues", c)).padStart(9));
-    salidaJson[`${tam}-${tema}`] = res;
+    salidaJson[`${tam}-x${cpu}-${tema}`] = res;
   }
   await nav.close();
   fs.writeFileSync(path.join(salida, "rendimiento.json"), JSON.stringify(salidaJson, null, 2));
+  process.exit(0);
 }
 
 /* ---- costo de carga por variante (CPU x4): reescribe base.css al vuelo para aislar qué parte del vidrio cuesta ---- */
