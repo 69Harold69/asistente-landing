@@ -395,8 +395,8 @@ try {
       // Un gesto de scroll rellena «Durante el scroll» y lo conserva al soltar.
       // (Toques reales por CDP, arriba del panel: synthesizeScrollGesture no desplaza aquí y un arrastre sobre el panel desplaza el panel.)
       const toqueDiag = (type, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x: 195, y, id: 1 }] });
-      await toqueDiag("touchStart", 480);
-      for (let i = 1; i <= 40; i++) { await toqueDiag("touchMove", 480 - i * 8); await dormir(16); }
+      await toqueDiag("touchStart", 330);
+      for (let i = 1; i <= 40; i++) { await toqueDiag("touchMove", 330 - i * 7); await dormir(16); }
       await toqueDiag("touchEnd", 0);
       await dormir(900);
       d = await leer();
