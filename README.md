@@ -290,8 +290,10 @@ al primer clic en el toggle).
 - **Navegación con puntos (`nav-recorrido.js`):** `nav` con `aria-label`,
   `aria-current="location"` y salto a la posición en la que cada sección
   queda en lectura. Un riel de 2 px une los puntos y su relleno (`--avance`
-  por CSSOM) llega a cada punto justo cuando su sección pasa a leerse: 0 antes
-  de «Chat», 100 % en «Tu día». Los puntos ya recorridos (`data-pasado`) toman
+  por CSSOM) llega a cada punto justo cuando su sección pasa a leerse: 0 en el
+  hero, 100 % en «Tu día». El primer punto es «Inicio» (`#hero`): lleva al tope
+  de la página (scrollY 0, no al borde del hero), deja el foco en el hero y la
+  URL sin hash; sin JS es un ancla común a `#hero`. Los puntos ya recorridos (`data-pasado`) toman
   el acento. Decorativo (sin texto ni rol); se va con los puntos
   (`data-fuera`); sin JS queda el conector tenue.
 - **Mascota del header:** respira y se infla con el hover de un CTA de la beta o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
