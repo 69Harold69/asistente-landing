@@ -116,10 +116,17 @@
   }
 }
 
-/* Inclinación sutil con el mouse (tilt.js), compuesta aparte del giro. */
+/*
+  Inclinación con el mouse (tilt.js, #99), compuesta aparte del giro. `--tilt-p` es la perspectiva EXTRA de la
+  inclinación: se suma (en 1/d) a la de `.escenario-3d` hasta una efectiva de 900 px mientras el teléfono sigue
+  al cursor, y vale «infinito» (1e7 px) en reposo y en los giros, así el giro de 360° conserva sus 1600 px.
+  Origen al centro (el del envoltorio coincide con el de `.escenario-3d`, así las dos perspectivas se suman).
+*/
 .phone-tilt {
   transform-style: preserve-3d;
-  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transform-origin: 50% 50%;
+  transform: translateX(var(--tilt-dx, 0px)) perspective(var(--tilt-p, 10000000px)) rotateX(var(--tilt-x, 0deg))
+    rotateY(var(--tilt-y, 0deg));
 }
 
 /*
@@ -442,10 +449,15 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--color-accent);
-  /* Mirada (tilt.js, #27): hasta 9 % de su propio tamaño hacia el cursor, por `translate`
-     (se compone con la respiración, que usa `transform`). A 180° la espalda queda sin
-     espejo en pantalla (giro del teléfono + rotateY de la cara), así que no se invierte. */
-  translate: calc(var(--mira-x, 0) * 9%) calc(var(--mira-y, 0) * 9%);
+  /* Mirada (tilt.js, #27/#99): el círculo completo se corre hasta 16 % de su tamaño (~1/6 del diámetro)
+     hacia el cursor, por `translate` (se compone con la respiración, que usa `transform`). A 180° la espalda
+     queda sin espejo en pantalla (giro del teléfono + rotateY de la cara), así que no se invierte. Brillo
+     suave del lado del cursor, afuera del círculo y en su propio color (sobre la espalda clara u oscura);
+     contorno transparente por lo mismo que en el Splash (scenes.css): sin bordes de caja pegados a lo pintado. */
+  outline: 0.5rem solid transparent;
+  translate: calc(var(--mira-x, 0) * 16%) calc(var(--mira-y, 0) * 16%);
+  box-shadow: calc(var(--mira-x, 0) * 0.25rem) calc(var(--mira-y, 0) * 0.25rem) 0.9rem -0.1rem
+    color-mix(in oklab, var(--color-accent) calc(var(--mira-r, 0) * 75%), transparent);
 }
 
 .phone-mascota-halo::before {

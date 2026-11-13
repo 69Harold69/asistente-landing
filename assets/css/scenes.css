@@ -243,13 +243,25 @@
   display: flex;
 }
 
+/*
+  Mascota del Splash: un círculo liso, sin rasgos (como en la app). Mirada (tilt.js, #27/#99): el círculo
+  COMPLETO se corre hasta 16 dp (1/6 de su diámetro) hacia el cursor, por `translate` (se compone con la
+  respiración y con la escala del envoltorio), y un brillo suave del lado del cursor (`box-shadow` afuera del
+  círculo, en `--color-on-accent`: luz sobre el morado en claro y en oscuro, nunca un punto adentro). Sin
+  mirada (`--mira-r` 0, reposo, sin JS, táctil, reduced-motion) el brillo es transparente.
+  Contorno transparente (`outline`): el círculo se mueve a posiciones subpíxel dentro del contexto 3D del
+  teléfono y como capa compuesta (respira con `transform`); el contorno amplía la caja que se rasteriza con
+  un margen transparente, así los bordes de esa caja nunca quedan pegados a píxeles pintados (#99, líneas finas
+  en los bordes de la caja al moverse).
+*/
 .ps-splash .ps-dot {
   width: calc(96 * var(--dp));
   height: calc(96 * var(--dp));
   background: var(--color-bg-elevated);
-  /* Mirada (tilt.js, #27): la mascota se corre hasta 7 dp hacia el cursor. `translate`
-     se compone con el `transform` de la respiración y con la escala del envoltorio. */
-  translate: calc(var(--mira-x, 0) * 7 * var(--dp)) calc(var(--mira-y, 0) * 7 * var(--dp));
+  outline: calc(6 * var(--dp)) solid transparent;
+  translate: calc(var(--mira-x, 0) * 16 * var(--dp)) calc(var(--mira-y, 0) * 16 * var(--dp));
+  box-shadow: calc(var(--mira-x, 0) * 4 * var(--dp)) calc(var(--mira-y, 0) * 4 * var(--dp)) calc(14 * var(--dp))
+    calc(-2 * var(--dp)) color-mix(in oklab, var(--color-on-accent) calc(var(--mira-r, 0) * 70%), transparent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
