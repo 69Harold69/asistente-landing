@@ -41,7 +41,7 @@ asistente-landing/
 │   │   ├── progreso.js  Pista "Desliza para descubrir"
 │   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
 │   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
-│   │   ├── tilt.js      Inclinación del teléfono con el mouse (±4°, quieto) y mirada de la mascota
+│   │   ├── tilt.js      Inclinación del teléfono con el mouse (20° a los lados / 10° arriba-abajo, con inercia) y mirada de la mascota
 │   │   ├── malla.js     Malla de fondo del hero (canvas 2D que reacciona al cursor)
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
@@ -326,19 +326,66 @@ al primer clic en el toggle).
   táctil (sin `hover`/puntero fino) se dibuja una vez, estática: en táctil el dedo hace
   scroll y una animación solo gastaría batería. Arranca tras `load` + `requestIdleCallback`
   (el LCP es el titular). Sin JS no existe el canvas y el hero queda igual.
-- **Mirada de la mascota (`tilt.js`, `scenes.css`, `phone.css`, #27):** la mascota de la app es un
-  punto sin rasgos (`ic_launcher_foreground.xml`), así que no hay ojos que separar: la «mirada» es un
-  desplazamiento pequeño del punto hacia el cursor, en el Splash (`.ps-splash .ps-dot`, hasta 7 dp) y
-  en la espalda del teléfono (`.phone-mascota-halo`, hasta 9 % de su tamaño). El mismo `pointermove`
-  pasivo y el mismo rAF de la inclinación alimentan `--mira-x/--mira-y` (-1..1, `gsap.quickTo` de 0.45 s,
-  un poco más rápido que el tilt de 0.7 s) en `.phone-tilt`. Se aplica con la propiedad `translate`,
-  que se compone con el `transform` de la coreografía (la escala de `.ps-dot-escala`, el giro de
-  `.phone`, la respiración del punto) sin pisarlo. Se apaga —y vuelve suave al centro— durante los
-  giros/vuelos (`yaruki:estado.enGiro`), mientras la mascota del hero crece con el scroll
-  (`mascota > 1.02`) y al salir el cursor; no existe en táctil ni con reduced-motion (mismo
-  `matchMedia` que el tilt). La inclinación del teléfono sigue en ±4° (Notion sugiere 8° laterales y
-  6° verticales: opción pendiente de Harold). Como la espalda solo se ve durante un giro, en la
-  práctica su mirada se ve en el modo de inspección `?cara=espalda` o con el scroll detenido sobre ella.
+- **Inclinación y mirada (`tilt.js`, `scenes.css`, `phone.css`, #27, #99):**
+  - **Inclinación («te voltea a ver»):** el teléfono gira hacia el cursor hasta **20° a los lados y 10°
+    arriba/abajo** (decisión de Harold tras compararlo con 15°/8° y 25°/12°), con peso: resortes amortiguados
+    por tiempo (0.28 s al seguir, sin GSAP, un solo rAF que se detiene cuando todo llegó a su objetivo).
+    **Vuelve despacio al centro** (1.1 s) al salir el cursor de la ventana o si no se mueve en 4 s. Durante
+    cada giro/vuelo se apaga rápido (0.18 s) y retoma desde 0 al aterrizar, sin saltos. Va por
+    `--tilt-x/--tilt-y/--tilt-p/--tilt-dx` en `.phone-tilt` (solo `transform`, compuesto; el giro de `.phone`
+    y el vuelo de `.escenario-3d` están en otros envoltorios).
+  - **Por qué antes casi no se notaba a los lados (revisión de Harold, #99):** la perspectiva era de 1600 px y
+    el trapecio de `rotateY` es proporcional a ancho·sen(θ)/perspectiva; el teléfono es angosto (296 px contra
+    641 de alto), así que a 8° los bordes izquierdo y derecho sólo diferían 16 px, mientras 6° arriba/abajo
+    (que actúan sobre el lado largo) cambiaban el ancho un 4 % contra un 2.6 %: se leía más el vertical.
+    Además el lado izquierdo se normalizaba por toda la distancia al borde de la ventana (~1000 px en el
+    hero): con el cursor sobre el titular la inclinación era de 2–3°. Nada anulaba el `rotateY` (la cadena
+    `.escenario-3d` → `.phone-tilt` → `.phone` conserva el 3D; los orígenes coinciden al centro).
+  - **Arreglo:** perspectiva **efectiva de 900 px** para la inclinación sin tocar la del giro de 360°: la
+    inclinación suma `perspective(--tilt-p)` a su transform (las perspectivas se suman en 1/d:
+    1/1600 + 1/2057 = 1/900) y esa fuerza sigue un resorte que vale 0 en reposo y durante los giros, así el
+    vuelo se ve igual y no hay salto al aterrizar. El recorrido lateral llega al máximo a un 34 % del ancho
+    de la ventana (o antes si el borde está más cerca); arriba/abajo, cada lado por su distancia al borde.
+    Un desplazamiento lateral leve (hasta 10 px) acompaña el giro. Medidas (1440×900, hero y fases, cursor en
+    el borde): 8°/6° de antes → 16 px laterales contra 12 px verticales; 20°/10° → 72 / 36 px.
+  - **Dónde aplica:** `min-width: 1024px` + `hover: hover` + `pointer: fine` + sin reduced-motion. La
+    tablet con mouse (768–1023 px) **no** inclina: el teléfono ahí está en la franja del recorrido de una
+    columna y la perspectiva lo acercaría al texto vecino.
+  - **Mirada de la mascota:** la mascota de la app es un círculo liso, sin rasgos (`ic_launcher_foreground.xml`):
+    **no hay pupila ni ojo**. «Mirar» es que **el círculo completo** se corre hacia el cursor (Splash
+    `.ps-splash .ps-dot`, hasta 16 dp = 1/6 de su diámetro; espalda `.phone-mascota-halo`, hasta 16 % de su
+    tamaño) y vuelve exacto a su centro en reposo, más **un brillo suave del lado del cursor**: un halo
+    (`box-shadow` afuera del círculo, desplazado hacia el cursor; en el Splash en `--color-on-accent`, en la
+    espalda en `--color-accent`), con opacidad proporcional a `--mira-r` (0 sin mirada, sin JS, en táctil y
+    con reduced-motion). Es un realce propio de la landing, la app no lo tiene. Se aplica con la propiedad
+    `translate`, que se compone con el `transform` de la coreografía y con la respiración sin pisarlos. Se
+    apaga —y vuelve suave al centro— durante los giros, mientras la mascota del hero crece con el scroll
+    (`mascota > 1.02`) y al salir el cursor.
+  - **Líneas finas en los bordes de la caja (#99):** el círculo se mueve a posiciones subpíxel como capa
+    compuesta (respira con `transform`) dentro del contexto 3D del teléfono inclinado; un `outline`
+    transparente amplía la caja que se rasteriza, así sus bordes nunca quedan pegados a píxeles pintados, y no
+    hay `::after` (la pupila de #112, una segunda caja que se movía con `left/top`). `mirada.mjs` revisa en
+    píxeles reales, con la mascota en movimiento, las esquinas de su caja lejos del brillo (claro y oscuro,
+    ×1 y ×2). En Chromium sin pantalla el artefacto no se reproduce (ni con GPU). Con colores forzados (alto
+    contraste) el contorno se quita: el navegador lo pintaría como un aro.
+  - **Rendijas en la pantalla (#99, revisión de Harold en dev):** con 20° y la perspectiva de 900 px vio una línea
+    horizontal fina que cruza la pantalla (bajo la mascota del Splash y bajo «Escuchando…» en la llamada) y un corte en
+    la orilla izquierda. No se reprodujo en Chromium automatizado (sin pantalla y con ventana y GPU, DPR 1–2), así que
+    el arreglo es de defensa en las tres capas posibles: (1) un **respaldo** (`.phone::before`) del color de la escena,
+    1 px detrás del frente y del tamaño de la pantalla: una costura entre trozos del compositor deja ver ese color y no
+    la página; (2) el **fondo propio de la pantalla** es el de la escena (`data-fondo` en `#telefono`, stage.js), no el
+    crema de la página; (3) las escenas se **enciman 1 px** sobre la orilla de la pantalla y el bisel va en **px
+    enteros**. `scripts/pruebas/rendijas.mjs` lo cuida en las 8 escenas, claro y oscuro, en reposo, en los extremos y
+    en ángulos intermedios, a DPR 1, 1.25, 1.5 y 2.
+  - **Pendiente (opcional del Notion):** el punto del logo del header también mirando al cursor.
+  - **Prueba:** `scripts/pruebas/mirada.mjs` espera por estado (rAF dentro de la página), no por tiempo
+    (#88); verifica los ángulos en las cuatro esquinas, lateral mayor que vertical en píxeles proyectados, el
+    regreso al centro exacto, el apagado durante el giro, que no haya pupila, el brillo del lado correcto y los
+    bordes de la caja sin líneas. Los saltos se miden en cada paso del resorte (un `MutationObserver` sobre el
+    `style` del envoltorio), no en el rAF de stage.js: muestrear en otro rAF mezclaba fases y duplicaba el salto.
+  - **Al medir la mirada en pantalla,** la referencia es el cursor sobre el centro del teléfono: con el cursor al
+    centro de la ventana la mascota ya mira a la izquierda (≈ −15 px en el hero a 1440×900) y las esquinas dan
+    −8 / +38 px, una asimetría que es de la referencia y no de la mirada (auditoría de #99).
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
   magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
