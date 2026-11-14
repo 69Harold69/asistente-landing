@@ -1,4 +1,4 @@
-import { logotipo } from "../icons.js?v=b33aca15d5";
+import { logotipo } from "../icons.js?v=aa89f90c40";
 
 /**
  * Login — copia de `ui/auth/LoginScreen.kt:104-193` (0.1.6a): logotipo de letras «Yaruki» (`displaySmall`,
