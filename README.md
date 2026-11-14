@@ -507,6 +507,7 @@ Sin JS no hay malla (no hay canvas): las tarjetas quedan con relleno sólido sob
   encendiendo la malla debajo.
 - **Contraste:** `node vidrio-contraste.mjs` (registrado en `todo.mjs`) mide en píxeles renderizados, con la malla en
   movimiento y el cursor real encima, títulos grandes contra 3:1 y todo el texto pequeño contra 4.5:1, en todas las secciones.
+- **Malla más visible en tema claro (#98, variantes para comparar):** `?malla-claro=1|2|3` (malla.js pone `data-malla-claro` en `<html>`; `tokens.css` solo lo aplica en tema claro, explícito o por esquema del sistema; el oscuro no cambia). Solo suben las opacidades **en reposo** (líneas 0.10 → 0.14 / 0.19 / 0.24; puntos 0.28 → 0.38 / 0.46 / 0.54); la encendida por el cursor se queda en 0.30 / 0.56, porque es la que fija el contraste del texto pequeño (subirla a 0.38 / 0.64 ya dejó párrafos en 4.36:1). Sin parámetro, como hoy. Capturas: `scripts/pruebas/capturas-malla-claro.mjs`.
 - **Parámetros de URL que quedan (diagnóstico):** `?malla=apagada`, `?malla-diagnostico=1`, `?malla-movil=…` y
   `?malla-forzar=…`. Se retiraron `?vidrio=1` (ya es el defecto; ponerlo no rompe nada), `?vidrio-forma=unica`,
   `?vidrio-relleno=`, `?vidrio-desenfoque=` y `?malla=referencia|pleno|medio|<n>`.
