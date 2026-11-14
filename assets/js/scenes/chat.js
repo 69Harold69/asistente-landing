@@ -1,4 +1,4 @@
-import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js?v=aa71b9d321";
+import { iconoTrazo, iconoMic, iconoEnviar } from "../icons.js?v=b33aca15d5";
 
 /**
  * Chat vivo (etapa 5, plan 4.3 y sección 2) — pool de 8 escenarios, uno al
