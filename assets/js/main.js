@@ -6,16 +6,16 @@ import {
   fijarTema,
   guardarTema,
   transicionarTema,
-} from "./theme.js?v=c142dac662";
-import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js?v=c142dac662";
-import { inicializarEscenario } from "./stage.js?v=c142dac662";
-import { inicializarTilt } from "./tilt.js?v=c142dac662";
-import { inicializarReveals } from "./revelar.js?v=c142dac662";
-import { inicializarProgreso } from "./progreso.js?v=c142dac662";
-import { inicializarMagneticos } from "./magnetico.js?v=c142dac662";
-import { inicializarNavRecorrido } from "./nav-recorrido.js?v=c142dac662";
-import { inicializarMalla } from "./malla.js?v=c142dac662";
-import { inicializarIman } from "./iman.js?v=c142dac662";
+} from "./theme.js?v=e0e2c6f325";
+import { mostrarDemoDeTemaSiCorresponde, cancelarDemo } from "./theme-demo.js?v=e0e2c6f325";
+import { inicializarEscenario } from "./stage.js?v=e0e2c6f325";
+import { inicializarTilt } from "./tilt.js?v=e0e2c6f325";
+import { inicializarReveals } from "./revelar.js?v=e0e2c6f325";
+import { inicializarProgreso } from "./progreso.js?v=e0e2c6f325";
+import { inicializarMagneticos } from "./magnetico.js?v=e0e2c6f325";
+import { inicializarNavRecorrido } from "./nav-recorrido.js?v=e0e2c6f325";
+import { inicializarMalla } from "./malla.js?v=e0e2c6f325";
+import { inicializarIman } from "./iman.js?v=e0e2c6f325";
 
 /**
  * GSAP y ScrollTrigger se inyectan desde aquí, en orden (`async = false`), y no van como `<script defer>`
