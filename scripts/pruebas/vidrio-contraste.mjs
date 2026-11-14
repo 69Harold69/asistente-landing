@@ -9,7 +9,8 @@
   en escritorio, con el cursor sobre 3 elementos del bloque (la malla se enciende al acento a su máxima intensidad).
   El mínimo de todos los cuadros es el contraste de cada elemento.
 
-  Uso: node vidrio-contraste.mjs [--url URL] [--query "malla-forzar=normal"] [--temas claro,oscuro] [--tams escritorio,movil]
+  Uso: node vidrio-contraste.mjs [--url URL] [--query "malla-forzar=normal"] [--temas claro,oscuro] [--tams escritorio,tablet,movil]
+         (también escritorio1024 y movil360)
          [--solo fase-chat,preguntas] [--salida DIR]
   Sale con 1 si algún elemento baja de su mínimo.
 */
@@ -19,7 +20,7 @@ import { iniciarServidor } from "./lib/servidor.mjs";
 import { ruedaHasta } from "./lib/scroll.mjs";
 import { leerArgs, lanzarChromium, carpetaSalida, scriptInicial, esperarCarga, dormir, lista } from "./lib/comun.mjs";
 
-const TAM = { escritorio: { w: 1440, h: 900, movil: false }, movil: { w: 390, h: 844, movil: true }, movil360: { w: 360, h: 800, movil: true } };
+const TAM = { escritorio: { w: 1440, h: 900, movil: false }, escritorio1024: { w: 1024, h: 768, movil: false }, tablet: { w: 820, h: 1180, movil: true }, movil: { w: 390, h: 844, movil: true }, movil360: { w: 360, h: 800, movil: true } };
 const TEMA = { claro: "light", oscuro: "dark" };
 const SECCIONES = ["hero", "fase-chat", "fase-elementos", "fase-habitos", "fase-avisos", "fase-llamada", "cta", "como-funciona", "lo-que-viene", "preguntas", "quien-esta-detras"];
 
@@ -28,7 +29,9 @@ function recolectar() {
   const SALTAR = ".pie, #stage, .nav-recorrido, .malla-diagnostico, .chip, .chip-beta-header, .button--primary, .pasos-beta-numero, [data-theme-toggle], .punto-vivo-envoltura";
   const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
   const out = [];
-  const els = [...document.querySelectorAll("main *, .site-header *")];
+  // Sin lo de `#stage`: la escena del teléfono agrega y quita nodos y movía el índice de todo lo que va después; un
+  // elemento podía «ya estar medido» con el índice de otro y saltarse en silencio (auditoría #100).
+  const els = [...document.querySelectorAll("main *, .site-header *")].filter((el) => !el.closest("#stage"));
   const stage = document.getElementById("stage");
   const movilStage = stage && matchMedia("(max-width: 1023px)").matches ? stage.getBoundingClientRect() : null;
   els.forEach((el, idx) => {
@@ -58,6 +61,21 @@ function recolectar() {
     const seccion = el.closest("#hero, section[id], .site-header, footer")?.id || (el.closest(".site-header") ? "header" : "?");
     const grupo = el.matches(".fase-kicker, .hero-significado") ? "kicker" : grande ? "titulo" : el.matches("a") ? "enlace" : el.matches(".fase-texto, .subtitulo-hero, .pregunta-respuesta p, .tarjeta-viene p, .pasos-lista p, .bloque-intro, .pasos-beta span, .cta-nota") ? "parrafo" : "otro";
     out.push({ idx, texto: nodos[0].textContent.trim().slice(0, 36), rgb: rgb(cs.color), px, grande, op, rects, seccion, grupo, inactivo: !!el.closest(".button--disabled") });
+  });
+  return out;
+}
+
+/** Índices (mismo orden que `recolectar`) de todo elemento con texto propio de las secciones pedidas, sin filtros de posición. */
+function recolectarTodos(solo) {
+  const SALTAR = ".pie, #stage, .nav-recorrido, .malla-diagnostico, .chip, .chip-beta-header, .button--primary, .pasos-beta-numero, [data-theme-toggle], .punto-vivo-envoltura";
+  const out = [];
+  [...document.querySelectorAll("main *, .site-header *")].filter((el) => !el.closest("#stage")).forEach((el, idx) => {
+    if (el.closest(SALTAR) || !el.closest(solo.map((id) => "#" + id).join(","))) return;
+    if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length)) return;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === "hidden" || cs.display === "none") return;
+    const nodos = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim().length);
+    out.push({ idx, texto: nodos[0].textContent.trim().slice(0, 36), seccion: el.closest("#hero, section[id], .site-header, footer")?.id || "?" });
   });
   return out;
 }
@@ -106,8 +124,28 @@ export async function medir(nav, limpia, url, { tema, tam, query = "", solo = SE
   for (const id of solo) {
     const g = await page.evaluate((id) => { const r = document.getElementById(id).getBoundingClientRect(); return { top: scrollY + r.top, alto: r.height }; }, id);
     const posiciones = g.alto <= vh * 1.05 ? [Math.max(0, g.top + g.alto / 2 - vh / 2)] : Array.from({ length: Math.ceil((g.alto - vh * 0.3) / (vh * 0.6)) }, (_, k) => Math.max(0, g.top - 80 + k * vh * 0.6));
+    // El centro de la sección va SIEMPRE primero: una fase del recorrido mide un poco más que la pantalla (min-height 100vh +
+    // relleno) y, sin esta posición, solo se medía en sus orillas, donde el texto aún entra o ya sale (opacidad < 1) y se
+    // descartaba en silencio (auditoría #100: 16 elementos de las fases nunca se medían en escritorio).
+    posiciones.unshift(Math.max(0, g.top + g.alto / 2 - vh / 2));
     if (id === "hero") posiciones.splice(0, posiciones.length, 0);
-    for (const y of posiciones) {
+    let rescate = false;
+    for (let q = 0; q < posiciones.length || !rescate; q++) {
+      if (q >= posiciones.length) {
+        // Segunda pasada: cada elemento de la sección que no quedó entero a la vista en ninguna posición (una respuesta
+        // larga de las preguntas en móvil, por ejemplo) se centra en la pantalla y se mide ahí.
+        rescate = true;
+        const faltan = (await page.evaluate(recolectarTodos, [id])).filter((e) => !medidos.has(e.idx));
+        const tops = await page.evaluate((idxs) => {
+          const els = [...document.querySelectorAll("main *, .site-header *")].filter((el) => !el.closest("#stage"));
+          return idxs.map((i) => { const r = els[i].getBoundingClientRect(); return scrollY + r.top + r.height / 2; });
+        }, faltan.map((e) => e.idx));
+        const st = t.movil ? await page.evaluate(() => document.getElementById("stage")?.offsetHeight ?? 0) : 0;
+        // Centrada en la pantalla y, en móvil/tablet, también centrada en lo que queda bajo la franja del teléfono.
+        for (const c of tops) posiciones.push(...new Set([Math.max(0, c - vh / 2), Math.max(0, c - (vh + st) / 2)]));
+        if (q >= posiciones.length) break;
+      }
+      const y = posiciones[q];
       await ruedaHasta(page, Math.round(y), { paso: 220, pausaMs: 25 });
       let items = [];
       for (let i = 0; i < 22; i++) {
@@ -138,8 +176,15 @@ export async function medir(nav, limpia, url, { tema, tam, query = "", solo = SE
       vis.forEach((e, i) => medidos.set(e.idx, { ...e, min: peor[i], req: e.grande ? 3 : 4.5 }));
     }
   }
+  // Cobertura: todo texto pequeño o grande de las secciones pedidas tiene que haberse medido en alguna posición (si la
+  // franja del teléfono o el borde de la pantalla lo tapan en todas, el elemento no se mide y antes no se reportaba).
+  const todos = await page.evaluate(recolectarTodos, solo);
+  // Por sección + texto, no por índice: la escena del teléfono (dentro de <main>) agrega y quita nodos, y los índices de lo
+  // que va después de `#stage` cambian entre una lectura y otra.
+  const claves = new Set([...medidos.values()].map((e) => `${e.seccion}|${e.texto}`));
+  const sinMedir = todos.filter((e) => !claves.has(`${e.seccion}|${e.texto}`));
   await ctx.close();
-  return [...medidos.values()];
+  return Object.assign([...medidos.values()], { sinMedir });
 }
 
 export function resumen(filas) {
@@ -155,7 +200,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const nav = await lanzarChromium();
   const limpia = await (await nav.newContext()).newPage();
   const temas = lista(a.temas, ["claro", "oscuro"]);
-  const tams = lista(a.tams, ["escritorio", "movil"]);
+  const tams = lista(a.tams, ["escritorio", "tablet", "movil"]);
   const solo = lista(a.solo, SECCIONES);
   const todo = [];
   let fallas = 0;
@@ -171,6 +216,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     }
     const r = resumen(filas);
     console.log("  mínimo por grupo:", JSON.stringify(Object.fromEntries(Object.entries(r).map(([k, v]) => [k, +v.toFixed(2)]))));
+    for (const e of filas.sinMedir) { fallas++; console.log(`  FALLA ${e.seccion.padEnd(16)} sin medir (nunca visible entero fuera de la franja) «${e.texto}»`); }
     const sueltos = filas.filter((f) => f.grupo === "otro" && !f.grande);
     if (sueltos.length) console.log(`  texto pequeño fuera de los grupos conocidos (revisar si va en tarjeta): ${sueltos.map((s) => `${s.seccion}:«${s.texto}»`).join(" | ")}`);
   }
