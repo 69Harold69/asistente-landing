@@ -492,7 +492,7 @@ Tarjetas de vidrio ligero («Liquid Glass») sobre la malla encendida: **es el d
 de Harold tras revisarlo). `index.html` trae `data-vidrio` en `<html>`, así que los estilos aplican desde el primer pintado
 (sin esperar a JS: sin salto de «sin tarjeta» a «con tarjeta» ni CLS). Todo el estilo es CSS (`base.css`, bloque «VIDRIO»,
 y los tokens `--vidrio-*` de `tokens.css`). La malla es la «referencia» (color de acento, líneas 0.10 → 0.30, puntos
-0.28 → 0.56, igual en claro y oscuro y a pleno también detrás de las fases: `--malla-*` y `--malla-recorrido: 1`).
+0.28 → 0.56, distinta en claro (reposo 0.24 / 0.54) y oscuro (0.10 / 0.28), y a pleno también detrás de las fases: `--malla-*` y `--malla-recorrido: 1`).
 Sin JS no hay malla (no hay canvas): las tarjetas quedan con relleno sólido sobre el fondo liso (`sin-js.css`).
 
 - **Qué es vidrio:** relleno translúcido (`--vidrio-relleno`, **0.10**; en degradado, ×1.3 arriba y ×0.7 abajo),
@@ -518,7 +518,7 @@ Sin JS no hay malla (no hay canvas): las tarjetas quedan con relleno sólido sob
   encendiendo la malla debajo.
 - **Contraste:** `node vidrio-contraste.mjs` (registrado en `todo.mjs`) mide en píxeles renderizados, con la malla en
   movimiento y el cursor real encima, títulos grandes contra 3:1 y todo el texto pequeño contra 4.5:1, en todas las secciones.
-- **Malla más visible en tema claro (#98, variantes para comparar):** `?malla-claro=1|2|3` (malla.js pone `data-malla-claro` en `<html>`; `tokens.css` solo lo aplica en tema claro, explícito o por esquema del sistema; el oscuro no cambia). Solo suben las opacidades **en reposo** (líneas 0.10 → 0.14 / 0.19 / 0.24; puntos 0.28 → 0.38 / 0.46 / 0.54); la encendida por el cursor se queda en 0.30 / 0.56, porque es la que fija el contraste del texto pequeño (subirla a 0.38 / 0.64 ya dejó párrafos en 4.36:1). Sin parámetro, como hoy. Capturas: `scripts/pruebas/capturas-malla-claro.mjs`.
+- **Malla del tema claro más visible que la del oscuro (#98):** en claro, `tokens.css` fija líneas 0.24 / 0.30 y puntos 0.54 / 0.56 (reposo / encendido); en oscuro siguen 0.10 / 0.30 y 0.28 / 0.56 (repetidos en los dos bloques oscuros, porque `:root` es el claro). La encendida por el cursor **no sube**: es la que fija el contraste del texto pequeño en AA (con 0.38 / 0.64 los párrafos sobre vidrio caían a 4.36:1 y con 0.55 / 0.85 a 3.22:1). Solo se subió la de reposo.
 - **Parámetros de URL que quedan (diagnóstico):** `?malla=apagada`, `?malla-diagnostico=1`, `?malla-movil=…` y
   `?malla-forzar=…`. Se retiraron `?vidrio=1` (ya es el defecto; ponerlo no rompe nada), `?vidrio-forma=unica`,
   `?vidrio-relleno=`, `?vidrio-desenfoque=` y `?malla=referencia|pleno|medio|<n>`.
