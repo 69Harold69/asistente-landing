@@ -955,6 +955,12 @@ html[data-iman] {
   width: 1px;
 }
 
+/* Mientras iman.js jala a una fase (animación propia de 400–600 ms), el snap se apaga: si no, Chrome ajustaría cada
+   paso de la animación al ancla más cercana. */
+html[data-iman][data-iman-jalando] {
+  scroll-snap-type: none;
+}
+
 html[data-iman] .iman:not([data-desarmado]) {
   scroll-snap-align: start;
   scroll-snap-stop: normal;

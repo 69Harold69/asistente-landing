@@ -141,7 +141,18 @@ teléfono empiece a girar hacia la fase siguiente. Cómo está resuelto, sin toc
   para que el imán atrape al llegar y nunca jale de regreso, al empezar un gesto (toque, rueda o tecla) en reposo sobre
   un ancla, esa ancla se desarma (`data-desarmado`) hasta que el scroll termina fuera de su rango. La rueda y las
   teclas avanzan a saltos que terminan cada uno por separado: con ellas se desarman todas las anclas cuyo rango contiene
-  la posición (si no, la rueda se quedaba pegada en una fase), y atrapa la que se alcanza desde fuera. No hay imán en el
+  la posición (si no, la rueda se quedaba pegada en una fase), y atrapa la que se alcanza desde fuera.
+  *Remate al soltar (segunda ronda, decisión de Harold: en el recorrido la página nunca se queda entre dos fases).* Si un
+  gesto con el dedo termina lejos de toda ancla, entre la primera fase y el final de «Tu día», al terminar el scroll
+  (`scrollend`; donde no existe, 180 ms sin scroll) `iman.js` jala con una animación propia de 400–600 ms (cúbica de
+  entrada y salida) a la fase más próxima en la dirección del gesto: la siguiente si bajaba, la anterior si subía (al
+  final de su tarjeta si es alta). Nunca con el dedo en la pantalla ni durante la inercia; tocar, rueda o tecla lo
+  cancelan, y el toque que lo detiene no lo reanuda al soltar si no arrastró. No jala dentro de la zona de lectura de
+  chat y «Tu día», ni arriba de la primera fase ni abajo del final de «Tu día» (se sale libre), ni tras rueda, teclado,
+  enlaces o el punto «Inicio». Mientras anima apaga el snap (`data-iman-jalando`) para que Chrome no ajuste cada paso, y
+  el `scrollend` que provoca no dispara otro jalón. Un roce de menos de 24 px vuelve a la fase más cercana. El snap
+  nativo de proximidad se queda como primera capa: cuando el gesto termina cerca de una fase, el navegador lo resuelve
+  dentro de la misma inercia y el JS ya no tiene nada que hacer; el JS solo actúa cuando el navegador no ajustó. No hay imán en el
   hero, la parte final ni el pie (no tienen anclas), ni en escritorio, ni sin JS, ni en el teléfono en horizontal. Un
   hash a una fase cae en el mismo punto (`scroll-margin-top` de la sección). Las pruebas que miden con `scrollTo`
   apagan el imán en la página (`scroll-snap-type: none` en línea), porque Chrome también ajusta al ancla un
