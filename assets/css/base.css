@@ -2178,6 +2178,33 @@ html[data-vidrio] :is(#hero, .secciones > .seccion) > :is(.fase-titulo, .titular
   }
 }
 
+/* Escritorio bajo (laptops de 1366×768, 1280×720 y 1280×800): la pista «Desliza para descubrir» va en el flujo, debajo
+   de la tarjeta, y con menos de 860 px de alto caía bajo el pliegue. El hero se compacta en proporción al alto: cada
+   medida va de su valor normal (a 859 px) a su mínimo (a 720 px). De 860 px para arriba no cambia nada. */
+@media (min-width: 1024px) and (max-height: 859px) {
+  html[data-vidrio] #hero {
+    padding-top: clamp(1rem, 14.39vh - 5.475rem, var(--space-4));
+  }
+
+  html[data-vidrio] #hero > .hero-significado {
+    margin-bottom: clamp(0.375rem, 5.76vh - 2.2rem, var(--space-2));
+  }
+
+  html[data-vidrio] #hero > .titular-hero {
+    font-size: min(var(--text-display), max(3.5rem, 5.76vh + 0.906rem));
+    margin-bottom: clamp(1rem, 5.76vh - 1.59rem, var(--space-3));
+  }
+
+  html[data-vidrio] #hero > .subtitulo-hero {
+    font-size: min(var(--text-entrada), max(1.0625rem, 2.52vh - 0.07rem));
+    margin-bottom: clamp(0.75rem, 17.27vh - 7.02rem, var(--space-4));
+  }
+
+  html[data-vidrio] #hero > .pista-scroll {
+    margin-top: clamp(0.5rem, 7.19vh - 2.36rem, var(--space-3));
+  }
+}
+
 /* La tarjeta (relleno + desenfoque) y su aro luminoso: items de la rejilla en las mismas filas. */
 html[data-vidrio] :is(#hero, .secciones > .seccion)::before,
 html[data-vidrio] :is(#hero, .secciones > .seccion)::after {
