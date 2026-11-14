@@ -151,6 +151,9 @@ export function inicializarMalla(fasesRecorrido = []) {
   if (typeof HTMLCanvasElement === "undefined") return;
   // `?malla=apagada`: la página sola, sin canvas ni bucle (para saber si el costo del scroll es de la malla o de la página).
   if (parametro("malla") === "apagada") return;
+  // `?malla-claro=1|2|3`: intensidad de la malla SOLO en tema claro (tokens.css decide si aplica según el tema; sin parámetro, como hoy).
+  const claro = parametro("malla-claro");
+  if (claro === "1" || claro === "2" || claro === "3") raiz.setAttribute("data-malla-claro", claro);
   const arrancar = () => (window.requestIdleCallback ? window.requestIdleCallback(() => montar(fasesRecorrido), { timeout: 1500 }) : setTimeout(() => montar(fasesRecorrido), 200));
   if (document.readyState === "complete") arrancar();
   else window.addEventListener("load", arrancar, { once: true });
