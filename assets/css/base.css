@@ -2380,3 +2380,358 @@ html[data-vidrio] :is(.bloque-intro, .pasos-lista > li, .tarjeta-viene, .pregunt
     background: var(--color-border-card);
   }
 }
+
+/* ======================================================================
+   PARTE FINAL (#102, dirección «Escenas»): Cómo funciona, Lo que viene, Preguntas frecuentes y Quién está detrás.
+   Cuatro escenas centradas, cada una con un halo de acento detrás del título (el mismo del teléfono). Va DESPUÉS del
+   vidrio porque lo retoca: mismas superficies y tokens `--vidrio-*`, solo cambia la composición. Va todo en el CSS
+   crítico a propósito: sin hoja aparte no hay petición extra y `versionar.py` no cambia.
+   Qué es decoración y qué es contenido:
+     - El HTML y los textos son los de siempre (`<ol>`, `<ul>`, `<details>` nativos; nada de JS).
+     - Las mini-ilustraciones de «Cómo funciona» NO son elementos: son pseudo-elementos con `content: ""` (sin texto,
+       sin imagen), así que no entran al árbol de accesibilidad y no hace falta `aria-hidden`. Solo repiten con formas
+       lo que el texto del paso ya dice (burbujas, tarjeta con palomita, aviso y lista).
+     - El número del paso es `content: counter(paso) / ""` (texto alternativo vacío: el lector ya lee la lista).
+   Cómo están hechas las ilustraciones (README, «Parte final»): `li::before` es el recuadro (alto fijo en rem, número
+   dentro); `h3::before` y `p::before` son las dos piezas, en posición absoluta sobre el recuadro, con medidas en rem y
+   anchos `min()` contra el ancho de la tarjeta para que no se salgan con letra grande ni en 320 px.
+   ====================================================================== */
+html[data-vidrio] {
+  --c-aura: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  --c-trazo: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+html[data-vidrio] .bloque {
+  padding-top: clamp(4.5rem, 3rem + 5vw, 8rem);
+  text-align: center;
+  /* Letra grande del sistema en pantallas angostas: que una palabra larga se parta antes de salirse de su tarjeta. */
+  overflow-wrap: break-word;
+}
+
+/* ---- Aura detrás del título (decorativa, fuera del flujo: no mueve nada) ---- */
+html[data-vidrio] .bloque > .container {
+  position: relative;
+}
+
+html[data-vidrio] .bloque > .container::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -3.5rem;
+  left: 50%;
+  width: min(56rem, 100%);
+  height: 15rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(50% 50% at 50% 50%, var(--c-aura), transparent 72%);
+}
+
+html[data-vidrio] .bloque .fase-titulo {
+  max-width: 16ch;
+  margin-inline: auto;
+  /* El cuadro de texto de Baloo 2 es más alto que el glifo: este aire evita que el borde luminoso de la tarjeta de debajo
+     caiga dentro del cuadro del título (la medición de contraste lo contaba como fondo claro). */
+  margin-bottom: var(--space-3);
+  font-size: clamp(2.3rem, 1.5rem + 3.4vw, 4.1rem);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+}
+
+html[data-vidrio] .bloque-intro {
+  margin-inline: auto;
+  font-size: var(--text-base);
+  line-height: 1.6;
+  text-align: center;
+}
+
+html[data-vidrio] :is(.pasos-lista, .viene-lista, .preguntas-lista) {
+  text-align: left;
+}
+
+/* ---- Cómo funciona: tres tarjetas con mini-ilustración ---- */
+html[data-vidrio] .pasos-lista {
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+html[data-vidrio] .pasos-lista > li {
+  --c-pad: var(--space-3);
+  --c-alto: 7.25rem;
+  overflow: hidden;
+  padding: calc(var(--c-alto) + var(--c-pad) * 2) var(--c-pad) var(--c-pad);
+  border-radius: var(--radius-lg);
+}
+
+/* Recuadro de la ilustración; el número del paso va dentro, arriba a la izquierda. */
+html[data-vidrio] .pasos-lista > li::before {
+  position: absolute;
+  top: var(--c-pad);
+  left: var(--c-pad);
+  right: var(--c-pad);
+  height: var(--c-alto);
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: 1.6rem;
+  background: radial-gradient(90% 120% at 100% 0%, var(--c-trazo), transparent 70%), color-mix(in srgb, var(--color-accent) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+/* Piezas de la ilustración: h3::before y p::before, sobre el recuadro. */
+html[data-vidrio] .pasos-lista :is(h3, p)::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+html[data-vidrio] .pasos-lista h3 {
+  font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.45rem);
+  line-height: 1.2;
+}
+
+html[data-vidrio] .pasos-lista p {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+/* 1 · Díselo con tus palabras: dos burbujas de conversación. */
+html[data-vidrio] .pasos-lista > li:nth-child(1) h3::before {
+  top: calc(var(--c-pad) + 1rem);
+  left: calc(var(--c-pad) + 3rem);
+  width: min(9rem, calc(100% - var(--c-pad) * 2 - 4rem));
+  height: 2.5rem;
+  border-radius: 1.1rem 1.1rem 1.1rem 0.25rem;
+  background:
+    linear-gradient(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.9)) 1rem 0.8rem / 55% 4px no-repeat,
+    linear-gradient(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.6)) 1rem 1.4rem / 34% 4px no-repeat,
+    var(--color-accent);
+}
+
+html[data-vidrio] .pasos-lista > li:nth-child(1) p::before {
+  top: calc(var(--c-pad) + 4.25rem);
+  right: calc(var(--c-pad) + 1rem);
+  width: min(6.5rem, calc(100% - var(--c-pad) * 2 - 6rem));
+  height: 2.25rem;
+  border-radius: 1.1rem 1.1rem 0.25rem 1.1rem;
+  background:
+    linear-gradient(var(--color-accent), var(--color-accent)) 0.8rem 50% / 50% 4px no-repeat,
+    color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+/* 2 · Yaruki lo anota y te pregunta: una tarjeta con su palomita. */
+html[data-vidrio] .pasos-lista > li:nth-child(2) h3::before {
+  top: calc(var(--c-pad) + 1rem);
+  left: calc(var(--c-pad) + 3rem);
+  width: min(10.5rem, calc(100% - var(--c-pad) * 2 - 4rem));
+  height: 5rem;
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(var(--color-accent), var(--color-accent)) 1.1rem 1.15rem / 55% 5px no-repeat,
+    linear-gradient(color-mix(in srgb, var(--color-accent) 40%, transparent), color-mix(in srgb, var(--color-accent) 40%, transparent)) 1.1rem 2.15rem / 78% 4px no-repeat,
+    linear-gradient(color-mix(in srgb, var(--color-accent) 28%, transparent), color-mix(in srgb, var(--color-accent) 28%, transparent)) 1.1rem 3rem / 46% 4px no-repeat,
+    var(--color-bg-elevated);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 28%, transparent), 0 8px 18px -10px rgb(0 0 0 / 0.35);
+}
+
+/* La palomita: dos trazos diagonales de degradado sobre un círculo verde. */
+html[data-vidrio] .pasos-lista > li:nth-child(2) p::before {
+  top: calc(var(--c-pad) + 4.25rem);
+  left: calc(var(--c-pad) + 0.85rem);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background:
+    linear-gradient(to top right, transparent 38%, #fff 40% 60%, transparent 62%) 0.5rem 0.9rem / 0.45rem 0.45rem no-repeat,
+    linear-gradient(to bottom right, transparent 40%, #fff 42% 58%, transparent 60%) 0.85rem 0.5rem / 0.75rem 0.75rem no-repeat,
+    var(--color-success);
+}
+
+/* 3 · Te avisa y lo ves ordenado: el aviso arriba y la lista ordenada abajo. */
+html[data-vidrio] .pasos-lista > li:nth-child(3) h3::before {
+  top: calc(var(--c-pad) + 1rem);
+  left: calc(var(--c-pad) + 3rem);
+  width: min(10.5rem, calc(100% - var(--c-pad) * 2 - 4rem));
+  height: 2.5rem;
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 1.25rem 50%, #fff 0 0.4rem, transparent 0.44rem),
+    linear-gradient(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.85)) 2.5rem 50% / 45% 4px no-repeat,
+    var(--color-accent);
+}
+
+html[data-vidrio] .pasos-lista > li:nth-child(3) p::before {
+  top: calc(var(--c-pad) + 4.1rem);
+  left: calc(var(--c-pad) + 3rem);
+  width: min(10.5rem, calc(100% - var(--c-pad) * 2 - 4rem));
+  height: 2.25rem;
+  border-radius: 0.7rem;
+  background:
+    radial-gradient(circle at 0.8rem 0.55rem, var(--color-warning) 0 0.2rem, transparent 0.24rem),
+    radial-gradient(circle at 0.8rem 1.65rem, var(--color-success) 0 0.2rem, transparent 0.24rem),
+    linear-gradient(color-mix(in srgb, var(--color-accent) 45%, transparent), color-mix(in srgb, var(--color-accent) 45%, transparent)) 1.5rem 0.4rem / 55% 4px no-repeat,
+    linear-gradient(color-mix(in srgb, var(--color-accent) 45%, transparent), color-mix(in srgb, var(--color-accent) 45%, transparent)) 1.5rem 1.5rem / 38% 4px no-repeat,
+    var(--color-bg-elevated);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 28%, transparent);
+}
+
+/* ---- Lo que viene: rejilla (3 + 2 en escritorio, 2 por fila en tablet, 1 en móvil; la rejilla es la de arriba) ---- */
+html[data-vidrio] .viene-lista {
+  margin-top: var(--space-4);
+}
+
+html[data-vidrio] .tarjeta-viene,
+html[data-vidrio] .tarjeta-viene:nth-child(n + 4) {
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  /* Cinco ideas en dos columnas: la quinta ocupa el ancho para no quedar sola a medias. */
+  html[data-vidrio] .tarjeta-viene:nth-child(5) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* El chip va arriba de cada título (en el HTML va después; solo cambia el orden visual). */
+html[data-vidrio] .tarjeta-viene-cabecera {
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+html[data-vidrio] .tarjeta-viene h3 {
+  font-size: clamp(1.3rem, 1.15rem + 0.5vw, 1.55rem);
+  line-height: 1.15;
+}
+
+html[data-vidrio] .tarjeta-viene p {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+/* ---- Preguntas: una columna angosta y centrada ---- */
+html[data-vidrio] .bloque-preguntas {
+  display: block;
+}
+
+html[data-vidrio] .bloque-cabecera {
+  position: static;
+}
+
+html[data-vidrio] .preguntas-lista {
+  max-width: 46rem;
+  margin: var(--space-4) auto 0;
+  gap: 0.6rem;
+}
+
+html[data-vidrio] .pregunta {
+  border-radius: var(--radius-lg);
+}
+
+html[data-vidrio] .pregunta summary {
+  min-height: 4.25rem;
+  padding: var(--space-2) var(--space-3);
+  font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
+}
+
+html[data-vidrio] .pregunta[open] summary {
+  color: var(--vidrio-texto-acento);
+}
+
+html[data-vidrio] .pregunta[open] {
+  box-shadow: inset 0 1px 0 var(--vidrio-luz), inset 0 0 0 1.5px var(--color-accent), var(--vidrio-sombra);
+}
+
+html[data-vidrio] .pregunta-respuesta {
+  max-width: none;
+  margin: 0 var(--space-3);
+  padding: var(--space-2) 0 var(--space-3);
+  border-top: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+html[data-vidrio] .pregunta-respuesta p {
+  font-size: 1.0625rem;
+}
+
+html[data-vidrio] .pregunta summary:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
+  border-radius: var(--radius-lg);
+}
+
+/* ---- Quién está detrás: la firma que cierra ---- */
+html[data-vidrio] .bloque--breve > .container::before {
+  top: -5rem;
+  height: 19rem;
+}
+
+html[data-vidrio] .bloque--breve .bloque-intro {
+  max-width: 38rem;
+  margin-top: 4rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
+  line-height: 1.6;
+  text-wrap: balance;
+}
+
+/* La rayita de firma va sobre la tarjeta, fuera de la caja del título. */
+html[data-vidrio] .bloque--breve .bloque-intro::before {
+  content: "";
+  position: absolute;
+  top: -1.2rem;
+  left: 50%;
+  width: 3.4rem;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  background: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-vidrio] .pregunta {
+    transition: box-shadow 200ms ease;
+  }
+}
+
+/* «Más contraste»: bordes de las tarjetas y del recuadro de las ilustraciones sólidos. */
+@media (prefers-contrast: more) {
+  html[data-vidrio] .pasos-lista > li::before {
+    box-shadow: inset 0 0 0 2px var(--color-text);
+  }
+
+  html[data-vidrio] .pregunta[open] {
+    box-shadow: inset 0 0 0 2px var(--color-text);
+  }
+}
+
+/* Colores forzados (Windows alto contraste): el halo y las ilustraciones son decorativos y se quitan; las tarjetas
+   llevan borde real porque la sombra y el aro de vidrio no se dibujan. */
+@media (forced-colors: active) {
+  html[data-vidrio] .bloque > .container::before,
+  html[data-vidrio] .pasos-lista :is(h3, p)::before,
+  html[data-vidrio] .bloque--breve .bloque-intro::before {
+    display: none;
+  }
+
+  html[data-vidrio] :is(.bloque-intro, .pasos-lista > li, .tarjeta-viene, .pregunta) {
+    border: 1px solid CanvasText;
+  }
+
+  html[data-vidrio] .pasos-lista > li {
+    padding-top: calc(var(--c-pad) * 2 + 1.75rem);
+  }
+
+  html[data-vidrio] .pasos-lista > li::before {
+    height: auto;
+    border: 0;
+    box-shadow: none;
+    background: none;
+    color: CanvasText;
+  }
+
+  html[data-vidrio] .pregunta[open] summary {
+    color: CanvasText;
+  }
+}

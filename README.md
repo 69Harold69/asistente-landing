@@ -512,6 +512,39 @@ Sin JS no hay malla (no hay canvas): las tarjetas quedan con relleno sólido sob
   `?malla-forzar=…`. Se retiraron `?vidrio=1` (ya es el defecto; ponerlo no rompe nada), `?vidrio-forma=unica`,
   `?vidrio-relleno=`, `?vidrio-desenfoque=` y `?malla=referencia|pleno|medio|<n>`.
 
+### Parte final de la portada (#102, «Escenas»)
+
+Cómo funciona, Lo que viene, Preguntas frecuentes y Quién está detrás (los `.bloque` de `index.html`) se ven como cuatro escenas
+centradas sobre la malla, con tarjetas de vidrio. **Solo es presentación**: el HTML, los textos y los enlaces no cambian, y todo
+funciona sin JS (`<ol>`, `<ul>` y `<details>` nativos). El CSS está al final de `assets/css/base.css`, en el apartado «PARTE FINAL»
+(va después del vidrio porque lo retoca; no hay hoja aparte, así que no hay petición extra y `versionar.py` no cambia).
+
+- **Halo:** `.bloque > .container::before`, un degradado radial de acento detrás del título (`position: absolute`, `z-index: -1`,
+  sin tamaño en el flujo: no mueve nada, CLS 0). El título lleva `margin-bottom: var(--space-3)` a propósito: el cuadro de
+  texto de Baloo 2 es más alto que el glifo y, más cerca, el borde luminoso de la tarjeta de abajo cae dentro de ese cuadro y
+  la medición de contraste lo toma como fondo claro (lo vimos: 1.6:1 que no era real).
+- **Lo que viene:** rejilla de la parte vieja (3 + 2 en escritorio, 2 por fila hasta 900 px con la quinta a todo el ancho, 1 en
+  móvil). Las cinco ideas siempre están visibles: sin carril, sin scroll horizontal, sin `mask-image` ni `scroll-snap`. El chip
+  va arriba del título solo por orden visual (`flex-direction: column-reverse`); en el HTML sigue después.
+- **Preguntas:** una columna de 46 rem, centrada. La pregunta abierta lleva anillo de acento y el color `--vidrio-texto-acento`.
+- **Mini-ilustraciones de «Cómo funciona» (decorativas, sin elementos ni texto):**
+  - `li::before` es el recuadro (alto `--c-alto: 7.25rem`) y lleva el número del paso con `content: counter(paso) / ""`
+    (texto alternativo vacío: el lector ya anuncia la lista).
+  - `h3::before` y `p::before` son las dos piezas de cada dibujo (`content: ""`), en `position: absolute` sobre el recuadro,
+    colocadas con `top`/`left`/`right` en `rem` a partir de `--c-pad` (el relleno de la tarjeta). Los anchos usan
+    `min(<rem>, calc(100% - …))` para encogerse con la tarjeta, de modo que no se salen a 320 px ni con letra grande; `li` lleva
+    `overflow: hidden` como red.
+  - Paso 1: dos burbujas (la de Yaruki lleva dos líneas de «texto» hechas con degradados). Paso 2: una tarjeta y una palomita;
+    la palomita son dos degradados diagonales (`to top right` y `to bottom right`, bandas de 20 %) sobre un círculo verde.
+    Paso 3: un aviso (punto + línea) y debajo una lista de dos renglones con puntos de color.
+  - Como son pseudo-elementos vacíos no entran al árbol de accesibilidad: no hace falta `aria-hidden`. No dicen nada que el
+    texto no diga. En `forced-colors` se ocultan (`display: none`) y las tarjetas llevan borde real.
+  - Para cambiar un dibujo se editan solo las reglas `.pasos-lista > li:nth-child(n) h3::before / p::before`.
+- **Contraste (`vidrio-contraste.mjs`):** además del texto, mide el **número del paso** (texto generado por `li::before`, grupo
+  `numero`, 3:1 por ser grande) y agrupa las preguntas en `pregunta`. El número se oculta junto con el texto al medir.
+- `prefers-reduced-motion`: lo único que se mueve es la transición de 200 ms del anillo de la pregunta abierta, y solo con
+  `no-preference`. `prefers-contrast: more` y `forced-colors` tienen su bloque al final.
+
 ### Aviso de iPhone («avísame cuando salga»)
 
 La CSP bloquea formularios, así que el aviso es un **enlace a un Google Group**. La URL vive en `assets/js/config.js`

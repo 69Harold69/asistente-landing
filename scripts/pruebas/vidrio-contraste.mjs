@@ -56,8 +56,23 @@ function recolectar() {
     const w = Number(cs.fontWeight);
     const grande = px >= 24 || (px >= 18.66 && w >= 700);
     const seccion = el.closest("#hero, section[id], .site-header, footer")?.id || (el.closest(".site-header") ? "header" : "?");
-    const grupo = el.matches(".fase-kicker, .hero-significado") ? "kicker" : grande ? "titulo" : el.matches("a") ? "enlace" : el.matches(".fase-texto, .subtitulo-hero, .pregunta-respuesta p, .tarjeta-viene p, .pasos-lista p, .bloque-intro, .pasos-beta span, .cta-nota") ? "parrafo" : "otro";
+    const grupo = el.matches(".fase-kicker, .hero-significado") ? "kicker" : grande ? "titulo" : el.matches("a") ? "enlace" : el.matches(".pregunta summary") ? "pregunta" : el.matches(".fase-texto, .subtitulo-hero, .pregunta-respuesta p, .tarjeta-viene p, .pasos-lista p, .bloque-intro, .pasos-beta span, .cta-nota") ? "parrafo" : "otro";
     out.push({ idx, texto: nodos[0].textContent.trim().slice(0, 36), rgb: rgb(cs.color), px, grande, op, rects, seccion, grupo, inactivo: !!el.closest(".button--disabled") });
+  });
+  // El número de cada paso de «Cómo funciona» es TEXTO generado (`li::before`, #102): no tiene nodo de texto, así que se
+  // mide aparte, con su color calculado y la zona de su dígito sobre el recuadro de la ilustración. (La hoja que oculta
+  // el texto también lo oculta: ver `h.replaceSync` más abajo.)
+  document.querySelectorAll(".pasos-lista > li").forEach((li, k) => {
+    const pcs = getComputedStyle(li, "::before");
+    if (!pcs.content || pcs.content === "none" || pcs.display === "none" || pcs.position !== "absolute") return;
+    const lr = li.getBoundingClientRect();
+    const fs = parseFloat(pcs.fontSize);
+    const x0 = lr.left + parseFloat(pcs.left) + parseFloat(pcs.paddingLeft);
+    const y0 = lr.top + parseFloat(pcs.top) + parseFloat(pcs.paddingTop);
+    let op = 1;
+    for (let q = li; q; q = q.parentElement) op *= Number(getComputedStyle(q).opacity);
+    if (movilStage && lr.bottom > movilStage.top + 1 && lr.top < movilStage.bottom - 1) return;
+    out.push({ idx: 100000 + k, texto: "número del paso " + (k + 1), rgb: rgb(pcs.color), px: fs, grande: true, op, rects: [[x0, y0 + 0.2 * fs, x0 + 0.8 * fs, y0 + 1.05 * fs]], seccion: li.closest("section[id]")?.id || "?", grupo: "numero", inactivo: false });
   });
   return out;
 }
@@ -120,7 +135,7 @@ export async function medir(nav, limpia, url, { tema, tam, query = "", solo = SE
       if (!vis.length) continue;
       await page.evaluate(() => {
         const h = new CSSStyleSheet();
-        h.replaceSync("main *, .site-header * { color: transparent !important; text-shadow: none !important; text-decoration-color: transparent !important; } main svg { stroke: transparent !important; } #stage { visibility: hidden !important; }");
+        h.replaceSync("main *, .site-header * { color: transparent !important; text-shadow: none !important; text-decoration-color: transparent !important; } main svg { stroke: transparent !important; } .pasos-lista > li::before { color: transparent !important; } #stage { visibility: hidden !important; }");
         document.adoptedStyleSheets = [h];
       });
       const pos = [null, null];
