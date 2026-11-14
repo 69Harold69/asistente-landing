@@ -80,15 +80,16 @@
 
   /* Malla de fondo (malla.js), «referencia» de Harold: del color de acento (--color-accent) en reposo y
      encendida por el cursor, igual en claro y oscuro. Opacidades de líneas y puntos en reposo y encendidos. */
-  --malla-linea-reposo: 0.1;
+  --malla-linea-reposo: 0.24;
   --malla-linea-activa: 0.3;
-  --malla-punto-reposo: 0.28;
+  --malla-punto-reposo: 0.54;
   --malla-punto-activo: 0.56;
   /* Intensidad (0..1) de la malla mientras una fase del teléfono ocupa la pantalla: plena (decisión de Harold). */
   --malla-recorrido: 1;
 
-  /* Malla en tema CLARO, tres intensidades para comparar (#98): `?malla-claro=1|2|3` (malla.js pone `data-malla-claro` en <html>).
-     Sin parámetro valen los de arriba («hoy»). Solo sube la malla EN REPOSO: la encendida por el cursor se queda en 0.30 / 0.56 (es el tope que deja el texto pequeño en AA). El tema oscuro no cambia nunca (reglas al final del archivo). */
+  /* Malla del tema CLARO (#98, intensidad 3 elegida por Harold): líneas 0.24 / 0.30 y puntos 0.54 / 0.56 (reposo / encendido).
+     La encendida por el cursor NO sube: con 0.38 / 0.64 los párrafos sobre vidrio caían a 4.36:1 y con 0.55 / 0.85 a 3.22:1 (mínimo 4.5:1).
+     Solo se subió la de reposo, que es la que se ve sin mover el mouse. El tema oscuro conserva sus valores (0.10 / 0.30, 0.28 / 0.56), repetidos en sus dos bloques. */
 
   /* Vidrio (#100): tarjetas de «Liquid Glass» ligero sobre la malla, siempre activo (`data-vidrio` en <html>).
      `--vidrio-relleno` (0..1) es la opacidad del tinte (0.10, valores aprobados por Harold); el desenfoque es bajo a
@@ -112,6 +113,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --malla-linea-reposo: 0.1;
+    --malla-punto-reposo: 0.28;
     --color-bg: #151322;
     --color-bg-elevated: #1e1b30;
     --color-text: #f1effb;
@@ -151,6 +154,8 @@
   en oscuro.
 */
 :root[data-theme="dark"] {
+  --malla-linea-reposo: 0.1;
+  --malla-punto-reposo: 0.28;
   --color-bg: #151322;
   --color-bg-elevated: #1e1b30;
   --color-text: #f1effb;
@@ -182,6 +187,8 @@
 }
 
 :root[data-theme="light"] {
+  --malla-linea-reposo: 0.24;
+  --malla-punto-reposo: 0.54;
   --color-bg: #faf7f2;
   --color-bg-elevated: #ffffff;
   --color-text: #221f1b;
@@ -231,14 +238,4 @@
   :root {
     --vh-pequeno: 1svh;
   }
-}
-
-/* Malla en tema claro: variantes elegibles con ?malla-claro=1|2|3 (solo claro: explícito o por esquema del sistema). */
-:root[data-theme="light"][data-malla-claro="1"] { --malla-linea-reposo: 0.14; --malla-linea-activa: 0.3; --malla-punto-reposo: 0.38; --malla-punto-activo: 0.56; }
-:root[data-theme="light"][data-malla-claro="2"] { --malla-linea-reposo: 0.19; --malla-linea-activa: 0.3; --malla-punto-reposo: 0.46; --malla-punto-activo: 0.56; }
-:root[data-theme="light"][data-malla-claro="3"] { --malla-linea-reposo: 0.24; --malla-linea-activa: 0.3; --malla-punto-reposo: 0.54; --malla-punto-activo: 0.56; }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"])[data-malla-claro="1"] { --malla-linea-reposo: 0.14; --malla-linea-activa: 0.3; --malla-punto-reposo: 0.38; --malla-punto-activo: 0.56; }
-  :root:not([data-theme="dark"])[data-malla-claro="2"] { --malla-linea-reposo: 0.19; --malla-linea-activa: 0.3; --malla-punto-reposo: 0.46; --malla-punto-activo: 0.56; }
-  :root:not([data-theme="dark"])[data-malla-claro="3"] { --malla-linea-reposo: 0.24; --malla-linea-activa: 0.3; --malla-punto-reposo: 0.54; --malla-punto-activo: 0.56; }
 }
