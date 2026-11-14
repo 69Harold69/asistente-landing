@@ -1447,6 +1447,23 @@ html[data-malla-recorrido] {
   }
 }
 
+/*
+  Escritorio angosto (1024–1279 px; auditoría de #100): con la tarjeta de vidrio, el borde de las tarjetas se ve, y
+  a 1024 px la de «Tu día» quedaba a 4 px del teléfono centrado (más el giro hacia el cursor, que lo corre hasta 10 px)
+  y la de las fases de la derecha pasaba por debajo de los puntos de navegación (fijos a la derecha). Aquí el cierre
+  mide lo que queda a la izquierda del teléfono menos 2.25rem, y las fases de la derecha dejan 2rem más por lado
+  (siguen centradas en su columna: el teléfono no cambia de lugar). Desde 1280 px nada de esto cambia.
+*/
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  #cta {
+    width: min(21rem, 50% - var(--phone-width) / 2 - 2.25rem);
+  }
+
+  .seccion--derecha {
+    --ancho-texto: min(31rem, var(--columna) - 4rem);
+  }
+}
+
 /* Centro de Privacidad y Datos (footer#privacidad, plan 4.7) -------------- */
 
 .privacidad-section {
@@ -2144,6 +2161,20 @@ html[data-vidrio] :is(#hero, .secciones > .seccion) > :is(.fase-titulo, .titular
 
   html[data-vidrio] #hero > .titular-hero {
     margin-bottom: var(--space-2);
+  }
+
+  /* Con el subtítulo de #73 (un renglón más a 320 px) el botón bajaba a 584 px de 568: se quita aire alrededor de
+     la tarjeta y entre el subtítulo y los botones (auditoría #100), no letra ni texto. */
+  html[data-vidrio] #hero {
+    padding-top: var(--space-2);
+  }
+
+  html[data-vidrio] #hero > .subtitulo-hero {
+    margin-bottom: var(--space-1);
+  }
+
+  html[data-vidrio] #hero > .cta-row {
+    padding-top: 0.25rem;
   }
 }
 
