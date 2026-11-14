@@ -98,7 +98,12 @@ export function inicializarIman() {
   function medir() {
     const encender = mqTactil.matches && !mqHorizontal.matches && stage.offsetHeight > 0;
     raiz.toggleAttribute("data-iman", encender);
-    if (!encender) return;
+    if (!encender) {
+      // Girar a horizontal (o pasar a «reducir movimiento») a media animación: el jalón iba a un destino del layout
+      // anterior y ya no hay imán; se detiene donde está (auditoría final).
+      cancelarJalon();
+      return;
+    }
     const degradado = parseFloat(getComputedStyle(stage, "::after").height) || 0;
     const zonaTop = stage.offsetHeight + degradado + AIRE_ARRIBA;
     const base = topDoc(secciones);

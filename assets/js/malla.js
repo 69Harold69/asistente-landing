@@ -7,13 +7,13 @@
   1. Onda en reposo. Cada punto flota hasta ±15 px según su posición y el tiempo (senos y
      cosenos lentos, ~9 s por ciclo), así que la malla está viva aunque no muevas el mouse.
   2. Reacción al cursor. Cuadrícula de 128 px, radio de 300 px, empuje de 38 px × (1 − d/r)²,
-     líneas de 1.1 px, puntos de 1.35 px que crecen hasta +3 px; del color del borde de
-     tarjeta al acento. Todo con inercia: al salir el cursor la malla vuelve sola.
+     líneas de 1.1 px, puntos de 1.35 px que crecen hasta +3 px; de la opacidad de reposo a la
+     encendida (las dos del acento). Todo con inercia: al salir el cursor la malla vuelve sola.
 
   Reglas que cumple:
   - Los colores salen de los tokens: el acento (`--color-accent`) tanto en reposo como
-    encendido, con las opacidades de `--malla-*` (tokens.css; las mismas en claro y oscuro:
-    líneas 0.10 → 0.30 y puntos 0.28 → 0.56, la malla «referencia» de Harold). El toggle con
+    encendido, con las opacidades de `--malla-*` (tokens.css; encendidas iguales en claro y oscuro,
+    0.30 líneas y 0.56 puntos; en reposo 0.24 / 0.54 en claro y 0.10 / 0.28 en oscuro). El toggle con
     revelado circular y la demo de tema la repintan en el mismo microtask del cambio de
     `data-theme`.
   - Intensidad: el canvas se atenúa con `opacity` CSS (`--malla-intensidad`, gratis: la
