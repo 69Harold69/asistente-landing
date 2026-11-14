@@ -144,8 +144,8 @@ teléfono empiece a girar hacia la fase siguiente. Cómo está resuelto, sin toc
   la posición (si no, la rueda se quedaba pegada en una fase), y atrapa la que se alcanza desde fuera.
   *Remate al soltar (segunda ronda, decisión de Harold: en el recorrido la página nunca se queda entre dos fases).* Si un
   gesto con el dedo termina lejos de toda ancla, entre la primera fase y el final de «Tu día», al terminar el scroll
-  (`scrollend`; donde no existe, 180 ms sin scroll) `iman.js` jala con una animación propia de 400–600 ms (cúbica de
-  entrada y salida) a la fase más próxima en la dirección del gesto: la siguiente si bajaba, la anterior si subía (al
+  (`scrollend`; donde no existe, 180 ms sin scroll) `iman.js` jala con una animación propia de 800–1200 ms (seno de
+  entrada y salida; tercera ronda: a 400–600 ms con cúbica el teléfono giraba demasiado rápido) a la fase más próxima en la dirección del gesto: la siguiente si bajaba, la anterior si subía (al
   final de su tarjeta si es alta). Nunca con el dedo en la pantalla ni durante la inercia; tocar, rueda o tecla lo
   cancelan, y el toque que lo detiene no lo reanuda al soltar si no arrastró. No jala dentro de la zona de lectura de
   chat y «Tu día», ni arriba de la primera fase ni abajo del final de «Tu día» (se sale libre), ni tras rueda, teclado,

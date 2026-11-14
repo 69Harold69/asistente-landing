@@ -19,7 +19,7 @@
   3. Remate al soltar (segunda ronda, decisión de Harold: en el recorrido la página NUNCA se queda entre dos fases).
      El snap de proximidad solo atrapa cerca de un ancla; si un gesto con el dedo termina lejos de todas (entre la
      primera fase y el final de «Tu día»), al terminar el scroll (`scrollend`, o 180 ms sin scroll donde no existe) se
-     jala, con una animación de 400–600 ms, a la fase más próxima EN LA DIRECCIÓN del gesto: la siguiente si bajaba,
+     jala, con una animación de 800–1200 ms, a la fase más próxima EN LA DIRECCIÓN del gesto: la siguiente si bajaba,
      la anterior si subía (al final de su tarjeta, si es más alta que la pantalla). Reglas:
      - solo después de soltar y de que termine la inercia: nunca con el dedo en la pantalla ni mientras se desliza;
      - tocar (o rueda, o tecla) durante el jalón lo cancela, y no se reanuda al soltar si ese toque no arrastró;
@@ -42,9 +42,12 @@ const AIRE_ABAJO = 16;
 /** Rango de proximidad de Chromium (`kProximityRatio`, 1/3 del snapport) más holgura, para rearmar fuera de él. */
 const RANGO = 1 / 3;
 const HOLGURA = 24;
-/** Duración del jalón: 400 ms para distancias cortas, hasta 600 ms para una pantalla o más. */
-const JALON_MIN = 400;
-const JALON_MAX = 600;
+/**
+ * Duración del jalón: 800 ms para distancias cortas, hasta 1200 ms para una pantalla o más (tercera ronda: a 400–600 ms
+ * el teléfono daba la vuelta demasiado rápido en el teléfono de Harold).
+ */
+const JALON_MIN = 800;
+const JALON_MAX = 1200;
 /** px de arrastre por debajo de los cuales el gesto no tiene dirección (un roce). */
 const ROCE = 24;
 /** Tolerancia (px) para «está en el punto de una fase». */
@@ -52,7 +55,12 @@ const EN_PUNTO = 2;
 /** Respaldo de `scrollend`: px quieto durante este tiempo = el scroll terminó. */
 const QUIETO_MS = 180;
 
-const suavizar = (p) => (p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2);
+/*
+  Seno de entrada y salida: su velocidad máxima (a la mitad) es π/2 ≈ 1.57 veces la media, contra 3 veces de la cúbica
+  que había. El giro del teléfono cae a media animación, así que con la cúbica alargar la duración al doble solo lo
+  hacía ~1.4 veces más lento; con el seno y el doble de duración el giro de 360° tarda ~2–2.5 veces más (medido).
+*/
+const suavizar = (p) => (1 - Math.cos(Math.PI * p)) / 2;
 
 function topDoc(el) {
   let y = 0;

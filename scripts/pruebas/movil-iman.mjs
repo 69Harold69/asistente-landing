@@ -23,6 +23,7 @@
         arrastrar se queda donde se detuvo;
     (l) sin encadenar: un gesto produce un solo jalón (se cuentan las veces que aparece `data-iman-jalando`) y, al
         terminar, el scroll queda quieto 1.5 s;
+    (n) el jalón (de que aparece a que se quita `data-iman-jalando`) dura al menos 800 ms;
     (m) salida libre: subir 250 px desde el chat (al hero) y bajar 250 px desde el final de «Tu día» (a la parte
         final) termina donde lo dejó el dedo;
     (f) fuera del recorrido (hero, «Cómo funciona», preguntas, pie) un arrastre suave termina donde lo dejó el dedo;
@@ -35,7 +36,7 @@
   Mutación (README de pruebas): sin `inicializarIman()` fallan (b) y (c); sin desarmar al empezar el gesto, falla (d);
   sin desarmar con rueda todas las anclas cuyo rango contiene la posición, falla la rueda de (g); sin el remate
   fallan (d) y (j); con el remate hacia la fase más cercana en vez de la de la dirección, falla (d); sin cancelar al
-  tocar, falla (k).
+  tocar, falla (k); con el jalón de 400–600 ms de la segunda ronda, falla (n).
 
   Uso: node movil-iman.mjs [--tamanos 360x740,390x844,407x904] [--temas light,dark] [--video DIR] [--estricto]
 */
@@ -288,8 +289,16 @@ for (const [w, h] of tamanos) {
     {
       await page.evaluate(() => {
         window.__jalones = 0;
+        window.__duraciones = [];
+        let t0 = 0;
         new MutationObserver(() => {
-          if (document.documentElement.hasAttribute("data-iman-jalando")) window.__jalones++;
+          if (document.documentElement.hasAttribute("data-iman-jalando")) {
+            window.__jalones++;
+            t0 = performance.now();
+          } else if (t0) {
+            window.__duraciones.push(performance.now() - t0);
+            t0 = 0;
+          }
         }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-iman-jalando"] });
       });
       const x = punto["fase-habitos"];
@@ -320,6 +329,10 @@ for (const [w, h] of tamanos) {
       const despues = await leerY(page);
       const n = await page.evaluate(() => window.__jalones);
       if (n !== 1) falla(`${etiqueta}: (l) un gesto produjo ${n} jalones (se esperaba 1)`);
+      // (n) el jalón dura al menos ~800 ms (tercera ronda: a 400–600 ms el teléfono giraba demasiado rápido).
+      const dur = await page.evaluate(() => window.__duraciones.at(-1) ?? 0);
+      if (dur < 780) falla(`${etiqueta}: (n) el jalón de Hábitos a Avisos duró ${Math.round(dur)} ms (mínimo 800)`);
+      filas.push({ etiqueta, id: "jalon", dur: Math.round(dur) });
       if (despues !== llego) falla(`${etiqueta}: (l) después del jalón el scroll se movió solo (${llego} → ${despues})`);
     }
     // (m) salida libre del recorrido por arriba y por abajo.
@@ -419,6 +432,7 @@ console.log("tamaño            fase            alto  zona  visible  cabe  arrib
 for (const f of filas.filter((x) => x.alto !== undefined)) {
   console.log(`${f.etiqueta.padEnd(17)} ${f.id.padEnd(14)} ${String(f.alto).padStart(5)} ${String(f.zona).padStart(5)} ${String(f.visible).padStart(8)}  ${f.cabe ? "sí " : "no "} ${String(f.arriba).padStart(6)} ${String(f.abajo).padStart(6)}`);
 }
+for (const f of filas.filter((x) => x.id === "jalon")) console.log(`${f.etiqueta}: jalón de Hábitos a Avisos ${f.dur} ms`);
 for (const f of filas.filter((x) => x.id === "fuerte")) console.log(`${f.etiqueta}: gesto fuerte desde Elementos ${f.desde} → ${f.fin}`);
 for (const f of guardia.fallas) fallas.push(`${f.contexto}: ${f.tipo} ${f.detalle}`);
 if (dirVideo) console.log(`\nvideos en ${dirVideo}`);
