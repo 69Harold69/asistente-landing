@@ -46,6 +46,15 @@ a:hover {
   text-decoration-thickness: 2px;
 }
 
+/*
+  Texto en acento sobre la malla (#100): con la malla dibujada detrás de todo, sin huecos, el acento puro (4.6:1 sobre el
+  crema en claro, 5.4:1 en oscuro) cae a 3.4–4.0:1 cuando el cursor enciende las líneas debajo. El kicker de cada fase y los
+  enlaces en línea usan `--color-on-accent-soft` (el tono de los chips): ≥ 4.5:1 medido en píxeles (malla.mjs, vidrio-contraste.mjs).
+*/
+main :is(p, span) a:not(.button) {
+  color: var(--color-on-accent-soft);
+}
+
 :focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 3px;
@@ -733,6 +742,8 @@ strong {
 @property --color-on-accent-ui { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
 @property --color-border { syntax: "<color>"; inherits: true; initial-value: #ece6dd; }
 @property --color-border-card { syntax: "<color>"; inherits: true; initial-value: #ddd4c7; }
+@property --vidrio-texto-secundario { syntax: "<color>"; inherits: true; initial-value: #4c473f; }
+@property --vidrio-texto-acento { syntax: "<color>"; inherits: true; initial-value: #40349b; }
 @property --color-canto { syntax: "<color>"; inherits: true; initial-value: #d3c9bb; }
 
 :root.tema-fundido {
@@ -747,7 +758,9 @@ strong {
     --color-on-accent-ui 600ms ease,
     --color-border 600ms ease,
     --color-border-card 600ms ease,
-    --color-canto 600ms ease;
+    --color-canto 600ms ease,
+    --vidrio-texto-secundario 600ms ease,
+    --vidrio-texto-acento 600ms ease;
 }
 
 .header-acciones {
@@ -892,16 +905,79 @@ strong {
 */
 @media (max-width: 1023px) {
   .seccion:not(.seccion-hero) {
-    padding-top: calc(var(--franja-alto, 44vh) + 2vh);
-    min-height: 100vh;
+    padding-top: calc(var(--franja-alto, calc(44 * var(--vh-pequeno))) + 2 * var(--vh-pequeno));
+    min-height: calc(100 * var(--vh-pequeno));
   }
 
   #fase-habitos {
-    min-height: 160vh;
+    min-height: calc(160 * var(--vh-pequeno));
+  }
+
+  /*
+    Ritmo de lectura (#122, móvil y tablet): el giro del teléfono hacia la fase siguiente arranca cuando el borde superior
+    de la sección siguiente llega al 92 % del alto visible (`TRAMOS.movil.ini`, stage.js). Para que la última línea de
+    esta fase lleve a la vista al menos el 25 % del alto visible de scroll antes de ese arranque (con 1.5rem de margen
+    sobre el borde inferior), debajo del último elemento tiene que quedar: 1.5rem + (25 % − 8 %) del alto visible
+    = 1.5rem + 17 svh (+ 0.25rem de holgura). Como va DESPUÉS del bloque, se adapta sola a la altura real de cada
+    tarjeta (una tarjeta alta alarga su fase, una baja no): no hay alturas por fase. El cierre (#cta) no tiene fase
+    siguiente y no lo lleva. Prueba: `movil-lectura.mjs`.
+  */
+  .seccion:not(.seccion-hero):not(#cta) {
+    padding-bottom: max(var(--space-6), calc(17 * var(--vh-pequeno) + 1.75rem));
   }
 }
 
+/*
+  Imán de lectura (#122, solo táctil ≤ 1023 px y sin «reducir movimiento»): `iman.js` pone `data-iman` en <html> y
+  coloca un ancla invisible (`.iman`) sobre la tarjeta de cada fase del recorrido, con `scroll-margin-top` = alto de la
+  franja + su degradado. El snap es el del navegador, de PROXIMIDAD: solo atrapa si el gesto termina cerca de un ancla, y
+  lo resuelve dentro de la inercia del propio gesto (no hay un segundo movimiento hecho con JS). Un ancla más alta que la
+  pantalla (chat, «Tu día») deja leerla libre de arriba a abajo. `data-desarmado` apaga el ancla de la que el usuario
+  está saliendo, para que el imán atrape al llegar y nunca jale de regreso. Sin JS, en escritorio o con «reducir
+  movimiento» no hay imán.
+*/
+html[data-iman] {
+  scroll-snap-type: y proximity;
+}
+
+.imanes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 0;
+  pointer-events: none;
+}
+
+.iman {
+  position: absolute;
+  left: 0;
+  width: 1px;
+}
+
+/* Mientras iman.js jala a una fase (animación propia de 800–1200 ms), el snap se apaga: si no, Chrome ajustaría cada
+   paso de la animación al ancla más cercana. */
+html[data-iman][data-iman-jalando] {
+  scroll-snap-type: none;
+}
+
+html[data-iman] .iman:not([data-desarmado]) {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+
+/* Un enlace con hash a una fase deja su tarjeta en el mismo punto que el imán (bajo la franja y su degradado), también
+   en las tarjetas más altas que la pantalla, donde el snap deja el scroll libre: borde de la sección + 2 svh de su
+   `padding-top` sobre la franja = tarjeta; se sube el degradado (2.5rem) y el aire del imán (4 px). */
+html[data-iman] .secciones > .seccion {
+  scroll-margin-top: calc(2.5rem + 4px - 2 * var(--vh-pequeno));
+}
+
 @media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
+  .seccion:not(.seccion-hero):not(#cta) {
+    padding-bottom: var(--space-6);
+  }
+
   .seccion:not(.seccion-hero) {
     padding-top: var(--space-5);
     display: flex;
@@ -955,22 +1031,99 @@ strong {
 }
 
 /*
-  Malla de fondo del hero (malla.js): el canvas lo crea el módulo, ocupa todo el
-  ancho de la ventana (el hero sólo mide una columna) y va DETRÁS del texto
-  (`#hero` es un contexto de apilamiento: z-index 1). El tamaño y el desfase
-  llegan por CSSOM en `--malla-*`. Se desvanece hacia abajo para no dejar un
-  corte seco donde termina el hero.
+  Malla de fondo continua (malla.js, #98): UN canvas fijo, creado por el módulo como primer
+  hijo de <body>. `z-index: -1` lo deja sobre el fondo del documento (el `background` de
+  <body> se propaga al lienzo) y bajo todo lo demás: las secciones sin fondo propio lo
+  dejan ver y las tarjetas, la franja del teléfono (móvil) y el pie lo cubren. No recibe
+  clics. Alto `100lvh` (el viewport grande): la barra de direcciones del móvil no
+  redimensiona el bitmap. La intensidad es opacidad CSS (la compone la GPU, cero costo
+  por cuadro): `--malla-intensidad` vale 1 y, con `data-malla-recorrido` en la raíz
+  (malla.js lo pone mientras una fase del teléfono cruza el centro de la pantalla), pasa
+  a `--malla-recorrido` (tokens.css). El tamaño del bitmap lo decide el JS.
 */
-.malla-hero {
-  position: absolute;
+.malla-fondo {
+  position: fixed;
   top: 0;
-  left: var(--malla-izq, 0);
-  width: var(--malla-ancho, 100%);
-  height: var(--malla-alto, 100%);
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
   z-index: -1;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+  opacity: var(--malla-intensidad, 1);
+  transition: opacity 700ms ease;
+}
+
+html[data-malla-recorrido] {
+  --malla-intensidad: var(--malla-recorrido, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .malla-fondo {
+    transition: none;
+  }
+}
+
+/* Modo de diagnóstico de la malla (`?malla-diagnostico=1`, malla-diagnostico.js): solo existe con el parámetro. */
+.malla-diagnostico {
+  position: fixed;
+  left: 8px;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index: 1000;
+  max-width: calc(100vw - 16px);
+  max-height: 55vh;
+  overflow-y: auto;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
+  font: 12px/1.35 ui-monospace, monospace;
+  opacity: 0.92;
+}
+
+.malla-diagnostico pre {
+  margin: 0;
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+.malla-diagnostico p {
+  margin: 6px 0 0;
+}
+
+.malla-diagnostico-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.malla-diagnostico button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 6px 12px;
+  border: 1px solid #c9c2ff;
+  border-radius: 6px;
+  background: transparent;
+  color: #c9c2ff;
+  font: inherit;
+}
+
+.malla-diagnostico a {
+  color: #c9c2ff;
+  padding: 10px 8px;
+  display: inline-block;
+}
+
+.malla-diagnostico a[aria-current] {
+  color: #111;
+  background: #c9c2ff;
+  border-radius: 4px;
+}
+
+.malla-diagnostico-copia {
+  position: fixed;
+  left: -9999px;
 }
 
 .hero-significado {
@@ -1166,7 +1319,7 @@ strong {
   font-weight: 600;
   font-size: 1.0625rem;
   line-height: 1.4;
-  color: var(--color-accent);
+  color: var(--color-on-accent-soft); /* no el acento puro: ver la nota de los enlaces en línea, arriba (#100) */
   margin-bottom: var(--space-1);
 }
 
@@ -1291,6 +1444,23 @@ strong {
 
   #cta .pasos-beta {
     margin-left: 0;
+  }
+}
+
+/*
+  Escritorio angosto (1024–1279 px; auditoría de #100): con la tarjeta de vidrio, el borde de las tarjetas se ve, y
+  a 1024 px la de «Tu día» quedaba a 4 px del teléfono centrado (más el giro hacia el cursor, que lo corre hasta 10 px)
+  y la de las fases de la derecha pasaba por debajo de los puntos de navegación (fijos a la derecha). Aquí el cierre
+  mide lo que queda a la izquierda del teléfono menos 2.25rem, y las fases de la derecha dejan 2rem más por lado
+  (siguen centradas en su columna: el teléfono no cambia de lugar). Desde 1280 px nada de esto cambia.
+*/
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  #cta {
+    width: min(21rem, 50% - var(--phone-width) / 2 - 2.25rem);
+  }
+
+  .seccion--derecha {
+    --ancho-texto: min(31rem, var(--columna) - 4rem);
   }
 }
 
@@ -1837,7 +2007,7 @@ main > .bloque:last-child {
 */
 @media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
   .layout-con-stage {
-    --franja-alto: 50vh;
+    --franja-alto: calc(50 * var(--vh-pequeno));
   }
 
   .seccion {
@@ -1884,5 +2054,721 @@ main > .bloque:last-child {
 
   .seccion:not(.seccion-hero) .fase-texto {
     font-size: 1.125rem;
+  }
+}
+
+/* ======================================================================
+   VIDRIO (#100): tarjetas de vidrio ligero («Liquid Glass») sobre la malla continua. Siempre activo: `index.html`
+   trae `data-vidrio` en <html> desde el HTML, así que estos estilos aplican desde el primer pintado (sin esperar a JS,
+   sin salto de «sin tarjeta» a «con tarjeta»). La malla se dibuja DETRÁS de todo, sin huecos: el contraste del párrafo lo da el
+   vidrio (relleno translúcido + desenfoque ligero) y el de los títulos grandes (texto grande, AA = 3:1) se mide con
+   la malla debajo.
+
+   Qué es vidrio: el texto pequeño (kicker, párrafos, chips, FAQ, notas) va SIEMPRE sobre una tarjeta; el titular y los
+   títulos de sección, que son texto grande, van sueltos sobre la malla (composición separada, la que decidió Harold).
+   Todo sale de los tokens `--vidrio-*` (tokens.css).
+
+   Por dentro: cada tarjeta es un elemento con relleno (`--vidrio-fondo`), `backdrop-filter` ligero, sombra tenue y luz
+   especular en el canto de arriba (`inset` box-shadow); el aro con degradado luminoso (más luz arriba, casi nada
+   abajo) es un pseudo-elemento con `mask`. En las secciones del recorrido la tarjeta es el `::after` de la sección
+   (item de su rejilla, abarca las filas del texto que lleva) y el aro, su `::before`.
+
+   Respaldos: sin `backdrop-filter` (`@supports not`), con «reducir transparencia» y con «más contraste» → relleno
+   sólido y sin desenfoque. En móvil/tablet solo las tarjetas grandes llevan desenfoque (las pequeñas de una lista,
+   relleno sin desenfoque): hay varias a la vez en pantalla y el desenfoque sobre un canvas que cambia cada cuadro se
+   recompone sin parar.
+   ====================================================================== */
+
+/* Texto sobre el vidrio: con la malla encendida y el cursor encima, el texto secundario y el de acento suave del tema
+   no llegan a 4.5:1 en el peor píxel. Se ajusta el COLOR del texto (no el relleno ni el desenfoque): solo en el contenido
+   de la portada (no en el teléfono, que copia los colores de la app). Valores en tokens.css. */
+html[data-vidrio] :is(#hero, .secciones, .bloque) {
+  --color-text-secondary: var(--vidrio-texto-secundario);
+  --color-on-accent-soft: var(--vidrio-texto-acento);
+}
+
+/* ---- Secciones del recorrido y hero: rejilla de una columna; la tarjeta abarca las filas del texto que lleva ---- */
+html[data-vidrio] :is(#hero, .secciones > .seccion) {
+  --vidrio-pad: 1.25rem;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(8, auto);
+  align-content: center;
+}
+
+@media (max-width: 1023px) {
+  html[data-vidrio] :is(#hero, .secciones > .seccion) {
+    --vidrio-pad: 1rem;
+    align-content: start;
+  }
+
+  html[data-vidrio] :is(#hero, .secciones > .seccion) {
+    padding-inline: var(--space-2);
+  }
+}
+
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
+  html[data-vidrio] .secciones > .seccion {
+    align-content: center;
+  }
+}
+
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(1) { grid-row: 1; }
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(2) { grid-row: 2; }
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(3) { grid-row: 3; }
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(4) { grid-row: 4; }
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(5) { grid-row: 5; }
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(6) { grid-row: 6; }
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(7) { grid-row: 7; }
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(8) { grid-row: 8; }
+
+html[data-vidrio] :is(#hero, .secciones > .seccion) > * {
+  grid-column: 1;
+  position: relative;
+  z-index: 2;
+}
+
+/* Composición separada: kicker en píldora de vidrio y título suelto; la tarjeta lleva del 3.er elemento en adelante. */
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(n + 3) {
+  margin-inline: var(--vidrio-pad);
+}
+
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :nth-child(3) {
+  margin-top: var(--vidrio-pad);
+}
+
+html[data-vidrio] .secciones > .seccion > :last-child,
+html[data-vidrio] #hero > :nth-child(5) {
+  margin-bottom: var(--vidrio-pad);
+}
+
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :is(.fase-kicker, .hero-significado) {
+  justify-self: start;
+  margin-bottom: var(--space-2);
+}
+
+html[data-vidrio] :is(#hero, .secciones > .seccion) > :is(.fase-titulo, .titular-hero) {
+  margin-bottom: var(--space-3);
+}
+
+/* Pantallas bajas (320×568): menos aire entre píldora, título y tarjeta para que el primer botón siga a la vista (el aire de dentro de la tarjeta no cambia). */
+@media (max-width: 1023px) and (max-height: 600px) {
+  html[data-vidrio] #hero > .hero-significado {
+    margin-bottom: var(--space-1);
+  }
+
+  html[data-vidrio] #hero > .titular-hero {
+    margin-bottom: var(--space-2);
+  }
+
+  /* Con el subtítulo de #73 (un renglón más a 320 px) el botón bajaba a 584 px de 568: se quita aire alrededor de
+     la tarjeta y entre el subtítulo y los botones (auditoría #100), no letra ni texto. */
+  html[data-vidrio] #hero {
+    padding-top: var(--space-2);
+  }
+
+  html[data-vidrio] #hero > .subtitulo-hero {
+    margin-bottom: var(--space-1);
+  }
+
+  html[data-vidrio] #hero > .cta-row {
+    padding-top: 0.25rem;
+  }
+}
+
+/* La tarjeta (relleno + desenfoque) y su aro luminoso: items de la rejilla en las mismas filas. */
+html[data-vidrio] :is(#hero, .secciones > .seccion)::before,
+html[data-vidrio] :is(#hero, .secciones > .seccion)::after {
+  content: "";
+  grid-column: 1;
+  grid-row: 3 / 9;
+  pointer-events: none;
+  border-radius: var(--radius-lg);
+  opacity: var(--vidrio-op, 1);
+}
+
+html[data-vidrio] #hero::before,
+html[data-vidrio] #hero::after {
+  grid-row: 3 / 6;
+}
+
+html[data-vidrio] :is(#hero, .secciones > .seccion)::after {
+  z-index: 1;
+  background: var(--vidrio-fondo-solido);
+  box-shadow: inset 0 1px 0 var(--vidrio-luz), inset 0 0 0 1px var(--vidrio-hilo), var(--vidrio-sombra);
+}
+
+html[data-vidrio] :is(#hero, .secciones > .seccion)::before {
+  z-index: 1;
+  padding: 1px;
+  background: var(--vidrio-aro);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* Hero: la nota y el resto del texto pequeño van en la tarjeta; «Desliza» lleva su propia píldora. */
+html[data-vidrio] #hero > .pista-scroll {
+  justify-self: start;
+}
+
+/* Cierre centrado en móvil y tablet: píldora y pista centradas. */
+@media (max-width: 1023px) {
+  html[data-vidrio] .seccion-cta > .fase-kicker {
+    justify-self: center;
+  }
+}
+
+/* ---- Píldoras: kicker y significado del hero, texto pequeño suelto ---- */
+html[data-vidrio] :is(.fase-kicker, .hero-significado, .pista-scroll) {
+  position: relative;
+  width: fit-content;
+  padding: 0.3em 0.95em;
+  border-radius: var(--radius-pill);
+  background: var(--vidrio-fondo-solido);
+  box-shadow: inset 0 1px 0 var(--vidrio-luz), inset 0 0 0 1px var(--vidrio-hilo), var(--vidrio-sombra-chica);
+}
+
+/* El pie es opaco (cubre la malla): su kicker no lleva píldora. */
+html[data-vidrio] .pie .fase-kicker {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html[data-vidrio] .pie .fase-kicker::after {
+  content: none;
+}
+
+/* ---- Tarjetas compactas, solo móvil (≤ 767 px; #122) --------------------------------------------------------------
+   Una tarjeta de fase de ~570 px (las cuatro piezas del chat) casi no cabía entre la franja del teléfono y el borde
+   inferior. Aquí se le quita aire (no letra): el párrafo sigue en --text-base (17 px) y el título no cambia de tamaño.
+   Antes → ahora:  interlineado del párrafo 1.65 → 1.5 · separación entre párrafos 14 → 10 px · relleno de la tarjeta
+   16 → 12 px · separación bajo el título 24 → 14 px · píldora del kicker 0.3em 0.95em → 0.2em 0.8em y separación bajo
+   ella 14 → 8 px. Las reglas con id igualan la especificidad de las del vidrio de arriba (`:is(#hero, …)` cuenta el id)
+   y van después. La tablet (≥ 768 px) y el escritorio no cambian. */
+@media (max-width: 767px) {
+  .secciones > .seccion .fase-texto:not(:last-child) {
+    line-height: 1.5;
+    margin-bottom: 0.625rem;
+  }
+
+  .secciones > .seccion .fase-texto:last-child {
+    line-height: 1.5;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) {
+    --vidrio-pad: 0.75rem;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-titulo {
+    margin-bottom: var(--space-2);
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-kicker {
+    margin-bottom: var(--space-1);
+    padding: 0.2em 0.8em;
+  }
+}
+
+/* Compactación extra, solo bajo 380 px de ancho (360×740 y similares; #122). A 360 px las tarjetas de Elementos y de
+   Avisos medían ~382 px contra ~374 de zona útil bajo la franja: no cabían enteras en el punto del imán. Se gana un
+   renglón por párrafo con ancho (no con letra): la sección pasa de 14 a 10 px de margen lateral, y la separación bajo
+   la píldora y bajo el título baja 8 → 4 px y 14 → 10 px. El párrafo sigue en 17 px con interlineado 1.5. */
+@media (max-width: 379.98px) {
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) {
+    padding-inline: 0.625rem;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-titulo {
+    margin-bottom: 0.625rem;
+  }
+
+  html[data-vidrio] :is(#fase-chat, #fase-elementos, #fase-habitos, #fase-avisos, #fase-llamada, #cta) > .fase-kicker {
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* «Desliza para descubrir» va en el flujo de la rejilla (debajo de la tarjeta), no absoluta al pie del hero: así no se
+   encima con la nota ni con el borde de la tarjeta. */
+html[data-vidrio] .pista-scroll {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  margin: var(--space-3) 0 0;
+}
+
+@media (min-width: 1024px) {
+  html[data-vidrio] #hero {
+    align-content: start;
+  }
+}
+
+/* ---- Bloques bajo el recorrido: el título suelto; la introducción y cada elemento, una tarjeta ---- */
+html[data-vidrio] .bloque-intro {
+  position: relative;
+  width: fit-content;
+  max-width: 36rem;
+  padding: 0.8rem 1.1rem;
+  border-radius: var(--radius-md);
+}
+
+html[data-vidrio] .bloque--breve .bloque-intro {
+  max-width: 42rem;
+}
+
+html[data-vidrio] .bloque .fase-titulo {
+  margin-bottom: var(--space-2);
+}
+
+html[data-vidrio] .pasos-lista {
+  gap: var(--space-3);
+}
+
+html[data-vidrio] .pasos-lista > li {
+  position: relative;
+  border-top: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+}
+
+html[data-vidrio] .tarjeta-viene {
+  position: relative;
+  border: 0;
+}
+
+html[data-vidrio] .preguntas-lista {
+  display: grid;
+  gap: var(--space-1);
+  border-top: 0;
+}
+
+html[data-vidrio] .pregunta {
+  position: relative;
+  border: 0;
+  border-radius: var(--radius-md);
+}
+
+html[data-vidrio] .pregunta summary {
+  padding-inline: var(--space-3);
+}
+
+html[data-vidrio] .pregunta-respuesta {
+  padding-inline: var(--space-3);
+}
+
+/* Superficie de vidrio compartida por las tarjetas sueltas (relleno translúcido, luz arriba, sombra tenue). */
+html[data-vidrio] :is(.bloque-intro, .pasos-lista > li, .tarjeta-viene, .pregunta) {
+  background: var(--vidrio-fondo-solido);
+  box-shadow: inset 0 1px 0 var(--vidrio-luz), inset 0 0 0 1px var(--vidrio-hilo), var(--vidrio-sombra);
+}
+
+/* Aro luminoso de cada tarjeta suelta: degradado del borde (luz arriba, casi nada abajo), con `mask`. */
+html[data-vidrio] :is(.bloque-intro, .pasos-lista > li, .tarjeta-viene, .pregunta, .fase-kicker, .hero-significado, .pista-scroll)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--vidrio-aro);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* ---- Desenfoque: solo con soporte; sin él (o con «reducir transparencia» / «más contraste») queda el relleno sólido ---- */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  html[data-vidrio] :is(#hero, .secciones > .seccion)::after,
+  html[data-vidrio] :is(.fase-kicker, .hero-significado, .pista-scroll, .bloque-intro, .pasos-lista > li, .tarjeta-viene, .pregunta) {
+    background: var(--vidrio-fondo);
+    -webkit-backdrop-filter: blur(var(--vidrio-desenfoque)) saturate(var(--vidrio-saturacion));
+    backdrop-filter: blur(var(--vidrio-desenfoque)) saturate(var(--vidrio-saturacion));
+  }
+
+  /* Móvil y tablet: las tarjetas pequeñas de una lista no desenfocan (hay varias a la vez en pantalla); llevan un poco más de relleno. */
+  @media (max-width: 1023px) {
+    html[data-vidrio] :is(.fase-kicker, .hero-significado, .pista-scroll, .pasos-lista > li, .tarjeta-viene, .pregunta) {
+      background: var(--vidrio-fondo-movil);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html[data-vidrio] :is(#hero, .secciones > .seccion)::after,
+  html[data-vidrio] :is(.fase-kicker, .hero-significado, .pista-scroll, .bloque-intro, .pasos-lista > li, .tarjeta-viene, .pregunta) {
+    background: var(--vidrio-fondo-solido);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  html[data-vidrio] :is(#hero, .secciones > .seccion)::before,
+  html[data-vidrio] :is(.bloque-intro, .pasos-lista > li, .tarjeta-viene, .pregunta, .fase-kicker, .hero-significado, .pista-scroll)::after {
+    background: var(--color-border-card);
+  }
+}
+
+/* ======================================================================
+   PARTE FINAL (#102, dirección «Escenas»): Cómo funciona, Lo que viene, Preguntas frecuentes y Quién está detrás.
+   Cuatro escenas centradas, cada una con un halo de acento detrás del título (el mismo del teléfono). Va DESPUÉS del
+   vidrio porque lo retoca: mismas superficies y tokens `--vidrio-*`, solo cambia la composición. Va todo en el CSS
+   crítico a propósito: sin hoja aparte no hay petición extra y `versionar.py` no cambia.
+   Qué es decoración y qué es contenido:
+     - El HTML y los textos son los de siempre (`<ol>`, `<ul>`, `<details>` nativos; nada de JS).
+     - Las mini-ilustraciones de «Cómo funciona» NO son elementos: son pseudo-elementos con `content: ""` (sin texto,
+       sin imagen), así que no entran al árbol de accesibilidad y no hace falta `aria-hidden`. Solo repiten con formas
+       lo que el texto del paso ya dice (burbujas, tarjeta con palomita, aviso y lista).
+     - El número del paso es `content: counter(paso) / ""` (texto alternativo vacío: el lector ya lee la lista).
+   Cómo están hechas las ilustraciones (README, «Parte final»): `li::before` es el recuadro (alto fijo en rem, número
+   dentro); `h3::before` y `p::before` son las dos piezas, en posición absoluta sobre el recuadro, con medidas en rem y
+   anchos `min()` contra el ancho de la tarjeta para que no se salgan con letra grande ni en 320 px.
+   ====================================================================== */
+html[data-vidrio] {
+  --c-aura: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  --c-trazo: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+html[data-vidrio] .bloque {
+  padding-top: clamp(4.5rem, 3rem + 5vw, 8rem);
+  text-align: center;
+  /* Letra grande del sistema en pantallas angostas: que una palabra larga se parta antes de salirse de su tarjeta. */
+  overflow-wrap: break-word;
+}
+
+/* ---- Aura detrás del título (decorativa, fuera del flujo: no mueve nada) ---- */
+html[data-vidrio] .bloque > .container {
+  position: relative;
+}
+
+html[data-vidrio] .bloque > .container::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -3.5rem;
+  left: 50%;
+  width: min(56rem, 100%);
+  height: 15rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(50% 50% at 50% 50%, var(--c-aura), transparent 72%);
+}
+
+html[data-vidrio] .bloque .fase-titulo {
+  max-width: 16ch;
+  margin-inline: auto;
+  /* El cuadro de texto de Baloo 2 es más alto que el glifo: este aire evita que el borde luminoso de la tarjeta de debajo
+     caiga dentro del cuadro del título (la medición de contraste lo contaba como fondo claro). */
+  margin-bottom: var(--space-3);
+  font-size: clamp(2.3rem, 1.5rem + 3.4vw, 4.1rem);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+}
+
+html[data-vidrio] .bloque-intro {
+  margin-inline: auto;
+  font-size: var(--text-base);
+  line-height: 1.6;
+  text-align: center;
+}
+
+html[data-vidrio] :is(.pasos-lista, .viene-lista, .preguntas-lista) {
+  text-align: left;
+}
+
+/* ---- Cómo funciona: tres tarjetas con mini-ilustración ---- */
+html[data-vidrio] .pasos-lista {
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+html[data-vidrio] .pasos-lista > li {
+  --c-pad: var(--space-3);
+  --c-alto: 7.25rem;
+  overflow: hidden;
+  padding: calc(var(--c-alto) + var(--c-pad) * 2) var(--c-pad) var(--c-pad);
+  border-radius: var(--radius-lg);
+}
+
+/* Recuadro de la ilustración; el número del paso va dentro, arriba a la izquierda. */
+html[data-vidrio] .pasos-lista > li::before {
+  position: absolute;
+  top: var(--c-pad);
+  left: var(--c-pad);
+  right: var(--c-pad);
+  height: var(--c-alto);
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: 1.6rem;
+  background: radial-gradient(90% 120% at 100% 0%, var(--c-trazo), transparent 70%), color-mix(in srgb, var(--color-accent) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+/* Piezas de la ilustración: h3::before y p::before, sobre el recuadro. */
+html[data-vidrio] .pasos-lista :is(h3, p)::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+html[data-vidrio] .pasos-lista h3 {
+  font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.45rem);
+  line-height: 1.2;
+}
+
+html[data-vidrio] .pasos-lista p {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+/* 1 · Díselo con tus palabras: dos burbujas de conversación. */
+html[data-vidrio] .pasos-lista > li:nth-child(1) h3::before {
+  top: calc(var(--c-pad) + 1rem);
+  left: calc(var(--c-pad) + 3rem);
+  width: min(9rem, calc(100% - var(--c-pad) * 2 - 4rem));
+  height: 2.5rem;
+  border-radius: 1.1rem 1.1rem 1.1rem 0.25rem;
+  background:
+    linear-gradient(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.9)) 1rem 0.8rem / 55% 4px no-repeat,
+    linear-gradient(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.6)) 1rem 1.4rem / 34% 4px no-repeat,
+    var(--color-accent);
+}
+
+html[data-vidrio] .pasos-lista > li:nth-child(1) p::before {
+  top: calc(var(--c-pad) + 4.25rem);
+  right: calc(var(--c-pad) + 1rem);
+  width: min(6.5rem, calc(100% - var(--c-pad) * 2 - 6rem));
+  height: 2.25rem;
+  border-radius: 1.1rem 1.1rem 0.25rem 1.1rem;
+  background:
+    linear-gradient(var(--color-accent), var(--color-accent)) 0.8rem 50% / 50% 4px no-repeat,
+    color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+/* 2 · Yaruki lo anota y te pregunta: una tarjeta con su palomita. */
+html[data-vidrio] .pasos-lista > li:nth-child(2) h3::before {
+  top: calc(var(--c-pad) + 1rem);
+  left: calc(var(--c-pad) + 3rem);
+  width: min(10.5rem, calc(100% - var(--c-pad) * 2 - 4rem));
+  height: 5rem;
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(var(--color-accent), var(--color-accent)) 1.1rem 1.15rem / 55% 5px no-repeat,
+    linear-gradient(color-mix(in srgb, var(--color-accent) 40%, transparent), color-mix(in srgb, var(--color-accent) 40%, transparent)) 1.1rem 2.15rem / 78% 4px no-repeat,
+    linear-gradient(color-mix(in srgb, var(--color-accent) 28%, transparent), color-mix(in srgb, var(--color-accent) 28%, transparent)) 1.1rem 3rem / 46% 4px no-repeat,
+    var(--color-bg-elevated);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 28%, transparent), 0 8px 18px -10px rgb(0 0 0 / 0.35);
+}
+
+/* La palomita: dos trazos diagonales de degradado sobre un círculo verde. */
+html[data-vidrio] .pasos-lista > li:nth-child(2) p::before {
+  top: calc(var(--c-pad) + 4.25rem);
+  left: calc(var(--c-pad) + 0.85rem);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background:
+    linear-gradient(to top right, transparent 38%, #fff 40% 60%, transparent 62%) 0.5rem 0.9rem / 0.45rem 0.45rem no-repeat,
+    linear-gradient(to bottom right, transparent 40%, #fff 42% 58%, transparent 60%) 0.85rem 0.5rem / 0.75rem 0.75rem no-repeat,
+    var(--color-success);
+}
+
+/* 3 · Te avisa y lo ves ordenado: el aviso arriba y la lista ordenada abajo. */
+html[data-vidrio] .pasos-lista > li:nth-child(3) h3::before {
+  top: calc(var(--c-pad) + 1rem);
+  left: calc(var(--c-pad) + 3rem);
+  width: min(10.5rem, calc(100% - var(--c-pad) * 2 - 4rem));
+  height: 2.5rem;
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 1.25rem 50%, #fff 0 0.4rem, transparent 0.44rem),
+    linear-gradient(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.85)) 2.5rem 50% / 45% 4px no-repeat,
+    var(--color-accent);
+}
+
+html[data-vidrio] .pasos-lista > li:nth-child(3) p::before {
+  top: calc(var(--c-pad) + 4.1rem);
+  left: calc(var(--c-pad) + 3rem);
+  width: min(10.5rem, calc(100% - var(--c-pad) * 2 - 4rem));
+  height: 2.25rem;
+  border-radius: 0.7rem;
+  background:
+    radial-gradient(circle at 0.8rem 0.55rem, var(--color-warning) 0 0.2rem, transparent 0.24rem),
+    radial-gradient(circle at 0.8rem 1.65rem, var(--color-success) 0 0.2rem, transparent 0.24rem),
+    linear-gradient(color-mix(in srgb, var(--color-accent) 45%, transparent), color-mix(in srgb, var(--color-accent) 45%, transparent)) 1.5rem 0.4rem / 55% 4px no-repeat,
+    linear-gradient(color-mix(in srgb, var(--color-accent) 45%, transparent), color-mix(in srgb, var(--color-accent) 45%, transparent)) 1.5rem 1.5rem / 38% 4px no-repeat,
+    var(--color-bg-elevated);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 28%, transparent);
+}
+
+/* ---- Lo que viene: rejilla (3 + 2 en escritorio, 2 por fila en tablet, 1 en móvil; la rejilla es la de arriba) ---- */
+html[data-vidrio] .viene-lista {
+  margin-top: var(--space-4);
+}
+
+html[data-vidrio] .tarjeta-viene,
+html[data-vidrio] .tarjeta-viene:nth-child(n + 4) {
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  /* Cinco ideas en dos columnas: la quinta ocupa el ancho para no quedar sola a medias. */
+  html[data-vidrio] .tarjeta-viene:nth-child(5) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* El chip va arriba de cada título (en el HTML va después; solo cambia el orden visual). */
+html[data-vidrio] .tarjeta-viene-cabecera {
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+html[data-vidrio] .tarjeta-viene h3 {
+  font-size: clamp(1.3rem, 1.15rem + 0.5vw, 1.55rem);
+  line-height: 1.15;
+}
+
+html[data-vidrio] .tarjeta-viene p {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+/* ---- Preguntas: una columna angosta y centrada ---- */
+html[data-vidrio] .bloque-preguntas {
+  display: block;
+}
+
+html[data-vidrio] .bloque-cabecera {
+  position: static;
+}
+
+html[data-vidrio] .preguntas-lista {
+  max-width: 46rem;
+  margin: var(--space-4) auto 0;
+  gap: 0.6rem;
+}
+
+html[data-vidrio] .pregunta {
+  border-radius: var(--radius-lg);
+}
+
+html[data-vidrio] .pregunta summary {
+  min-height: 4.25rem;
+  padding: var(--space-2) var(--space-3);
+  font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
+}
+
+html[data-vidrio] .pregunta[open] summary {
+  color: var(--vidrio-texto-acento);
+}
+
+html[data-vidrio] .pregunta[open] {
+  box-shadow: inset 0 1px 0 var(--vidrio-luz), inset 0 0 0 1.5px var(--color-accent), var(--vidrio-sombra);
+}
+
+html[data-vidrio] .pregunta-respuesta {
+  max-width: none;
+  margin: 0 var(--space-3);
+  padding: var(--space-2) 0 var(--space-3);
+  border-top: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+html[data-vidrio] .pregunta-respuesta p {
+  font-size: 1.0625rem;
+}
+
+html[data-vidrio] .pregunta summary:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
+  border-radius: var(--radius-lg);
+}
+
+/* ---- Quién está detrás: la firma que cierra ---- */
+html[data-vidrio] .bloque--breve > .container::before {
+  top: -5rem;
+  height: 19rem;
+}
+
+html[data-vidrio] .bloque--breve .bloque-intro {
+  max-width: 38rem;
+  margin-top: 4rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
+  line-height: 1.6;
+  text-wrap: balance;
+}
+
+/* La rayita de firma va sobre la tarjeta, fuera de la caja del título. */
+html[data-vidrio] .bloque--breve .bloque-intro::before {
+  content: "";
+  position: absolute;
+  top: -1.2rem;
+  left: 50%;
+  width: 3.4rem;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  background: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-vidrio] .pregunta {
+    transition: box-shadow 200ms ease;
+  }
+}
+
+/* «Más contraste»: bordes de las tarjetas y del recuadro de las ilustraciones sólidos. */
+@media (prefers-contrast: more) {
+  html[data-vidrio] .pasos-lista > li::before {
+    box-shadow: inset 0 0 0 2px var(--color-text);
+  }
+
+  html[data-vidrio] .pregunta[open] {
+    box-shadow: inset 0 0 0 2px var(--color-text);
+  }
+}
+
+/* Colores forzados (Windows alto contraste): el halo y las ilustraciones son decorativos y se quitan; las tarjetas
+   llevan borde real porque la sombra y el aro de vidrio no se dibujan. */
+@media (forced-colors: active) {
+  html[data-vidrio] .bloque > .container::before,
+  html[data-vidrio] .pasos-lista :is(h3, p)::before,
+  html[data-vidrio] .bloque--breve .bloque-intro::before {
+    display: none;
+  }
+
+  html[data-vidrio] :is(.bloque-intro, .pasos-lista > li, .tarjeta-viene, .pregunta) {
+    border: 1px solid CanvasText;
+  }
+
+  html[data-vidrio] .pasos-lista > li {
+    padding-top: calc(var(--c-pad) * 2 + 1.75rem);
+  }
+
+  html[data-vidrio] .pasos-lista > li::before {
+    height: auto;
+    border: 0;
+    box-shadow: none;
+    background: none;
+    color: CanvasText;
+  }
+
+  html[data-vidrio] .pregunta[open] summary {
+    color: CanvasText;
   }
 }

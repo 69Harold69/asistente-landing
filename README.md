@@ -41,8 +41,8 @@ asistente-landing/
 │   │   ├── progreso.js  Pista "Desliza para descubrir"
 │   │   ├── nav-recorrido.js  Navegación con puntos por sección (escritorio)
 │   │   ├── magnetico.js CTAs magnéticos (escritorio, CTA activo)
-│   │   ├── tilt.js      Inclinación del teléfono con el mouse (20° a los lados / 10° arriba-abajo, con inercia) y mirada de la mascota
-│   │   ├── malla.js     Malla de fondo del hero (canvas 2D que reacciona al cursor)
+│   │   ├── tilt.js      Inclinación del teléfono con el mouse (20° a los lados / 10° arriba-abajo por defecto, con inercia) y mirada de la mascota
+│   │   ├── malla.js     Malla de fondo continua de la portada (un canvas fijo: onda en reposo + cursor)
 │   │   ├── icons.js     SVG de los íconos de trazo (Elemento + navbar), compartidos entre escenas
 │   │   ├── main.js      Punto de entrada (`<script type="module">`)
 │   │   ├── scenes/      Un módulo por escena: splash, login, chat, elementos, habitos, logro, avisos, llamada, dashboard (+ contar.js)
@@ -121,6 +121,58 @@ de la franja). Como franja y texto se mueven juntos, los tramos (`TRAMOS.movil`)
 (`(franja − 3.5rem) × 0.4615` de ancho), el hero va centrado y compacto (sin la pista «Desliza») para que titular y
 teléfono compartan el primer pantallazo, y las secciones se centran en un bloque de 38rem. Tablet apaisada de 768–1023 px
 sigue en la rama móvil de siempre.
+
+**Lectura en móvil (#122, `movil-lectura.mjs`):** en móvil el texto de cada fase tiene que alcanzar a leerse antes de que el
+teléfono empiece a girar hacia la fase siguiente. Cómo está resuelto, sin tocar la coreografía:
+- *Duración por fase según su tarjeta.* El giro hacia la fase siguiente arranca cuando el borde superior de su sección llega
+  al 92 % del alto visible (`TRAMOS.movil.ini`). Cada sección (menos el hero y el cierre) lleva debajo del último elemento
+  `padding-bottom: max(5.5rem, 17 svh + 1.75rem)` (`base.css`, bloque «Ritmo de lectura»): con eso la última línea lleva a
+  la vista, con 1.5rem de margen sobre el borde inferior, al menos el 25 % del alto visible de scroll antes del giro
+  (1.5rem + (25 % − 8 %)). El espacio va DESPUÉS del bloque, así que se adapta solo a la altura real de cada tarjeta, y
+  si la tarjeta no cabe entera bajo la franja el texto sube normal mientras el teléfono espera en su escena.
+- *Imán de lectura (táctil ≤ 1023 px, sin «reducir movimiento»; `assets/js/iman.js`, bloque «Imán de lectura» de
+  `base.css`, prueba `movil-iman.mjs`).* Reemplaza a la retención de la PR #123 (la tarjeta pegada bajo la franja con una
+  animación ligada al scroll), que en el teléfono se sentía como un tropezón. Es `scroll-snap-type: y proximity` del
+  navegador sobre `<html>`: un ancla invisible por fase (`.iman`, del alto de la tarjeta, con `scroll-margin-top` =
+  franja + degradado + 4 px) hace que un gesto que termina cerca de la fase se detenga solo con la tarjeta pegada bajo la
+  franja, dentro de la misma inercia (sin un segundo movimiento con JS); un gesto fuerte sigue de largo y puede parar
+  varias fases después. Si la tarjeta es más alta que lo que queda de pantalla (chat, «Tu día»), el ancla cubre la
+  pantalla y el scroll queda libre dentro de ella. El rango de proximidad de Chrome es 1/3 del alto de la pantalla:
+  para que el imán atrape al llegar y nunca jale de regreso, al empezar un gesto (toque, rueda o tecla) en reposo sobre
+  un ancla, esa ancla se desarma (`data-desarmado`) hasta que el scroll termina fuera de su rango. La rueda y las
+  teclas avanzan a saltos que terminan cada uno por separado: con ellas se desarman todas las anclas cuyo rango contiene
+  la posición (si no, la rueda se quedaba pegada en una fase), y atrapa la que se alcanza desde fuera.
+  *Remate al soltar (segunda ronda, decisión de Harold: en el recorrido la página nunca se queda entre dos fases).* Si un
+  gesto con el dedo termina lejos de toda ancla, entre la primera fase y el final de «Tu día», al terminar el scroll
+  (`scrollend`; donde no existe, 180 ms sin scroll) `iman.js` jala con una animación propia de 800–1200 ms (seno de
+  entrada y salida; tercera ronda: a 400–600 ms con cúbica el teléfono giraba demasiado rápido) a la fase más próxima en la dirección del gesto: la siguiente si bajaba, la anterior si subía (al
+  final de su tarjeta si es alta). Nunca con el dedo en la pantalla ni durante la inercia; tocar, rueda o tecla lo
+  cancelan, y el toque que lo detiene no lo reanuda al soltar si no arrastró. No jala dentro de la zona de lectura de
+  chat y «Tu día», ni arriba de la primera fase ni abajo del final de «Tu día» (se sale libre), ni tras rueda, teclado,
+  enlaces o el punto «Inicio». Mientras anima apaga el snap (`data-iman-jalando`) para que Chrome no ajuste cada paso, y
+  el `scrollend` que provoca no dispara otro jalón. Un roce de menos de 24 px vuelve a la fase más cercana. El snap
+  nativo de proximidad se queda como primera capa: cuando el gesto termina cerca de una fase, el navegador lo resuelve
+  dentro de la misma inercia y el JS ya no tiene nada que hacer; el JS solo actúa cuando el navegador no ajustó. No hay imán en el
+  hero, la parte final ni el pie (no tienen anclas), ni en escritorio, ni sin JS, ni en el teléfono en horizontal. Un
+  hash a una fase cae en el mismo punto (`scroll-margin-top` de la sección). Las pruebas que miden con `scrollTo`
+  apagan el imán en la página (`scroll-snap-type: none` en línea), porque Chrome también ajusta al ancla un
+  `scrollTo` que cae cerca.
+- *Compactación extra bajo 380 px.* A 360 px las tarjetas de Elementos y Avisos no cabían bajo la franja: la sección
+  pasa de 14 a 10 px de margen lateral (un renglón menos por párrafo) y la separación bajo la píldora y el título baja
+  8 → 4 y 14 → 10 px. La letra del párrafo no cambia (17 px).
+- *Alto visible.* `--vh-pequeno` (`tokens.css`) es `1svh` (con respaldo `1vh`): la franja (44 / 50 svh), el `padding-top`
+  y el `min-height` de las secciones, y `stage.js` (una sonda `.sonda-alto` de `100svh`, no `innerHeight`) usan el viewport
+  PEQUEÑO, el de las barras de Chrome a la vista, que no cambia al esconderlas: el layout no salta y el cálculo de «cabe /
+  no cabe» es el del peor caso. Un `resize` que solo cambia `innerHeight` (la barra) no vuelve a medir. El ancho del
+  teléfono sigue siendo `clamp(120px, 18vh, 170px)`; solo se achica (`min`) si la franja no alcanzara a contenerlo.
+  Escritorio no cambia (`innerHeight`).
+- *Tarjetas compactas (solo ≤ 767 px).* Bloque «Tarjetas compactas» de `base.css`: interlineado del párrafo 1.65 → 1.5,
+  separación entre párrafos 14 → 10 px, relleno de la tarjeta 16 → 12 px, separación bajo el título 24 → 14 px y píldora
+  del kicker 0.3em 0.95em → 0.2em 0.8em; la letra (17 px) y el título no cambian.
+- *Prueba.* `movil-lectura.mjs` recorre el scroll con el teléfono en 360×740, 390×844 y 407×904 (y cada uno 128 px más bajo:
+  «con barras»), claro y oscuro, observa el arranque de cada giro por `yaruki:estado` y mide el bloque de cada fase. Con
+  `YARUKI_RAIZ=` mide otra versión del sitio y con `--solo-medir` solo imprime la tabla. Límite: Playwright no emula las
+  barras de Chrome que se esconden al hacer scroll; el alto «con barras» es otro viewport.
 
 **Sincronía texto ↔ teléfono (`TRAMOS`):** cada sección mide al menos una
 pantalla y cada vuelo termina ANTES de que su texto llegue al centro
@@ -301,31 +353,67 @@ al primer clic en el toggle).
   el acento. Decorativo (sin texto ni rol); se va con los puntos
   (`data-fuera`); sin JS queda el conector tenue.
 - **Mascota del header:** respira y se infla con el hover de un CTA de la beta o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
-- **Malla de fondo (`malla.js`, #26):** `<canvas class="malla-hero">` creado por el
-  módulo como primer hijo de `#hero`, decorativo (`aria-hidden`, `pointer-events:
-  none`), a todo el ancho de la ventana y detrás del texto (`z-index: -1` dentro del
-  contexto de `#hero`), con una máscara que lo desvanece hacia abajo. Tamaño y
-  desfase por CSSOM (`--malla-ancho/alto/izq`), nítido en HiDPI (`devicePixelRatio`
-  con tope 2 y como máximo 8 Mpx de canvas, ~1.5x en 2560×1440) y redimensionado con `ResizeObserver`. Valores (Notion «Ideas para V2»):
-  cuadrícula de 128 px, radio 300 px, empuje `38 px × (1 − d/r)²`, líneas de
-  1.1 px, puntos de 1.35 px (+3 px). **Colores y opacidades de los tokens**
-  (`tokens.css`): reposo `--color-border-card`, encendido `--color-accent`, y las
-  opacidades `--malla-linea-*`/`--malla-punto-*` (tenues en claro). **Contraste AA:**
-  dentro de las cajas del texto del hero (líneas de texto, botones y chips, con 8 px de
-  margen para el foco) la malla se deforma con el cursor pero **no se enciende**: se
-  dibuja en reposo, en un solo trazo y un solo relleno (sin apilar opacidades), y el
-  texto secundario queda en ≥ 4.5:1 en los dos temas. Fuera del texto el encendido es
-  el de siempre. `scripts/pruebas/malla.mjs` lo mide en píxeles renderizados (peor
-  píxel con el cursor real barriendo cada bloque). Un
-  `MutationObserver` sobre `data-theme` y el cambio de `prefers-color-scheme`
-  redibujan en el mismo microtask, así que el revelado circular y la demo de tema la
-  repintan bien. **Sin trabajo en reposo:** no hay bucle continuo; el único
-  `requestAnimationFrame` (la función `cuadro`) corre mientras la malla converge hacia el cursor
-  y se detiene al asentarse; tampoco corre con el hero fuera de pantalla
-  (`IntersectionObserver`) ni con la pestaña oculta. Con `prefers-reduced-motion` y en
-  táctil (sin `hover`/puntero fino) se dibuja una vez, estática: en táctil el dedo hace
-  scroll y una animación solo gastaría batería. Arranca tras `load` + `requestIdleCallback`
-  (el LCP es el titular). Sin JS no existe el canvas y el hero queda igual.
+- **Malla de fondo continua (`malla.js`, #98; nació en el hero con el #26):** UN solo
+  `<canvas class="malla-fondo">`, fijo (`position: fixed`, `z-index: -1`, alto `100lvh`), creado por el
+  módulo como primer hijo de `<body>` y visible en toda la portada donde el fondo es el mismo: el
+  `background` de `<body>` se propaga al lienzo, así que las secciones sin fondo propio la dejan ver y lo
+  que sí pinta fondo (tarjetas, la franja del teléfono en móvil y el pie) la tapa. Decorativo
+  (`aria-hidden`, `pointer-events: none`). **Solo en la portada:** las páginas legales y las guías no la
+  montan. Dos movimientos, a la manera de la referencia (Notion «Ideas para V2»):
+  1. **Onda en reposo:** cada punto flota hasta ±15 px (9 px + 6 px, senos y cosenos según su posición y
+     el tiempo, ~9 s por ciclo), así que está viva aunque no muevas el mouse.
+  2. **Cursor:** cuadrícula de 128 px, radio 300 px, empuje `38 px × (1 − d/r)²`, líneas de 1.1 px, puntos de
+     1.35 px (+3 px); del color del borde de tarjeta al acento, con inercia (la malla vuelve sola al salir).
+  **Colores:** salen de los tokens (`--color-accent` en reposo y encendido, con las opacidades `--malla-*` de
+  `tokens.css`: la malla «referencia», igual en claro y oscuro). **Se dibujan opacos**, ya mezclados con
+  `--color-bg` (detrás del canvas solo hay ese color liso): dos trazos que se cruzan no apilan opacidad y el
+  peor píxel posible es el del nivel más encendido, así que el contraste se garantiza por construcción. Cada
+  nivel funde dos capas (la de reposo se apaga y la del acento se enciende); mezclar colores y opacidades por
+  separado dejaba un valle de contraste a medio camino. La malla encendida (0.30 / 0.56) no cabe
+  debajo del texto sin ayuda: el contraste lo da el vidrio y, donde hizo falta, el color del texto. La malla se dibuja **detrás de todo,
+  sin huecos bajo el texto** (#100; antes había un hueco de 5 px bajo el texto en acento): el contraste del texto en
+  acento sobre las líneas más tenues queda en el límite de AA (ver «Vidrio» abajo, donde sí está medido).
+  **Intensidad:** es `opacity` del canvas (la compone la GPU, cero costo por cuadro). `--malla-intensidad` vale 1;
+  mientras una fase del teléfono (`.secciones > section[id^="fase-"]`) cruza el centro de la pantalla, malla.js pone
+  `data-malla-recorrido` en `<html>` y pasa a `--malla-recorrido` (`tokens.css`, hoy **1**: sin atenuado, decisión de Harold; el mecanismo
+  sigue por si se quisiera atenuar), con 700 ms de transición. API:
+  `fijarIntensidadRecorrido(0..1)` / `intensidadRecorrido()` exportadas de `malla.js`. **Rendimiento:** un solo
+  `requestAnimationFrame` (las pruebas cuentan sus cuadros con `canvas.cuadrosAnimados`), sin asignaciones por cuadro (arreglos tipados reutilizados), un
+  `beginPath` por nivel de opacidad, **30 fps en reposo y en táctil, 60 fps solo mientras el cursor se mueve**; DPR
+  ≤ 2 y ≤ 8 Mpx de canvas; cero cuadros con la pestaña oculta y con `<main>` fuera de pantalla (el pie opaco lo
+  cubre todo; `IntersectionObserver`). La malla queda **fija** respecto al viewport (sin parallax con el scroll: lo
+  más barato; no repinta la página al hacer scroll). **Movimiento reducido:** con `prefers-reduced-motion` se
+  dibuja una vez, estática (un instante fijo de la onda) y sin reaccionar; el cambio en vivo se atiende.
+  **Táctil** (sin `hover`/puntero fino): ondula a 30 fps pero **no reacciona** al dedo. **Defecto: «normal»**
+  (canvas a DPR ≤ 2; decisión de Harold con su teléfono real, DPR 3: «normal» 59 fps de pantalla y más nítida,
+  «ligera» 61 fps sin mejora). Para comparar hay cuatro variantes, elegibles con
+  `?malla-movil=normal|ligera|pausa-scroll|ligera-pausa` (ligera: canvas a DPR 1; pausa-scroll: no dibuja mientras el
+  dedo hace scroll y vuelve 180 ms después; ligera-pausa: las dos); elegir una a mano desactiva la degradación
+  automática. `?malla=apagada` quita el canvas y el bucle (la página sola).
+  **Degradación automática** (táctil y escritorio, sin parámetros): cada cuadro mide su costo de HILO PRINCIPAL
+  completo (del callback de rAF a la primera tarea posterior, vía `MessageChannel`; medir solo el JS de `dibujar`
+  engaña: el canvas 2D rasteriza después y el JS tarda ~0.4 ms cuando el cuadro cuesta ~14). Costo de la malla =
+  mediana de los cuadros con dibujo − mediana de los cuadros sin dibujo. Si pasa de 8 ms sostenidos (mediana de
+  ≥ 30 dibujos), baja un nivel: **1** = 20 fps y canvas a DPR 1 (el respaldo «ligera»); **2** = 15 fps y cuadrícula de
+  192 px (la mitad de puntos). Cada 30 s prueba volver al nivel anterior (el plazo se duplica, hasta 240 s, si la prueba
+  falla). La onda dura ~9 s por ciclo, así que 15 fps no se ve congelada. No consulta la GPU ni guarda nada.
+  `?malla-forzar=software` fija el nivel 2 y `?malla-forzar=normal` lo desactiva (pruebas).
+  **Diagnóstico en un teléfono real:** `?malla-diagnostico=1` muestra un panel plegable que no se puede malinterpretar:
+  «Pantalla» (cuadros que pinta el navegador, medidos con rAF) con el máximo visto (la tasa del teléfono: 60/120 Hz;
+  si sale ~30, el ahorro de batería de Android la está limitando); «En reposo» (últimos 5 s sin tocar) y «Durante el
+  scroll» (último gesto: fps promedio, mínimo por 250 ms, peor cuadro); «Malla: N dibujos/s (tope)» (el bucle de la
+  malla, que NO es la pantalla); «Costo de la malla por dibujo p50 / p95»; nivel de degradación y motivo; cuadros y
+  tareas largas. «Copiar resultados» deja un texto plano (variante, navegador, DPR, canvas, aceleración con
+  `WEBGL_debug_renderer_info`, ahorro de movimiento) y hay enlaces a «apagada» y las cuatro variantes. Sin el parámetro
+  `malla-diagnostico.js` ni se descarga. `node scripts/pruebas/medir-malla.mjs` reproduce la tabla de costos emulada
+  (hilo principal por segundo en reposo y en scroll, fps de scroll, tareas largas; medianas de N corridas). Para servir
+  una rama a un teléfono en la misma Wi-Fi: `node scripts/pruebas/lib/servidor.mjs --host 0.0.0.0`.
+  Un `MutationObserver`
+  sobre `data-theme` y el cambio de `prefers-color-scheme` redibujan en el mismo microtask (y otra vez a los
+  700 ms, por si el respaldo sin View Transitions aún estaba fundiendo los tokens). Arranca tras `load` +
+  `requestIdleCallback` (el LCP es el titular). Sin JS no existe el canvas y la página queda igual.
+  `scripts/pruebas/malla.mjs` mide todo lo anterior, incluido el contraste en píxeles renderizados de todos los
+  bloques de texto de la portada (peor píxel con el cursor real barriendo cada uno).
 - **Inclinación y mirada (`tilt.js`, `scenes.css`, `phone.css`, #27, #99):**
   - **Inclinación («te voltea a ver»):** el teléfono gira hacia el cursor hasta **20° a los lados y 10°
     arriba/abajo** (decisión de Harold tras compararlo con 15°/8° y 25°/12°), con peso: resortes amortiguados
@@ -363,29 +451,15 @@ al primer clic en el toggle).
     (`mascota > 1.02`) y al salir el cursor.
   - **Líneas finas en los bordes de la caja (#99):** el círculo se mueve a posiciones subpíxel como capa
     compuesta (respira con `transform`) dentro del contexto 3D del teléfono inclinado; un `outline`
-    transparente amplía la caja que se rasteriza, así sus bordes nunca quedan pegados a píxeles pintados, y no
-    hay `::after` (la pupila de #112, una segunda caja que se movía con `left/top`). `mirada.mjs` revisa en
+    transparente amplía la caja que se rasteriza, así sus bordes nunca quedan pegados a píxeles pintados, y ya
+    no hay `::after` (la pupila de #112, una segunda caja que se movía con `left/top`). `mirada.mjs` revisa en
     píxeles reales, con la mascota en movimiento, las esquinas de su caja lejos del brillo (claro y oscuro,
-    ×1 y ×2). En Chromium sin pantalla el artefacto no se reproduce (ni con GPU). Con colores forzados (alto
-    contraste) el contorno se quita: el navegador lo pintaría como un aro.
-  - **Rendijas en la pantalla (#99, revisión de Harold en dev):** con 20° y la perspectiva de 900 px vio una línea
-    horizontal fina que cruza la pantalla (bajo la mascota del Splash y bajo «Escuchando…» en la llamada) y un corte en
-    la orilla izquierda. No se reprodujo en Chromium automatizado (sin pantalla y con ventana y GPU, DPR 1–2), así que
-    el arreglo es de defensa en las tres capas posibles: (1) un **respaldo** (`.phone::before`) del color de la escena,
-    1 px detrás del frente y del tamaño de la pantalla: una costura entre trozos del compositor deja ver ese color y no
-    la página; (2) el **fondo propio de la pantalla** es el de la escena (`data-fondo` en `#telefono`, stage.js), no el
-    crema de la página; (3) las escenas se **enciman 1 px** sobre la orilla de la pantalla y el bisel va en **px
-    enteros**. `scripts/pruebas/rendijas.mjs` lo cuida en las 8 escenas, claro y oscuro, en reposo, en los extremos y
-    en ángulos intermedios, a DPR 1, 1.25, 1.5 y 2.
+    ×1 y ×2). En Chromium sin pantalla el artefacto no se reproduce (ni con GPU): confírmalo con un mouse real.
   - **Pendiente (opcional del Notion):** el punto del logo del header también mirando al cursor.
   - **Prueba:** `scripts/pruebas/mirada.mjs` espera por estado (rAF dentro de la página), no por tiempo
-    (#88); verifica los ángulos en las cuatro esquinas, lateral mayor que vertical en píxeles proyectados, el
-    regreso al centro exacto, el apagado durante el giro, que no haya pupila, el brillo del lado correcto y los
-    bordes de la caja sin líneas. Los saltos se miden en cada paso del resorte (un `MutationObserver` sobre el
-    `style` del envoltorio), no en el rAF de stage.js: muestrear en otro rAF mezclaba fases y duplicaba el salto.
-  - **Al medir la mirada en pantalla,** la referencia es el cursor sobre el centro del teléfono: con el cursor al
-    centro de la ventana la mascota ya mira a la izquierda (≈ −15 px en el hero a 1440×900) y las esquinas dan
-    −8 / +38 px, una asimetría que es de la referencia y no de la mirada (auditoría de #99).
+    (#88); verifica ángulos de las tres variantes en las cuatro esquinas, lateral mayor que vertical en
+    píxeles proyectados, el regreso al centro exacto, el apagado durante el giro, que no haya pupila, el
+    brillo del lado correcto y los bordes de la caja sin líneas.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
   magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
@@ -407,6 +481,76 @@ al primer clic en el toggle).
   Finanzas dice que no hay conexión a bancos ni asesoría financiera. Llamadas no repite `#fase-llamada`: una línea y un
   enlace ancla. «Quién está detrás» es una línea con el nombre y la ciudad que el sitio ya publica y un enlace a `/privacidad/`
   (sin foto, redes ni correo nuevos).
+
+### Vidrio sobre la malla (#100)
+
+Tarjetas de vidrio ligero («Liquid Glass») sobre la malla encendida: **es el defecto de la portada, sin parámetro** (decisión
+de Harold tras revisarlo). `index.html` trae `data-vidrio` en `<html>`, así que los estilos aplican desde el primer pintado
+(sin esperar a JS: sin salto de «sin tarjeta» a «con tarjeta» ni CLS). Todo el estilo es CSS (`base.css`, bloque «VIDRIO»,
+y los tokens `--vidrio-*` de `tokens.css`). La malla es la «referencia» (color de acento, líneas 0.10 → 0.30, puntos
+0.28 → 0.56, distinta en claro (reposo 0.24 / 0.54) y oscuro (0.10 / 0.28), y a pleno también detrás de las fases: `--malla-*` y `--malla-recorrido: 1`).
+Sin JS no hay malla (no hay canvas): las tarjetas quedan con relleno sólido sobre el fondo liso (`sin-js.css`).
+
+- **Qué es vidrio:** relleno translúcido (`--vidrio-relleno`, **0.10**; en degradado, ×1.3 arriba y ×0.7 abajo),
+  `backdrop-filter: blur(--vidrio-desenfoque 2px) saturate(1.5)`, aro con degradado luminoso (luz arriba, casi nada abajo;
+  pseudo-elemento con `mask`), luz especular `inset` en el canto de arriba y sombra tenue. Todo por tokens, en claro y oscuro.
+  Si un texto no alcanza el contraste, se ajusta **el color del texto** (tokens), no la transparencia ni el desenfoque.
+- **Dónde:** cada fase del recorrido, el hero, «Tu día», «Cómo funciona», «Lo que viene», las preguntas y «Quién está detrás».
+  El texto pequeño va siempre sobre vidrio; el titular y los títulos de sección (texto grande, AA = 3:1) van sueltos sobre
+  la malla. Composición **separada**: píldora de vidrio para el kicker, título suelto y una tarjeta con los párrafos y el
+  CTA; cada pregunta, paso y tarjeta de «Lo que viene» es su tarjeta.
+- **Animación:** la tarjeta de una fase es el `::after` de la sección y su opacidad es la variable `--vidrio-op`, que
+  revelar.js anima junto con la primera pieza (sin tarjeta vacía antes del texto). La salida en escritorio sigue
+  desvaneciendo la sección entera; mientras su opacidad es < 1 la sección es raíz de fondo y el desenfoque deja de ver la
+  malla (queda un relleno translúcido sin desenfoque durante ese desvanecimiento).
+- **Móvil:** la franja del teléfono (`.stage`) sigue siendo opaca (tapa el texto que sube por detrás), pero malla.js pone siempre
+  dentro un segundo canvas (`.malla-franja`) que repinta ahí el trozo de malla que le toca (traza otra vez la misma malla con el origen desplazado: copiar con `drawImage` rasterizaba el canvas principal dentro del cuadro y costaba ~5 ms con CPU ×4; la geometría se lee solo al hacer scroll o cambiar de tamaño; también bajo el degradado de abajo), así que la malla es continua de borde a borde. Prueba
+  `vidrio-franja.mjs`. En móvil/tablet solo las tarjetas grandes llevan desenfoque; las pequeñas de una lista, relleno
+  `--vidrio-fondo-movil` (relleno + 0.3) sin desenfoque.
+- **Respaldos:** `@supports not (backdrop-filter)`, `prefers-reduced-transparency: reduce` y `prefers-contrast: more` →
+  relleno sólido y sin desenfoque (con más contraste, además el aro es sólido).
+- **Texto en acento:** al quitar los huecos de la malla, el kicker y los enlaces en línea de `<main>` usan
+  `--color-on-accent-soft` (el tono de los chips) también sin vidrio: con el acento puro caían a 3.4–4.0:1 con el cursor
+  encendiendo la malla debajo.
+- **Contraste:** `node vidrio-contraste.mjs` (registrado en `todo.mjs`) mide en píxeles renderizados, con la malla en
+  movimiento y el cursor real encima, títulos grandes contra 3:1 y todo el texto pequeño contra 4.5:1, en todas las secciones.
+- **Malla del tema claro más visible que la del oscuro (#98):** en claro, `tokens.css` fija líneas 0.24 / 0.30 y puntos 0.54 / 0.56 (reposo / encendido); en oscuro siguen 0.10 / 0.30 y 0.28 / 0.56 (repetidos en los dos bloques oscuros, porque `:root` es el claro). La encendida por el cursor **no sube**: es la que fija el contraste del texto pequeño en AA (con 0.38 / 0.64 los párrafos sobre vidrio caían a 4.36:1 y con 0.55 / 0.85 a 3.22:1). Solo se subió la de reposo.
+- **Parámetros de URL que quedan (diagnóstico):** `?malla=apagada`, `?malla-diagnostico=1`, `?malla-movil=…` y
+  `?malla-forzar=…`. Se retiraron `?vidrio=1` (ya es el defecto; ponerlo no rompe nada), `?vidrio-forma=unica`,
+  `?vidrio-relleno=`, `?vidrio-desenfoque=` y `?malla=referencia|pleno|medio|<n>`.
+
+### Parte final de la portada (#102, «Escenas»)
+
+Cómo funciona, Lo que viene, Preguntas frecuentes y Quién está detrás (los `.bloque` de `index.html`) se ven como cuatro escenas
+centradas sobre la malla, con tarjetas de vidrio. **Solo es presentación**: el HTML, los textos y los enlaces no cambian, y todo
+funciona sin JS (`<ol>`, `<ul>` y `<details>` nativos). El CSS está al final de `assets/css/base.css`, en el apartado «PARTE FINAL»
+(va después del vidrio porque lo retoca; no hay hoja aparte, así que no hay petición extra y `versionar.py` no cambia).
+
+- **Halo:** `.bloque > .container::before`, un degradado radial de acento detrás del título (`position: absolute`, `z-index: -1`,
+  sin tamaño en el flujo: no mueve nada, CLS 0). El título lleva `margin-bottom: var(--space-3)` a propósito: el cuadro de
+  texto de Baloo 2 es más alto que el glifo y, más cerca, el borde luminoso de la tarjeta de abajo cae dentro de ese cuadro y
+  la medición de contraste lo toma como fondo claro (lo vimos: 1.6:1 que no era real).
+- **Lo que viene:** rejilla de la parte vieja (3 + 2 en escritorio, 2 por fila hasta 900 px con la quinta a todo el ancho, 1 en
+  móvil). Las cinco ideas siempre están visibles: sin carril, sin scroll horizontal, sin `mask-image` ni `scroll-snap`. El chip
+  va arriba del título solo por orden visual (`flex-direction: column-reverse`); en el HTML sigue después.
+- **Preguntas:** una columna de 46 rem, centrada. La pregunta abierta lleva anillo de acento y el color `--vidrio-texto-acento`.
+- **Mini-ilustraciones de «Cómo funciona» (decorativas, sin elementos ni texto):**
+  - `li::before` es el recuadro (alto `--c-alto: 7.25rem`) y lleva el número del paso con `content: counter(paso) / ""`
+    (texto alternativo vacío: el lector ya anuncia la lista).
+  - `h3::before` y `p::before` son las dos piezas de cada dibujo (`content: ""`), en `position: absolute` sobre el recuadro,
+    colocadas con `top`/`left`/`right` en `rem` a partir de `--c-pad` (el relleno de la tarjeta). Los anchos usan
+    `min(<rem>, calc(100% - …))` para encogerse con la tarjeta, de modo que no se salen a 320 px ni con letra grande; `li` lleva
+    `overflow: hidden` como red.
+  - Paso 1: dos burbujas (la de Yaruki lleva dos líneas de «texto» hechas con degradados). Paso 2: una tarjeta y una palomita;
+    la palomita son dos degradados diagonales (`to top right` y `to bottom right`, bandas de 20 %) sobre un círculo verde.
+    Paso 3: un aviso (punto + línea) y debajo una lista de dos renglones con puntos de color.
+  - Como son pseudo-elementos vacíos no entran al árbol de accesibilidad: no hace falta `aria-hidden`. No dicen nada que el
+    texto no diga. En `forced-colors` se ocultan (`display: none`) y las tarjetas llevan borde real.
+  - Para cambiar un dibujo se editan solo las reglas `.pasos-lista > li:nth-child(n) h3::before / p::before`.
+- **Contraste (`vidrio-contraste.mjs`):** además del texto, mide el **número del paso** (texto generado por `li::before`, grupo
+  `numero`, 3:1 por ser grande) y agrupa las preguntas en `pregunta`. El número se oculta junto con el texto al medir.
+- `prefers-reduced-motion`: lo único que se mueve es la transición de 200 ms del anillo de la pregunta abierta, y solo con
+  `no-preference`. `prefers-contrast: more` y `forced-colors` tienen su bloque al final.
 
 ### Aviso de iPhone («avísame cuando salga»)
 
@@ -1001,7 +1145,7 @@ Qué vigila cada prueba (todas corren en `todo.mjs`):
 | `rendimiento.mjs` | Arranque de la portada en móvil con CPU ×4 y 4G lenta: el LCP es texto del hero (no una imagen ni la malla) y llega en ≤ 2 s; CLS 0.000; TBT ≤ 250 ms (medido con CPU ×4: el de Lighthouse es otra escala); **ningún `<script src>` clásico en el `<head>`** y GSAP no se pide antes del primer pintado. Interacción (Event Timing, el INP de laboratorio): toggle de tema, abrir/cerrar un `<details>`, punto de la navegación, mouse sobre el hero con la malla; cada una ≤ 200 ms con CPU ×4 (hoy la peor, el toggle de tema, ronda 150–180 ms). |
 | `cls.mjs` | CLS ≤ 0.02 en la portada a 360, 390, 412, 820, 1024 y 1440 px con las fuentes 1.5 s tarde, y el reacomodo del hero en el barrido de 320 a 480 px. |
 | `compresion.mjs` | Que el servidor de pruebas comprima como Caddy; sin esto los números del laboratorio no representan a producción. |
-| `malla.mjs` | Costo por cuadro de la malla (< 4 ms) y sin tareas largas con el cursor moviéndose. |
+| `malla.mjs` | Malla continua (#98): existe y pinta, se mueve sola, reacciona al mouse y no al toque, 30/60 fps, pausas, reduced-motion, intensidad detrás del recorrido, sin JS, costo por cuadro (escritorio < 4 ms y móvil con CPU ×4 < 10 ms) sin tareas largas, `?malla=apagada`, el panel de diagnóstico (reposo/scroll, copiar, plegar), la degradación por software (`?malla-forzar=software`, y sola con CPU ×8, con recuperación) y el defecto táctil «normal», y contraste AA del texto de toda la portada. |
 
 **Por qué el LCP móvil era «bimodal» (1.65 s o 2.3 s, y 1.05 s o 1.5 s con compresión).** Lighthouse no mide el LCP:
 lo *simula* (Lantern) desde el trazo de una corrida rápida en local. Su gráfica del primer pintado incluye la tarea de

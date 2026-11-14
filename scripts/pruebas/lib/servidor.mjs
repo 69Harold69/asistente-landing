@@ -168,10 +168,17 @@ export function iniciarServidor({ raiz = RAIZ_SITIO, puerto = 0, host = "127.0.0
   });
 }
 
-// CLI: `node lib/servidor.mjs [--puerto 8765]`
+// CLI: `node lib/servidor.mjs [--puerto 8765] [--host 127.0.0.1]`
+// `--host 0.0.0.0` escucha en la red local (para abrir la rama desde un teléfono en la misma Wi-Fi). Por defecto, solo
+// en esta máquina.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const i = process.argv.indexOf("--puerto");
-  const puerto = i > 0 ? Number(process.argv[i + 1]) : 8765;
-  const s = await iniciarServidor({ puerto });
+  const arg = (n, d) => {
+    const i = process.argv.indexOf(n);
+    return i > 0 ? process.argv[i + 1] : d;
+  };
+  const puerto = Number(arg("--puerto", 8765));
+  const host = arg("--host", "127.0.0.1");
+  const s = await iniciarServidor({ puerto, host });
   console.log(`Sirviendo ${RAIZ_SITIO} en ${s.url} (Ctrl+C para salir)`);
+  if (host === "0.0.0.0") console.log("Escuchando en la red local: abre http://<IP de esta máquina>:" + s.puerto + "/ desde el teléfono (misma Wi-Fi).");
 }

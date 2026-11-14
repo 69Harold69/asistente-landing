@@ -51,7 +51,7 @@ const pasos = [
   // Reglas de las páginas-guía (Article, FAQ visible, sitemap): defectos sembrados que validar debe atrapar (#50).
   ["guias-pruebas", "python3", ["-I", "test_guias.py"]],
   ["portada-pruebas", "python3", ["-I", "test_portada.py"]],
-  // Malla del hero (#26): pausas, reduced-motion, costo por cuadro y contraste AA en píxeles reales.
+  // Malla de fondo continua (#98): onda en reposo, cursor, táctil, pausas, reduced-motion, intensidad, costo por cuadro y contraste AA por sección.
   ["malla", process.execPath, ["malla.mjs", "--salida", path.join(salida, "malla")]],
   // Mirada de la mascota (#27): dirección y tope, giros, transform intacto, reduced-motion y táctil.
   ["mirada", process.execPath, ["mirada.mjs", "--salida", path.join(salida, "mirada")]],
@@ -59,6 +59,13 @@ const pasos = [
   ["rendijas", process.execPath, ["rendijas.mjs", "--salida", path.join(salida, "rendijas")]],
   // Avance de la portada (#60, opción B): sin barra superior; riel entre los puntos, 0-100 %, desvanecido, reduced-motion y sin JS.
   ["progreso", process.execPath, ["progreso.mjs"]],
+  // Vidrio (#100, hoy el defecto de la portada): contraste AA en píxeles con la malla encendida sin huecos (títulos grandes 3:1, texto pequeño sobre el vidrio 4.5:1), claro/oscuro × escritorio/móvil, en TODAS las secciones (hero, 5 fases, «Tu día», cómo funciona, lo que viene, FAQ abierta, quién está detrás) y el header.
+  ["vidrio-contraste", process.execPath, ["vidrio-contraste.mjs", "--salida", path.join(salida, "vidrio-contraste")]],
+  ["vidrio-franja", process.execPath, ["vidrio-franja.mjs", "--salida", path.join(salida, "vidrio-franja")]],
+  // Lectura en móvil (#122): el texto de cada fase se alcanza a leer antes de que el teléfono gire hacia la siguiente (360×740, 390×844, 407×904 y con barras de Chrome, claro y oscuro).
+  ["movil-lectura", process.execPath, ["movil-lectura.mjs"]],
+  // Imán de lectura en móvil táctil (#122): con un gesto suave el scroll termina en la fase siguiente; no regresa al salir; el gesto fuerte pasa de largo; nada fuera del recorrido, con «reducir movimiento» ni en escritorio.
+  ["movil-iman", process.execPath, ["movil-iman.mjs", "--temas", "light,dark"]],
   // Pool del chat (auditoría de la Fase 2): cada escenario llega a su final, con y sin movimiento, sin cortes ni desbordes.
   ["pool-chat", process.execPath, ["pool-chat.mjs", "--salida", path.join(salida, "pool-chat")]],
   ["capturas", process.execPath, ["capturas.mjs", "--tamanos", "escritorio,tablet,tablet768,tabletapaisada,movil", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
@@ -78,6 +85,7 @@ const EXCEPCIONES = {
   "lib/comun.mjs": "librería compartida",
   "lib/scroll.mjs": "librería (rueda real)",
   "lib/servidor.mjs": "librería (servidor de pruebas; también `npm run servir`)",
+  "medir-malla.mjs": "herramienta de medición de la malla (#98): produce una tabla, no es prueba; se corre a mano",
 };
 function sinRegistrar() {
   const corridos = new Set([...pasos, tactil].flatMap(([, , args]) => args).filter((x) => /\.(mjs|py)$/.test(x)).map((x) => path.normalize(x)));

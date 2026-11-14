@@ -8,7 +8,8 @@
     - la espalda (que está en espejo por rotateY(180deg)) también mira hacia el cursor EN PANTALLA;
     - al sacar el cursor vuelve al centro;
     - durante un giro/vuelo de la coreografía no hay saltos ni se pisa el `transform` de la coreografía
-      (la mirada va por la propiedad `translate`) y al terminar el teléfono queda de frente (0°);
+      (la mirada va por la propiedad `translate`), la mirada solo baja (no sigue al cursor) y a los 600 ms está en
+      ~0, y al terminar el teléfono queda de frente (0°);
     - con prefers-reduced-motion y en táctil no se mueve; con colores forzados la mascota no lleva contorno (se
       pintaría como un aro);
     - la inclinación llega al máximo en las esquinas (#99, decisión de Harold): 20° a los lados y 10°
@@ -456,13 +457,15 @@ try {
       const env = document.getElementById("tilt-telefono");
       const dot = () => document.querySelector(".ps-splash .ps-dot");
       const tel = document.getElementById("telefono");
+      let enGiroAhora = false;
       tel.addEventListener("yaruki:estado", (e) => {
+        enGiroAhora = e.detail.enGiro;
         const d = dot();
         const t = d ? getComputedStyle(d).translate : "none";
         const v = t === "none" ? [0, 0] : t.split(" ").map(parseFloat);
         const g = (n) => parseFloat(env.style.getPropertyValue(n)) || 0;
         // Sin Splash montado (otra escena en el teléfono) no hay mascota que medir: `montada` false.
-        r.muestras.push({ t: performance.now(), enGiro: e.detail.enGiro, mascota: e.detail.mascota, montada: !!d, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
+        r.muestras.push({ t: performance.now(), enGiro: e.detail.enGiro, mascota: e.detail.mascota, montada: !!d, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y"), mx: g("--mira-x"), my: g("--mira-y") });
       });
       /* Saltos (auditoría de #99, #88): cada vez que tilt.js escribe sus propiedades (una vez por cuadro de su resorte)
          se registra el valor, con un MutationObserver sobre el `style` del envoltorio. Muestrear en el evento de
@@ -476,7 +479,7 @@ try {
         const g = (n) => parseFloat(env.style.getPropertyValue(n)) || 0;
         // Tiempo del CUADRO (el mismo que recibe el rAF de tilt.js), no la hora del callback: con carga, dos pasos
         // seguidos pueden correr a 8 ms de reloj aunque sus cuadros estén a 33 ms, y eso duplicaba el salto.
-        r.pasos.push({ t: document.timeline.currentTime ?? performance.now(), montada: !!d, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y") });
+        r.pasos.push({ t: document.timeline.currentTime ?? performance.now(), enGiro: enGiroAhora, espalda: tel.dataset.espalda === "visible", montada: !!d, x: v[0] || 0, y: v[1] || 0, rx: g("--tilt-x"), ry: g("--tilt-y"), mx: g("--mira-x"), my: g("--mira-y") });
       }).observe(env, { attributes: true, attributeFilter: ["style"] });
       // Muestreo independiente en cada cuadro: nadie más que stage.js escribe el `transform` del envoltorio
       // de la mascota (sólo "" o scale(n)) y la mascota no tiene `transform` en línea (la mirada va por `translate`).
@@ -551,9 +554,53 @@ try {
       }
     }
     ok(giroTilt.length >= 1 && Math.max(...giroTilt) < 1, `la inclinación se apaga durante el giro (giro más largo ${durMax.toFixed(0)} ms, ${giroTilt.length} muestras, máx ${Math.max(0, ...giroTilt).toFixed(2)}°)`);
-    const giro = muestras.filter((m) => m.enGiro && m.montada);
-    const enMovimiento = giro.filter((m) => Math.hypot(m.x, m.y) > 2.5).length;
-    ok(giro.length > 5 && enMovimiento / giro.length < 0.15, `durante los giros la mirada se apaga (${enMovimiento}/${giro.length} muestras con desplazamiento > 2.5 px)`);
+    /*
+      La mirada se apaga durante los giros (auditoría final, #88). Antes se contaba qué fracción de las muestras con el Splash
+      MONTADO pasaba de 2.5 px (tope 15 %), y eso medía otra cosa: en los giros el Splash está montado pero INVISIBLE (su capa
+      va a opacidad 0 bajo el Login, desde el final del hero), y la fracción dependía de cuántos cuadros duraba ese tramo
+      (velocidad de la rueda y tasa de cuadros), no de la mirada: 8–11 de ~40 en una máquina tranquila, < 6 con carga.
+      Ahora se mide la mirada misma (`--mira-x/y`, la que mueven las dos mascotas) en cada paso del resorte, igual que la
+      inclinación: (1) desde que empieza un giro no vuelve a crecer (no sigue al cursor, que se mueve todo el tiempo), y
+      (2) pasados 600 ms de giro ya está en ~0 (< 5 % de su tope, como la inclinación < 1° de 20°). Los primeros 50 ms se
+      excluyen de (1): el aviso del giro llega un cuadro después del último paso hacia el cursor.
+    */
+    const girosMira = [];
+    {
+      let g = null;
+      for (const p of pasos) {
+        if (!p.enGiro) { g = null; continue; }
+        if (!g) girosMira.push((g = { t0: p.t, pasos: [] }));
+        g.pasos.push({ dt: p.t - g.t0, m: Math.hypot(p.mx, p.my), espalda: p.espalda });
+      }
+    }
+    let crece = 0;
+    let creceDonde = "";
+    const tarde = [];
+    for (const g of girosMira) {
+      const desde = g.pasos.filter((p) => p.dt >= 50);
+      for (let i = 1; i < desde.length; i++) {
+        const d = desde[i].m - desde[i - 1].m;
+        if (d > crece) {
+          crece = d;
+          creceDonde = `a ${desde[i].dt.toFixed(0)} ms del giro, ${desde[i - 1].m.toFixed(3)} → ${desde[i].m.toFixed(3)}`;
+        }
+      }
+    }
+    // (2) en las muestras de stage.js (una por cuadro del giro, aunque el resorte ya se haya detenido en 0).
+    {
+      let t0 = null;
+      for (const m of muestras) {
+        if (!m.enGiro) t0 = null;
+        else {
+          t0 ??= m.t;
+          if (m.t - t0 > 600) tarde.push(Math.hypot(m.mx, m.my));
+        }
+      }
+    }
+    const conEspalda = girosMira.filter((g) => g.pasos.some((p) => p.espalda)).length;
+    ok(girosMira.length >= 2 && conEspalda >= 2, `hubo giros con la espalda a la vista para medir la mirada (${girosMira.length} giros, ${conEspalda} con espalda)`);
+    ok(crece <= 0.002, `durante los giros la mirada no sigue al cursor: solo baja (máx. subida ${crece.toFixed(3)}${creceDonde ? "; " + creceDonde : ""})`);
+    ok(tarde.length >= 1 && Math.max(...tarde) < 0.05, `durante los giros la mirada se apaga: pasados 600 ms ya está en ~0 (${tarde.length} muestras, máx ${Math.max(0, ...tarde).toFixed(3)} de 1)`);
     ok(e.angulo !== null && (e.angulo < 0.6 || e.angulo > 359.4) && e.escena === "splash", `al regresar arriba el teléfono queda de frente en splash (${e.angulo?.toFixed(2)}°, ${e.escena})`);
     /* La escala de la mascota la suaviza stage.js con el scroll: con la máquina cargada sigue bajando un rato después
        de que el estado «reposa» (corrida 10/10 de la auditoría del control 1: «scale(1.06503)»). Se espera por ESTADO

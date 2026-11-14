@@ -48,7 +48,7 @@
 
 @media (max-width: 1023px) {
   .stage {
-    height: var(--franja-alto, 44vh);
+    height: var(--franja-alto, calc(44 * var(--vh-pequeno)));
     background: var(--color-bg);
   }
 
@@ -65,15 +65,38 @@
     pointer-events: none;
   }
 
+  /* Vidrio (#100): la franja es opaca (tapa el texto que sube) y malla.js repinta encima de ese fondo el
+     trozo de malla que le toca, para que la malla se vea también ahí. Va debajo del teléfono y del degradado. */
+  .malla-franja {
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: calc(100% + 2.5rem); /* también cubre el degradado de abajo */
+    pointer-events: none;
+    opacity: var(--malla-intensidad, 1);
+    transition: opacity 700ms ease;
+  }
+
+  /* El degradado queda por debajo del canvas de la malla (los dos son hijos con z-index negativo de `.stage`). */
+  html[data-vidrio] .stage::after {
+    z-index: -2;
+  }
+
   /* Foco no tapado (WCAG 2.4.11): al subir con Shift+Tab el navegador deja
      el enlace en el borde de arriba, detrás de la franja. Con este margen lo
      deja debajo de la franja y de su difuminado (prueba `foco-visible.mjs`). */
   .secciones :is(a, button) {
-    scroll-margin-top: calc(var(--franja-alto, 44vh) + 2.5rem);
+    scroll-margin-top: calc(var(--franja-alto, calc(44 * var(--vh-pequeno))) + 2.5rem);
   }
 }
 
 @media (min-width: 1024px) {
+  .malla-franja {
+    display: none;
+  }
+
   .stage {
     top: var(--space-3);
     height: calc(100vh - var(--space-4));
@@ -159,9 +182,23 @@
    (×19.5/9), con aire de sobra dentro de los 44vh en los 2 tamaños de
    prueba (390×844 y 360×740). */
 @media (max-width: 1023px) {
+  /* El ancho es el de siempre (`18vh`, tope 170 px); `min` con lo que cabe en la franja (ahora en `svh`) solo lo achica
+     cuando, con las barras de Chrome a la vista, la franja no alcanzaría para el teléfono: sin barras no cambia. */
   .escenario-3d {
-    --phone-width: clamp(120px, 18vh, 170px);
+    --phone-width: min(clamp(120px, 18vh, 170px), calc((var(--franja-alto, calc(44 * var(--vh-pequeno))) - 1rem) * 0.4615));
   }
+
+}
+
+/* Sonda de alto: mide en px cuánto es 100svh para stage.js (alto visible pequeño, estable con las barras). */
+.sonda-alto {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: calc(100 * var(--vh-pequeno));
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* Tablet vertical: el teléfono llena la franja de 50vh (base.css) en vez de quedarse en 170px. */
