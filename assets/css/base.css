@@ -2180,10 +2180,11 @@ html[data-vidrio] :is(#hero, .secciones > .seccion) > :is(.fase-titulo, .titular
 
 /* Escritorio bajo (laptops de 1366×768, 1280×720 y 1280×800): la pista «Desliza para descubrir» va en el flujo, debajo
    de la tarjeta, y con menos de 860 px de alto caía bajo el pliegue. El hero se compacta en proporción al alto: cada
-   medida va de su valor normal (a 859 px) a su mínimo (a 720 px). De 860 px para arriba no cambia nada. */
+   medida baja de su valor normal (a 859 px) hasta su mínimo, en dos tramos: suave hasta 720 px y más marcado hasta unos
+   620 px, que es lo que deja el navegador en una laptop de 1366×768. De 860 px para arriba no cambia nada. */
 @media (min-width: 1024px) and (max-height: 859px) {
   html[data-vidrio] #hero {
-    padding-top: clamp(1rem, 14.39vh - 5.475rem, var(--space-4));
+    padding-top: clamp(0.5rem, max(14.39vh - 5.475rem, 8vh - 2.6rem), var(--space-4));
   }
 
   html[data-vidrio] #hero > .hero-significado {
@@ -2191,13 +2192,13 @@ html[data-vidrio] :is(#hero, .secciones > .seccion) > :is(.fase-titulo, .titular
   }
 
   html[data-vidrio] #hero > .titular-hero {
-    font-size: min(var(--text-display), max(3.5rem, 5.76vh + 0.906rem));
-    margin-bottom: clamp(1rem, 5.76vh - 1.59rem, var(--space-3));
+    font-size: min(var(--text-display), max(2.875rem, min(5.76vh + 0.906rem, 10vh - 1rem)));
+    margin-bottom: clamp(0.5rem, min(5.76vh - 1.59rem, 8vh - 2.6rem), var(--space-3));
   }
 
   html[data-vidrio] #hero > .subtitulo-hero {
-    font-size: min(var(--text-entrada), max(1.0625rem, 2.52vh - 0.07rem));
-    margin-bottom: clamp(0.75rem, 17.27vh - 7.02rem, var(--space-4));
+    font-size: min(var(--text-entrada), max(1rem, 2.52vh - 0.07rem, 1vh + 0.6125rem));
+    margin-bottom: clamp(0.375rem, max(17.27vh - 7.02rem, 6vh - 1.95rem), var(--space-4));
   }
 
   html[data-vidrio] #hero > .pista-scroll {
