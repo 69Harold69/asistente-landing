@@ -4,7 +4,7 @@
     - UN solo <canvas class="malla-fondo">, fijo, hijo de <body>, decorativo (aria-hidden, pointer-events: none),
       que PINTA (píxeles no vacíos) en claro y en oscuro; al cambiar de tema se repinta con los colores del tema nuevo;
     - SE MUEVE SOLO: dos cuadros separados en el tiempo, sin tocar el mouse, difieren (onda en reposo);
-    - reacciona al mouse real en escritorio (el color cerca del cursor se enciende al acento y vuelve al salir) y NO
+    - reacciona al mouse real en escritorio (cerca del cursor los puntos crecen y se encienden, y vuelve al salir) y NO
       reacciona en táctil (hover: none), pero sí ondula;
     - ritmo: ~30 fps en reposo y 60 fps solo mientras el cursor se mueve; cero cuadros con la pestaña oculta y con
       <main> fuera de pantalla (el pie lo cubre); se reanuda al volver;
@@ -112,21 +112,46 @@ const huellaTotal = (page) =>
     return h;
   });
 /*
-  «Encendido» del bloque de píxeles alrededor de (x, y): promedio de (azul − rojo) de los píxeles pintados. El gris/beige
-  de reposo da un valor bajo o negativo (claro: −22; oscuro: +23) y el acento morado lo sube mucho (+116 / +101).
-  A diferencia de una huella, no cambia con la onda en reposo, solo con el encendido por el cursor.
+  «Encendido» del bloque de píxeles alrededor de (x, y). Al acercarse el cursor, cada punto de la malla crece de 1.35 a
+  hasta 4.35 px de radio y sube a la opacidad encendida (`--malla-punto-activo`); las líneas apenas cambian.
+  Se mide el ÁREA (px² de CSS) pintada con opacidad efectiva ≥ el punto medio entre la línea encendida y el punto
+  encendido (los dos tokens, leídos del tema): solo la alcanzan los puntos (las líneas son colores opacos ya mezclados
+  con el fondo y no apilan), y encendidos son ~10 veces más grandes. Es la misma medida en claro y en oscuro.
+  Antes se usaba el promedio de (azul − rojo), que medía el CAMBIO DE COLOR: con la malla de claro aprobada (reposo 0.24 /
+  0.54, encendida 0.30 / 0.56, #98) el reposo casi alcanza al encendido y daba +7–8 aunque la reacción estuviera intacta.
+  Se sigue imprimiendo como dato. Quitar la reacción al cursor (malla.js sin `activo`) deja el área igual (8 → 7).
 */
 const encendido = (page, x, y, r = 110) =>
   page.evaluate(([x, y, r]) => {
     const c = document.querySelector("canvas.malla-fondo");
     const b = c.getBoundingClientRect();
     const k = c.width / b.width;
+    const cs = getComputedStyle(document.documentElement);
+    const color = (v) => {
+      const el = document.createElement("i");
+      el.style.setProperty("color", `var(${v})`);
+      document.body.append(el);
+      const m = getComputedStyle(el).color.match(/[\d.]+/g).map(Number);
+      el.remove();
+      return m.slice(0, 3);
+    };
+    const fondo = color("--color-bg");
+    const acento = color("--color-accent");
+    const dist = Math.hypot(acento[0] - fondo[0], acento[1] - fondo[1], acento[2] - fondo[2]);
+    const umbral = (parseFloat(cs.getPropertyValue("--malla-linea-activa")) + parseFloat(cs.getPropertyValue("--malla-punto-activo"))) / 2;
     const x0 = Math.max(0, Math.round((x - r) * k)), y0 = Math.max(0, Math.round((y - r) * k));
     const d = c.getContext("2d").getImageData(x0, y0, Math.round(2 * r * k), Math.round(2 * r * k)).data;
-    let s = 0, n = 0;
-    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 20) { s += d[i + 2] - d[i]; n++; }
-    return n ? s / n : 0;
+    let s = 0, n = 0, area = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] > 20) { s += d[i + 2] - d[i]; n++; }
+      const op = ((d[i + 3] / 255) * Math.hypot(d[i] - fondo[0], d[i + 1] - fondo[1], d[i + 2] - fondo[2])) / dist;
+      if (op >= umbral) area++;
+    }
+    return { area: area / (k * k), azulRojo: n ? s / n : 0 };
   }, [x, y, r]);
+const verEncendido = (v) => `área de puntos encendidos ${v.area.toFixed(0)} px², azul−rojo ${v.azulRojo.toFixed(0)}`;
+/* Lo mínimo que debe crecer esa área con el cursor encima (medido: claro 8 → 79, oscuro 0 → 75; sin reacción, 8 → 7). */
+const AREA_ENCENDIDA = 30;
 const mover = async (page, x0, y0, x1, y1, pasos = 30) => {
   await page.mouse.move(x0, y0);
   for (let i = 1; i <= pasos; i++) {
@@ -187,13 +212,13 @@ try {
     await mover(page, 300, 200, 720, 380);
     await dormir(700);
     const con = await encendido(page, 720, 380);
-    ok(con - sin > 10, `el color cerca del cursor se enciende al acento (azul−rojo ${sin.toFixed(0)} -> ${con.toFixed(0)})`);
+    ok(con.area - sin.area >= AREA_ENCENDIDA, `cerca del cursor la malla se enciende: los puntos crecen y suben al acento (${verEncendido(sin)} -> ${verEncendido(con)}; mínimo +${AREA_ENCENDIDA} px²)`);
     await page.screenshot({ path: path.join(salida, `malla-${tema === "light" ? "claro" : "oscuro"}-cursor.png`) });
     // El cursor se va: la malla vuelve sola a su estado de reposo.
     await page.evaluate(() => document.documentElement.dispatchEvent(new PointerEvent("pointerleave")));
     await dormir(1200);
     const luego = await encendido(page, 720, 380);
-    ok(luego - sin < (con - sin) * 0.3, `al salir el cursor la malla se apaga sola (${con.toFixed(0)} -> ${luego.toFixed(0)})`);
+    ok(luego.area - sin.area < (con.area - sin.area) * 0.3, `al salir el cursor la malla se apaga sola (área ${con.area.toFixed(0)} -> ${luego.area.toFixed(0)} px²)`);
 
     /* ---- 4. cambio de tema repinta ---- */
     if (tema === "light") {
@@ -322,7 +347,7 @@ try {
     await mover(page, 100, 300, 280, 520);
     await dormir(600);
     const con = await encendido(page, 200, 420, 150);
-    ok(con - sin < 8, `móvil: ni el toque ni un mouse emulado la encienden (azul−rojo ${sin.toFixed(0)} -> ${con.toFixed(0)})`);
+    ok(Math.abs(con.area - sin.area) < AREA_ENCENDIDA / 2 && con.azulRojo - sin.azulRojo < 8, `móvil: ni el toque ni un mouse emulado la encienden (${verEncendido(sin)} -> ${verEncendido(con)})`);
     await ctx.close();
   }
 
