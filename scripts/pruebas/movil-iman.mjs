@@ -11,9 +11,20 @@
         (borde de arriba a ≤ 8 px del final del degradado) y, si cabe, entera sobre el borde inferior;
     (c) gesto suave que termina cerca de la fase siguiente (a 190 px de su punto, dentro del rango de proximidad):
         el scroll termina EXACTO (± 2 px) en el punto de esa fase. En cada fase;
-    (d) gesto suave que SALE de una fase (arrastre de 250 px): se queda donde lo dejó el dedo, no vuelve (el imán
-        atrapa al llegar, nunca al salir). También dentro de la tarjeta alta del chat (arrastre de 40 px);
-    (e) gesto fuerte desde Elementos: pasa de largo al menos dos fases (termina más allá del punto de Avisos − rango);
+    (d) remate en la dirección del gesto (segunda ronda): un arrastre suave de 250 px hacia abajo desde una fase termina
+        en el punto de la SIGUIENTE; hacia arriba, en el de la ANTERIOR (o al final de su tarjeta si es alta); un roce
+        de 10 px se queda en su fase. Dentro de la zona de lectura del chat (tarjeta más alta que la pantalla) un
+        arrastre corto se queda donde lo dejó el dedo; pasada su última línea, jala a Elementos;
+    (e) gesto fuerte desde Elementos: pasa de largo al menos dos fases y, después de la inercia, reposa en un punto;
+    (j) reposo: tras arrastres suaves de ±200 px desde 10 posiciones repartidas por el recorrido, el reposo es siempre el
+        punto de una fase o la zona de lectura de chat/«Tu día»; y la dirección se respeta (bajando, nunca termina
+        arriba de donde soltó; subiendo, nunca abajo);
+    (k) tocar durante el jalón lo cancela: con el dedo quieto en la pantalla el scroll no se mueve, y al soltar sin
+        arrastrar se queda donde se detuvo;
+    (l) sin encadenar: un gesto produce un solo jalón (se cuentan las veces que aparece `data-iman-jalando`) y, al
+        terminar, el scroll queda quieto 1.5 s;
+    (m) salida libre: subir 250 px desde el chat (al hero) y bajar 250 px desde el final de «Tu día» (a la parte
+        final) termina donde lo dejó el dedo;
     (f) fuera del recorrido (hero, «Cómo funciona», preguntas, pie) un arrastre suave termina donde lo dejó el dedo;
     (g) hash a una fase deja la tarjeta en su punto; el punto «Inicio» de la navegación lleva a 0; teclado: Flecha
         abajo desde una fase avanza 40 px (no regresa), Fin y Inicio llegan a los extremos; 70 saltos de rueda de 60 px
@@ -22,7 +33,9 @@
         dejó el dedo, sin deslizamiento;
     (i) escritorio (1440×900, ratón): sin `data-iman`.
   Mutación (README de pruebas): sin `inicializarIman()` fallan (b) y (c); sin desarmar al empezar el gesto, falla (d);
-  sin desarmar con rueda todas las anclas cuyo rango contiene la posición, falla la rueda de (g).
+  sin desarmar con rueda todas las anclas cuyo rango contiene la posición, falla la rueda de (g); sin el remate
+  fallan (d) y (j); con el remate hacia la fase más cercana en vez de la de la dirección, falla (d); sin cancelar al
+  tocar, falla (k).
 
   Uso: node movil-iman.mjs [--tamanos 360x740,390x844,407x904] [--temas light,dark] [--video DIR] [--estricto]
 */
@@ -192,22 +205,52 @@ for (const [w, h] of tamanos) {
       const fin = await quieto(page);
       if (Math.abs(fin - x.p) > TOL) falla(`${etiqueta} ${id}: (c) gesto suave desde ${desde} (llega a ~${x.p - 190}) terminó en ${fin}, el punto es ${x.p}`);
     }
-    // (d) salir de una fase con un arrastre suave: no regresa.
-    for (const id of ["fase-elementos", "fase-habitos", "fase-llamada"]) {
+    const lista = FASES.map((id) => punto[id]).filter(Boolean);
+    /** ¿Es `y` un reposo válido? Punto de una fase, zona de lectura de una tarjeta alta, o fuera del recorrido. */
+    const valido = (y) =>
+      y < lista[0].p - TOL || y > lista[lista.length - 1].fin + TOL || lista.some((q) => y >= q.p - TOL && y <= q.fin + TOL);
+    // (d) remate en la dirección del gesto.
+    for (const [i, id] of FASES.entries()) {
       const x = punto[id];
+      const sig = punto[FASES[i + 1]];
+      const ant = punto[FASES[i - 1]];
       if (!x) continue;
+      if (sig && x.fin === x.p) {
+        await ir(page, x.p);
+        await gesto(cdp, vp, suave(250));
+        const fin = await quieto(page);
+        if (Math.abs(fin - sig.p) > TOL) falla(`${etiqueta} ${id}: (d) arrastre suave de 250 px hacia abajo terminó en ${fin}; la fase siguiente está en ${sig.p}`);
+      }
+      if (ant && x.fin === x.p) {
+        await ir(page, x.p);
+        await gesto(cdp, vp, suave(-250));
+        const fin = await quieto(page);
+        if (Math.abs(fin - ant.fin) > TOL) falla(`${etiqueta} ${id}: (d) arrastre suave de 250 px hacia arriba terminó en ${fin}; la fase anterior reposa en ${ant.fin}`);
+      }
+    }
+    {
+      const x = punto["fase-elementos"];
       const desde = await ir(page, x.p);
-      await gesto(cdp, vp, suave(250));
+      await gesto(cdp, vp, suave(10));
       const fin = await quieto(page);
-      if (fin - desde < 200) falla(`${etiqueta} ${id}: (d) al salir con un arrastre suave de 250 px el scroll volvió (${desde} → ${fin})`);
+      if (Math.abs(fin - desde) > TOL) falla(`${etiqueta}: (d) un roce de 10 px en Elementos movió el scroll a ${fin} (estaba en ${desde})`);
     }
-    if (punto["fase-chat"] && punto["fase-chat"].fin > punto["fase-chat"].p + 20) {
-      const desde = await ir(page, punto["fase-chat"].p);
-      await gesto(cdp, vp, suave(40));
+    {
+      const c = punto["fase-chat"];
+      const zona = c.fin - c.p;
+      if (zona > 30) {
+        const d = Math.min(40, zona - 15);
+        const desde = await ir(page, c.p);
+        await gesto(cdp, vp, suave(d));
+        const fin = await quieto(page);
+        if (fin < desde + d - 20 || fin > c.fin + TOL) falla(`${etiqueta}: (d) dentro de la zona de lectura del chat (${c.p}–${c.fin}) el arrastre de ${d} px terminó en ${fin}`);
+      }
+      await ir(page, c.p);
+      await gesto(cdp, vp, suave(zona + 140));
       const fin = await quieto(page);
-      if (fin - desde < 20) falla(`${etiqueta}: (d) dentro de la tarjeta del chat (más alta que la pantalla) el arrastre de 40 px volvió (${desde} → ${fin})`);
+      if (Math.abs(fin - punto["fase-elementos"].p) > TOL) falla(`${etiqueta}: (d) pasada la última línea del chat, el arrastre terminó en ${fin}; Elementos está en ${punto["fase-elementos"].p}`);
     }
-    // (e) fuerte: pasa de largo más de una fase.
+    // (e) fuerte: pasa de largo más de una fase y reposa en un punto.
     {
       let desde = 0;
       let fin = 0;
@@ -218,7 +261,79 @@ for (const [w, h] of tamanos) {
         if (fin >= punto["fase-avisos"].p - rango) break;
       }
       if (fin < punto["fase-avisos"].p - rango) falla(`${etiqueta}: (e) el gesto fuerte desde Elementos (${desde}) terminó en ${fin}; no pasó de Hábitos (Avisos en ${punto["fase-avisos"].p})`);
+      if (!valido(fin)) falla(`${etiqueta}: (e) después del gesto fuerte el scroll reposa en ${fin}, entre dos fases`);
       filas.push({ etiqueta, id: "fuerte", desde, fin });
+    }
+    // (j) reposo y dirección tras arrastres suaves desde posiciones repartidas.
+    {
+      const ini = lista[0].p;
+      const fin0 = lista[lista.length - 1].fin;
+      for (let k = 1; k <= 10; k++) {
+        const y0 = Math.round(ini + ((fin0 - ini) * k) / 11);
+        for (const dist of [200, -200]) {
+          await ir(page, y0);
+          const antes = await leerY(page);
+          await gesto(cdp, vp, suave(dist));
+          const suelta = antes + dist;
+          const fin = await quieto(page);
+          if (!valido(fin)) falla(`${etiqueta}: (j) arrastre de ${dist} px desde ${antes} reposa en ${fin}, entre dos fases`);
+          if (fin >= lista[0].p - TOL && fin <= fin0 + TOL) {
+            if (dist > 0 && fin < suelta - 40) falla(`${etiqueta}: (j) bajando desde ${antes} el remate subió (${suelta} → ${fin})`);
+            if (dist < 0 && fin > suelta + 40) falla(`${etiqueta}: (j) subiendo desde ${antes} el remate bajó (${suelta} → ${fin})`);
+          }
+        }
+      }
+    }
+    // (k) tocar durante el jalón lo cancela; (l) un gesto, un jalón, y quieto al terminar.
+    {
+      await page.evaluate(() => {
+        window.__jalones = 0;
+        new MutationObserver(() => {
+          if (document.documentElement.hasAttribute("data-iman-jalando")) window.__jalones++;
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-iman-jalando"] });
+      });
+      const x = punto["fase-habitos"];
+      await ir(page, x.p);
+      await page.evaluate(() => { window.__jalones = 0; });
+      await gesto(cdp, vp, suave(250));
+      // Espera a que el jalón esté en marcha y lo detiene con un toque sostenido.
+      const t0 = Date.now();
+      while (Date.now() - t0 < 2000 && !(await page.evaluate(() => document.documentElement.hasAttribute("data-iman-jalando")))) await dormir(10);
+      await dormir(120);
+      const xx = Math.round(w / 2);
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: xx, y: Math.round(h * 0.6), id: 1 }] });
+      const alTocar = await leerY(page);
+      await dormir(700);
+      const conDedo = await leerY(page);
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await dormir(1200);
+      const soltado = await leerY(page);
+      if (Math.abs(conDedo - alTocar) > 2) falla(`${etiqueta}: (k) con el dedo en la pantalla el scroll siguió moviéndose (${alTocar} → ${conDedo})`);
+      if (Math.abs(soltado - conDedo) > 2) falla(`${etiqueta}: (k) al soltar sin arrastrar, el jalón cancelado se reanudó (${conDedo} → ${soltado})`);
+      if (Math.abs(alTocar - punto["fase-avisos"].p) < 10) falla(`${etiqueta}: (k) el jalón no se canceló: llegó a Avisos (${alTocar})`);
+      // (l): un gesto desde Hábitos, un solo jalón; quieto después.
+      await ir(page, x.p);
+      await page.evaluate(() => { window.__jalones = 0; });
+      await gesto(cdp, vp, suave(250));
+      const llego = await quieto(page);
+      await dormir(1500);
+      const despues = await leerY(page);
+      const n = await page.evaluate(() => window.__jalones);
+      if (n !== 1) falla(`${etiqueta}: (l) un gesto produjo ${n} jalones (se esperaba 1)`);
+      if (despues !== llego) falla(`${etiqueta}: (l) después del jalón el scroll se movió solo (${llego} → ${despues})`);
+    }
+    // (m) salida libre del recorrido por arriba y por abajo.
+    {
+      const c = punto["fase-chat"];
+      const desde = await ir(page, c.p);
+      await gesto(cdp, vp, suave(-250));
+      const fin = await quieto(page);
+      if (Math.abs(fin - (desde - 250)) > 30) falla(`${etiqueta}: (m) subir 250 px desde el chat (salir al hero) terminó en ${fin}, se esperaba ~${desde - 250}`);
+      const t = punto.cta;
+      const desde2 = await ir(page, t.fin);
+      await gesto(cdp, vp, suave(250));
+      const fin2 = await quieto(page);
+      if (Math.abs(fin2 - (desde2 + 250)) > 30) falla(`${etiqueta}: (m) bajar 250 px desde el final de «Tu día» terminó en ${fin2}, se esperaba ~${desde2 + 250}`);
     }
     // (f) fuera del recorrido: hero, cómo funciona, preguntas y pie.
     for (const [nombre, y] of [["hero", 0], ["como-funciona", e.comoFunciona + 40], ["preguntas", e.preguntas + 40], ["pie", e.max - 400]]) {
