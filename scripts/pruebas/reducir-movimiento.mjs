@@ -46,9 +46,17 @@ const leer = (fases) => {
   return { y: Math.round(scrollY), enPantalla, op: oculto ? 0 : op, capas };
 };
 
+/*
+  Desfase de la rejilla: con «reducir movimiento» la rueda no se suaviza y cada parada cae en un múltiplo exacto de
+  `paso`; como las cuatro combinaciones tienen casi la misma geometría, sin desfase muestrean los MISMOS puntos y un
+  hueco de menos de `paso` px (un fundido de 60 px, por ejemplo) pasa sin verse. Cada combinación arranca corrida
+  `paso / 4` más que la anterior: juntas muestrean cada `paso / 4` px.
+*/
+let combinacion = 0;
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1905, height: 905 }]) {
   for (const tema of temas) {
     const nombre = `${viewport.width}×${viewport.height} ${tema}`;
+    const desfase = Math.round(((combinacion++ % 4) * paso) / 4);
     const ctx = await navegador.newContext({ viewport, reducedMotion: "reduce", colorScheme: tema });
     const page = await ctx.newPage();
     await page.addInitScript(scriptInicial({ tema }));
@@ -60,7 +68,13 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1905, height: 905
     const tope = Math.min(max, fin);
     const huecos = [];
     const mezclas = [];
+    const vistas = new Set();
+    let yMax = 0;
     let paradas = 0;
+    if (desfase) {
+      await page.mouse.wheel(0, desfase);
+      await dormir(espera);
+    }
     const recorrer = async (dir) => {
       let y = await page.evaluate(() => scrollY);
       let quieto = 0;
@@ -72,6 +86,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1905, height: 905
         quieto = Math.abs(e.y - y) < 1 ? quieto + 1 : 0;
         if (quieto > 5) break; // tope del documento
         y = e.y;
+        yMax = Math.max(yMax, e.y);
+        e.enPantalla.forEach((id) => vistas.add(id));
         if (e.enPantalla.length && !(e.op >= 0.99)) huecos.push({ dir, y: e.y, fase: e.enPantalla.join("+"), op: Number(e.op.toFixed(3)) });
         if (e.enPantalla.includes("fase-habitos") && e.capas.length > 1 && e.capas.some((c) => c.op < 0.99))
           mezclas.push({ dir, y: e.y, capas: e.capas.map((c) => `${c.id}:${c.op.toFixed(2)}`).join(" + ") });
@@ -81,7 +97,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1905, height: 905
     await recorrer(1);
     await recorrer(-1);
     await ctx.close();
-    console.log(`${nombre}: ${paradas} paradas, ${huecos.length} sin teléfono a plena opacidad, ${mezclas.length} mezclas en Hábitos`);
+    console.log(`${nombre}: desfase ${desfase} px, ${paradas} paradas, ${huecos.length} sin teléfono a plena opacidad, ${mezclas.length} mezclas en Hábitos`);
+    // Sin esto, una rueda que no mueve la página (foco, overlay, tope mal medido) terminaba «OK» tras 6 paradas.
+    const faltan = FASES.filter((id) => !vistas.has(id));
+    if (yMax < tope - 2 * paso || faltan.length)
+      fallas.push(`${nombre}: el recorrido no se cubrió (llegó a y=${yMax} de ${Math.round(tope)}; fases sin ver: ${faltan.join(", ") || "ninguna"})`);
     if (huecos.length) fallas.push(`${nombre}: con una fase en pantalla el teléfono no estaba a opacidad ≥ 0.99 (${huecos.length} paradas): ${huecos.slice(0, 6).map((h) => `${h.dir > 0 ? "↓" : "↑"}y=${h.y} ${h.fase} op=${h.op}`).join("; ")}`);
     if (mezclas.length) fallas.push(`${nombre}: en Hábitos hay dos pantallas encimadas con opacidad intermedia (${mezclas.length} paradas): ${mezclas.slice(0, 4).map((m) => `${m.dir > 0 ? "↓" : "↑"}y=${m.y} ${m.capas}`).join("; ")}`);
   }
