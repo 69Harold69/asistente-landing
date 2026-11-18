@@ -295,10 +295,6 @@ function cruceDeLectura(previa, nueva, desde, hasta, zonaTexto, vh) {
 const arco = (p) => Math.sin(p * Math.PI);
 const entradaYSalida = (p) => (p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2);
 const limitar01 = (v) => Math.min(Math.max(v, 0), 1);
-const suave = (v) => {
-  const x = limitar01(v);
-  return x * x * (3 - 2 * x);
-};
 
 function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
   const capas = crearCapas(pantalla);
@@ -383,27 +379,6 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       const previa = i === 0 ? "hero" : FASES[i - 1].seccion;
       s.cruceTexto = cruceDeLectura(previa, f.seccion, s.ini - vh * 0.5, s.fin + vh * 0.5, zonaTexto, vh);
     });
-    // Escritorio sin movimiento: el teléfono salta de columna apagado. Se
-    // apaga antes de que el texto que llega alcance su columna y reaparece
-    // recién cuando el texto que se va dejó libre la columna nueva.
-    if (mqEscritorio.matches && stageEl) {
-      const r = telefono.getBoundingClientRect();
-      const st = stageEl.getBoundingClientRect();
-      const pegado = parseFloat(getComputedStyle(stageEl).top) || 0;
-      const telTop = r.top - st.top + pegado;
-      const telBottom = r.bottom - st.top + pegado;
-      // El centro choca con las dos columnas; una columna, sólo con su texto.
-      const choca = (colTexto, colTel) => colTel === 0 || colTexto === colTel;
-      FASES.forEach((f, i) => {
-        const s = segmentos.find((x) => x.tipo === "giro" && x.despues === f.despues);
-        const entra = bloquesDeTexto(f.seccion);
-        const sale = bloquesDeTexto(i === 0 ? "hero" : FASES[i - 1].seccion);
-        s.salidaLibre =
-          entra.length && choca(-s.lado, s.ladoAntes) ? Math.min(...entra.map((b) => b.ini)) - telBottom - 24 - 120 : Infinity;
-        s.regresoLibre =
-          sale.length && choca(-s.ladoAntes, s.lado) ? Math.max(...sale.map((b) => b.fin)) - telTop + 24 : -Infinity;
-      });
-    }
     const iniPrimerGiro = segmentos[0].ini;
     // Centro de cada columna respecto del centro del escenario (que abarca
     // el ancho completo del layout): el teléfono vuela entre esos dos puntos.
@@ -484,9 +459,24 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
     let escena = "login";
     let xFinal = xDe(LADO_HERO);
     for (const s of geo.segmentos) {
-      const ini = conMovimiento || s.tipo !== "giro" ? s.ini : Math.min(s.ini, s.cruceTexto - 160, s.salidaLibre ?? Infinity);
-      const fin =
-        conMovimiento || s.tipo !== "giro" ? s.fin : Math.max(s.fin, s.cruceTexto + 180, (s.regresoLibre ?? -Infinity) + 100);
+      /*
+        Sin movimiento (#128) cada transición es un CORTE en un solo punto de scroll, no un tramo: el giro/vuelo no existe,
+        así que no hay nada que repartir en 100-300 px. Antes el teléfono se desvanecía antes del cruce de lectura y
+        reaparecía recién cuando la columna nueva quedaba libre (`salidaLibre`/`regresoLibre`), y esos dos puntos pueden
+        quedar a ~500 px uno de otro (en Chat: 191 y 727): el teléfono faltaba todo ese tramo y reaparecía a media
+        opacidad. El cruce de lectura (`cruceTexto`) deja al teléfono junto al texto que se está leyendo y sólo una
+        franja chica de texto saliente queda cerca; eso es mejor que un hueco. La opacidad del teléfono es siempre 1.
+        El cruce Hábitos → Logro se corta igual, a la mitad del tramo: nunca hay dos pantallas mezcladas.
+      */
+      if (!conMovimiento) {
+        const corte = s.tipo === "cruce" ? (s.ini + s.fin) / 2 : s.cruceTexto;
+        if (y < corte) break;
+        escena = s.despues;
+        if (s.tipo === "giro") xFinal = xDe(s.lado);
+        continue;
+      }
+      const ini = s.ini;
+      const fin = s.fin;
       if (y < ini) break;
       if (y <= fin) {
         const p = limitar01((y - s.ini) / (s.fin - s.ini));
@@ -495,28 +485,6 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
           e.encima = s.despues;
           e.t = p;
           e.x = xFinal;
-          return e;
-        }
-        if (!conMovimiento) {
-          // Sin giro ni vuelo: la escena cambia justo donde cambia el texto que
-          // se lee. Si además cambia de columna (escritorio), el teléfono se
-          // desvanece, salta de lado invisible y reaparece.
-          if (lateral && s.lado !== s.ladoAntes) {
-            // Se apaga cuando el texto nuevo empieza a subir hacia su columna
-            // y reaparece del otro lado cuando ese texto ya es el que se lee.
-            const salida = Math.min(s.ini, s.cruceTexto - 120, s.salidaLibre ?? Infinity);
-            const regreso = Math.max(s.cruceTexto + 70, s.regresoLibre ?? -Infinity);
-            const ya = y >= s.cruceTexto;
-            e.base = ya ? s.despues : s.antes;
-            e.x = xDe(ya ? s.lado : s.ladoAntes);
-            e.opacidad = ya ? suave((y - regreso) / 100) : 1 - suave((y - salida) / 120);
-          } else {
-            const k = suave((y - s.cruceTexto) / 60 + 1);
-            e.base = s.antes;
-            e.encima = s.despues;
-            e.t = k;
-            e.x = xDe(s.lado);
-          }
           return e;
         }
         const a = arco(p);

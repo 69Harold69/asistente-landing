@@ -106,13 +106,15 @@ ScrollTrigger y `gsap.matchMedia()` con 3 ramas:
 - **Escritorio (≥1024px) con movimiento:** el teléfono cruza de una columna
   a la otra (escala 0.9 a mitad de vuelo) girando 360° en Y entre cada fase,
   y el texto de cada sección va en la columna libre; la escena cambia al 50%
-  del progreso (de espaldas). Sin movimiento, el teléfono salta de columna
-  apagado y reaparece cuando la columna nueva quedó libre de texto.
+  del progreso (de espaldas). Sin movimiento (#128), el teléfono salta de columna
+  con un corte, en el punto donde el texto que se lee cambia de sección, y siempre a plena opacidad (nunca hay un
+  tramo sin teléfono).
 - **Móvil y tablet vertical (<1024px) con movimiento:** el mismo giro 360°, en el lugar, con el
   teléfono en la franja sticky de 44vh. En horizontal (alto ≤520px) el layout
   pasa a 2 columnas.
-- **`prefers-reduced-motion: reduce`:** sin giros ni vuelo; cada fase cruza
-  con un fundido discreto cuando su sección llega a la mitad del viewport.
+- **`prefers-reduced-motion: reduce`:** sin giros ni vuelo; cada fase cambia con un corte (sin fundido, sin
+  opacidad intermedia) cuando el texto que se lee pasa a la sección nueva, y Hábitos → logro se corta a la mitad de
+  su tramo. Lo vigila `reducir-movimiento.mjs` (#128).
 
 **Tablet vertical (opción B, #61):** entre 768 y 1023 px y en vertical la rama móvil se compone aparte (fin de
 `base.css`, `phone.css`): `--franja-alto` (44vh por defecto, 50vh en tablet) gobierna la altura de la franja, el
@@ -1145,6 +1147,7 @@ Qué vigila cada prueba (todas corren en `todo.mjs`):
 | `rendimiento.mjs` | Arranque de la portada en móvil con CPU ×4 y 4G lenta: el LCP es texto del hero (no una imagen ni la malla) y llega en ≤ 2 s; CLS 0.000; TBT ≤ 250 ms (medido con CPU ×4: el de Lighthouse es otra escala); **ningún `<script src>` clásico en el `<head>`** y GSAP no se pide antes del primer pintado. Interacción (Event Timing, el INP de laboratorio): toggle de tema, abrir/cerrar un `<details>`, punto de la navegación, mouse sobre el hero con la malla; cada una ≤ 200 ms con CPU ×4 (hoy la peor, el toggle de tema, ronda 150–180 ms). |
 | `cls.mjs` | CLS ≤ 0.02 en la portada a 360, 390, 412, 820, 1024 y 1440 px con las fuentes 1.5 s tarde, y el reacomodo del hero en el barrido de 320 a 480 px. |
 | `compresion.mjs` | Que el servidor de pruebas comprima como Caddy; sin esto los números del laboratorio no representan a producción. |
+| `reducir-movimiento.mjs` | Con «reducir movimiento» (claro y oscuro, 1440×900 y 1905×905), recorriendo el scroll con rueda real hacia abajo y de vuelta: con una fase en pantalla el teléfono tiene opacidad efectiva ≥ 0.99 (sin huecos) y en Hábitos nunca hay dos pantallas de la escena con opacidad intermedia (#128). |
 | `malla.mjs` | Malla continua (#98): existe y pinta, se mueve sola, reacciona al mouse y no al toque, 30/60 fps, pausas, reduced-motion, intensidad detrás del recorrido, sin JS, costo por cuadro (escritorio < 4 ms y móvil con CPU ×4 < 10 ms) sin tareas largas, `?malla=apagada`, el panel de diagnóstico (reposo/scroll, copiar, plegar), la degradación por software (`?malla-forzar=software`, y sola con CPU ×8, con recuperación) y el defecto táctil «normal», y contraste AA del texto de toda la portada. |
 
 **Por qué el LCP móvil era «bimodal» (1.65 s o 2.3 s, y 1.05 s o 1.5 s con compresión).** Lighthouse no mide el LCP:
