@@ -5,7 +5,7 @@
   diseñadora, Chrome en Windows con los efectos de animación desactivados, vio justo eso).
 
   Recorre el scroll con rueda real, en pasos, hacia abajo y de vuelta hacia arriba, en claro y oscuro, a 1440×900 y
-  1905×905. En cada parada espera a que el cambio de escena se asiente (el corte o fundido corto es de ≤ 200 ms) y falla si:
+  1905×905. En cada parada espera a que el cambio de escena se asiente (con «reducir movimiento» el estado es el de la posición real, sin suavizado; la espera cubre el cuadro siguiente) y falla si:
     (a) hay una fase del recorrido en pantalla y el teléfono no está visible con opacidad efectiva (la suya por la de sus
         ancestros) ≥ 0.99, o
     (b) en Hábitos hay dos pantallas de la escena (capas con escena) a la vez con opacidad intermedia.

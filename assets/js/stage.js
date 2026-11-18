@@ -371,7 +371,7 @@ function inicializarCoreografia(telefono, pantalla, sombraVuelo) {
       s.fin = Math.max(s.fin, s.ini + 1);
       s.paso = (s.fin - s.ini) * (s.tipo === "giro" ? PASO_MAX_GIRO : PASO_MAX_FUNDIDO);
     });
-    // Sin giro, el frente se ve siempre: el fundido tiene que caer justo
+    // Sin giro, el frente se ve siempre: el corte (#128) tiene que caer justo
     // donde el texto que se lee pasa de una sección a la otra.
     const zonaTexto = mqEscritorio.matches ? 0 : mqTabletVertical.matches && stageEl ? stageEl.offsetHeight : 0.44 * vh;
     FASES.forEach((f, i) => {
