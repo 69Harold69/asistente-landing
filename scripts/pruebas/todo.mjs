@@ -66,6 +66,8 @@ const pasos = [
   ["movil-lectura", process.execPath, ["movil-lectura.mjs"]],
   // Imán de lectura en móvil táctil (#122): con un gesto suave el scroll termina en la fase siguiente; no regresa al salir; el gesto fuerte pasa de largo; nada fuera del recorrido, con «reducir movimiento» ni en escritorio.
   ["movil-iman", process.execPath, ["movil-iman.mjs", "--temas", "light,dark"]],
+  // Reducir movimiento (#128): el teléfono nunca desaparece con una fase en pantalla y Hábitos no mezcla dos pantallas.
+  ["reducir-movimiento", process.execPath, ["reducir-movimiento.mjs"]],
   // Pool del chat (auditoría de la Fase 2): cada escenario llega a su final, con y sin movimiento, sin cortes ni desbordes.
   ["pool-chat", process.execPath, ["pool-chat.mjs", "--salida", path.join(salida, "pool-chat")]],
   ["capturas", process.execPath, ["capturas.mjs", "--tamanos", "escritorio,tablet,tablet768,tabletapaisada,movil", "--salida", path.join(salida, "capturas"), ...video, ...paginas, ...estricto]],
