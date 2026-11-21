@@ -852,43 +852,29 @@ Hecho:
 - **Caddy, bloque nuevo (2026-11-20, «primera recarga»):** el servidor ya sirve `yarukiapp.com` con una copia exacta del
   bloque de «Despliegue §3» (mismo clon `/var/www/asistente-landing`, mismas cabeceras, CSP y `hide`), con log propio
   en `/var/log/caddy/yarukiapp-access.log`, y `www.yarukiapp.com` redirige con 301 a `https://yarukiapp.com{uri}`.
-  `yaruki.hjgr.dev` sigue sirviendo el sitio igual por ahora.
-- **Repo:** esta rama (`claude/landing-migracion-yarukiapp`): `python3 scripts/dominio.py --origen https://yarukiapp.com`
-  (canonical, OG, Twitter, JSON-LD, enlaces absolutos, `sitemap.xml`, `robots.txt`, `sitio.json`), `lastmod` de las 6 URLs
-  y este README. Se publica por tag (ver «Despliegue §5»).
+  La «primera recarga» no tocó `yaruki.hjgr.dev`.
+- **Repo:** PR #130 (`python3 scripts/dominio.py --origen https://yarukiapp.com`: canonical, OG, Twitter, JSON-LD, enlaces
+  absolutos, `sitemap.xml`, `robots.txt`, `sitio.json`; `lastmod` de las 6 URLs y este README). Publicado el 2026-11-20
+  con el tag `publicable-2026-11-20a`.
+- **IndexNow** del dominio nuevo: enviado el 2026-11-20 (respuesta `202`).
+- **Redirección 301 del dominio viejo (2026-11-20, «segunda recarga»):** `yaruki.hjgr.dev` redirige a
+  `https://yarukiapp.com{uri}` conservando ruta y query. Siguen sirviéndose **sin redirigir**, desde el dominio viejo, dos
+  archivos: `/google9633e8d6c904333e.html` (verificación de Search Console: no sigue redirecciones a otro dominio y la
+  propiedad vieja debe seguir verificada para «Cambio de dirección») y la clave de IndexNow
+  (`/72d573f4443baf5a20fc8627fb495555.txt`). En la misma recarga, las cabeceras de seguridad pasaron a un snippet
+  compartido que también cubre los 404. El bloque real, los scripts de las dos recargas, sus respaldos y el rollback
+  están en el repo de ops: `docs/entornos-landing.md` e `infra/caddy/`. Comprueba con
+  `curl -sI https://yaruki.hjgr.dev/privacidad/ | head -3` (301 y `location: https://yarukiapp.com/privacidad/`).
+  Plan: mantener el 301 indefinidamente (Google recomienda al menos un año:
+  <https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes>).
 
 Pendiente:
-1. **Redirección 301 del dominio viejo («segunda recarga»)**, después de publicar este código. Cambia el bloque de
-   `yaruki.hjgr.dev` por el de abajo. Siguen sirviéndose **sin redirigir**, desde el dominio viejo, dos archivos:
-   `/google9633e8d6c904333e.html` (verificación de Search Console: no sigue redirecciones a otro dominio y la
-   propiedad vieja debe seguir verificada para «Cambio de dirección») y el archivo de la clave de IndexNow
-   (`/72d573f4443baf5a20fc8627fb495555.txt`).
-
-   ```caddyfile
-   yaruki.hjgr.dev {
-   	root * /var/www/asistente-landing
-
-   	@verificacion path /google9633e8d6c904333e.html /72d573f4443baf5a20fc8627fb495555.txt
-   	handle @verificacion {
-   		file_server
-   	}
-
-   	handle {
-   		redir https://yarukiapp.com{uri} permanent
-   	}
-   }
-   ```
-
-   Valida y recarga con `sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
-   `{uri}` conserva ruta y query; `permanent` es un 301. Comprueba con
-   `curl -sI https://yaruki.hjgr.dev/privacidad/ | head -3` (301 y `location: https://yarukiapp.com/privacidad/`), y lo mismo con
-   `/`, `/terminos/`, `/eliminar-cuenta/`, `/sitemap.xml` y una URL inexistente. **Aún no existe**: no lo des por hecho.
-   Plan: mantenerlo indefinidamente (Google recomienda al menos un año:
-   <https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes>).
+1. **Los archivos `google9633e8d6c904333e.html` y `72d573f4443baf5a20fc8627fb495555.txt` no se borran del repo:** el dominio
+   viejo los sirve desde este mismo clon. Mantenerlos al menos 6 meses.
 2. **Search Console y Bing Webmaster Tools** (Harold): dar de alta y verificar el dominio nuevo, «Cambio de dirección» desde la
    propiedad vieja, enviar el sitemap nuevo. La guía detallada vive en el repo de ops, `docs/guia-buscadores-landing.md`.
 3. **App Android:** las URLs legales de `app/src/main/res/values/enlaces_legales.xml` siguen apuntando al dominio viejo
-   (funcionan mientras exista el 301): issue `asistente-android#203`.
+   (funcionan por el 301): issue `asistente-android#203`.
 4. **Backend:** referencias al dominio viejo (comentario de `config/legal.php`, runbooks): issue `asistente-backend#414`.
 5. **Correo:** `privacidad@hjgr.dev` no cambia hasta la tanda de correos.
 6. **Vista previa:** `dev.yaruki.hjgr.dev` se queda por ahora en el dominio viejo (mudarla: `asistente-ia-ops#30`).
