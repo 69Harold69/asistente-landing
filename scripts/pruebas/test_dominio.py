@@ -15,10 +15,12 @@ import unittest
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent.parent
 DOMINIO = RAIZ / "scripts" / "dominio.py"
-VIEJO = "yaruki.hjgr.dev"
+# «VIEJO» = el origen con el que parte el arbol real (el de scripts/sitio.json), no uno escrito a mano:
+# asi la prueba sigue valiendo tras cualquier mudanza.
+VIEJO = json.loads((RAIZ / "scripts" / "sitio.json").read_text(encoding="utf-8"))["origen"].split("://", 1)[1]
 NUEVO = "https://yaruki.app"
 # Unicos sitios donde el dominio viejo PUEDE seguir apareciendo tras mudarse (ver README, «Mudanza a dominio propio»):
-EXCEPCIONES = {"README.md", "scripts/pruebas/test_dominio.py", "scripts/pruebas/test_jsonld.py"}  # el README documenta la mudanza; esta prueba usa el dominio como dato
+EXCEPCIONES = {"README.md", "scripts/pruebas/test_dominio.py"}  # el README documenta la mudanza; esta prueba usa el dominio como dato
 IGNORAR = shutil.ignore_patterns(".git", "node_modules")
 
 
