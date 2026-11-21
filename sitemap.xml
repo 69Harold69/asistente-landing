@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://yaruki.hjgr.dev/</loc>
+    <loc>https://yarukiapp.com/</loc>
     <lastmod>2026-11-13</lastmod>
   </url>
   <url>
-    <loc>https://yaruki.hjgr.dev/privacidad/</loc>
+    <loc>https://yarukiapp.com/privacidad/</loc>
     <lastmod>2026-11-12</lastmod>
   </url>
   <url>
-    <loc>https://yaruki.hjgr.dev/terminos/</loc>
+    <loc>https://yarukiapp.com/terminos/</loc>
     <lastmod>2026-11-12</lastmod>
   </url>
   <url>
-    <loc>https://yaruki.hjgr.dev/eliminar-cuenta/</loc>
+    <loc>https://yarukiapp.com/eliminar-cuenta/</loc>
     <lastmod>2026-11-11</lastmod>
   </url>
   <url>
-    <loc>https://yaruki.hjgr.dev/organizar-tareas-con-ia/</loc>
+    <loc>https://yarukiapp.com/organizar-tareas-con-ia/</loc>
     <lastmod>2026-11-13</lastmod>
   </url>
   <url>
-    <loc>https://yaruki.hjgr.dev/recordatorios-por-voz/</loc>
+    <loc>https://yarukiapp.com/recordatorios-por-voz/</loc>
     <lastmod>2026-11-13</lastmod>
   </url>
 </urlset>
