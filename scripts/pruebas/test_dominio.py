@@ -15,10 +15,12 @@ import unittest
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent.parent
 DOMINIO = RAIZ / "scripts" / "dominio.py"
-VIEJO = "yaruki.hjgr.dev"
+# «VIEJO» = el origen con el que parte el arbol real (el de scripts/sitio.json), no uno escrito a mano:
+# asi la prueba sigue valiendo tras cualquier mudanza.
+VIEJO = json.loads((RAIZ / "scripts" / "sitio.json").read_text(encoding="utf-8"))["origen"].split("://", 1)[1]
 NUEVO = "https://yaruki.app"
 # Unicos sitios donde el dominio viejo PUEDE seguir apareciendo tras mudarse (ver README, «Mudanza a dominio propio»):
-EXCEPCIONES = {"README.md", "scripts/pruebas/test_dominio.py", "scripts/pruebas/test_jsonld.py"}  # el README documenta la mudanza; esta prueba usa el dominio como dato
+EXCEPCIONES = {"README.md", "scripts/pruebas/test_dominio.py"}  # el README documenta la mudanza; esta prueba usa el dominio como dato
 IGNORAR = shutil.ignore_patterns(".git", "node_modules")
 
 
@@ -186,6 +188,41 @@ class Auditoria(Base):
         idx = (self.raiz / "index.html").read_text(encoding="utf-8")
         self.assertIn("mailto:privacidad@hjgr.dev", idx)
         self.assertIn("play.google.com/apps/testing/dev.hjgr.yaruki", idx)
+
+
+class DominioAnterior(unittest.TestCase):
+    """Tras la mudanza, `dominio.py --check` ya no ve el dominio anterior como propio (ver
+    test_fuga_en_js_manifest_o_texto_se_reporta_y_falla): un `<a href>`, una cadena de JS o CSS o un texto
+    con el host anterior pasaria sin aviso. Esta guardia lo busca, con o sin esquema, en todo el arbol."""
+
+    ANTERIORES = ("yaruki.hjgr.dev",)  # dominios de los que el sitio ya se mudo (README, «Mudanza a dominio propio»)
+    BINARIOS = (".png", ".ico", ".woff2", ".webp", ".jpg", ".jpeg", ".gif")
+
+    def apariciones(self, raiz):
+        return [
+            k for k in huella(raiz)
+            if k not in EXCEPCIONES and not k.endswith(self.BINARIOS)
+            and any(h in (raiz / k).read_text(encoding="utf-8", errors="ignore") for h in self.ANTERIORES)
+        ]
+
+    def test_el_arbol_real_no_nombra_el_dominio_anterior(self):
+        self.assertEqual(self.apariciones(RAIZ), [], "el dominio anterior reaparece (corrige a mano; README, «Mudanza a dominio propio»)")
+
+    def test_la_guardia_atrapa_href_js_css_y_texto(self):
+        casos = {
+            "href": ("index.html", '<a href="#', '<a href="https://yaruki.hjgr.dev/privacidad/">x</a><a href="#'),
+            "js": ("assets/js/config.js", 'export const BRAND_NAME', 'const U = "https://yaruki.hjgr.dev/";\nexport const BRAND_NAME'),
+            "css": ("assets/css/base.css", ":root", "/* https://yaruki.hjgr.dev/ */\n:root"),
+            "texto": ("terminos/index.html", "</h1>", " yaruki.hjgr.dev</h1>"),
+        }
+        for nombre, (ruta, viejo, nuevo) in casos.items():
+            with self.subTest(nombre), tempfile.TemporaryDirectory() as tmp:
+                raiz = pathlib.Path(tmp) / "sitio"
+                shutil.copytree(RAIZ, raiz, ignore=IGNORAR)
+                t = (raiz / ruta).read_text(encoding="utf-8")
+                self.assertIn(viejo, t)
+                (raiz / ruta).write_text(t.replace(viejo, nuevo, 1), encoding="utf-8")
+                self.assertEqual(self.apariciones(raiz), [ruta])
 
 
 @unittest.skipUnless(shutil.which("node") and (RAIZ / "scripts/pruebas/node_modules").exists(), "requiere node y npm ci en scripts/pruebas")

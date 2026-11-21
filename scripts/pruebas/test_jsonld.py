@@ -3,6 +3,7 @@
 
 Uso:  python3 -I scripts/pruebas/test_jsonld.py   (requiere node y `npm ci` en scripts/pruebas)
 """
+import json
 import os
 import pathlib
 import shutil
@@ -11,6 +12,7 @@ import tempfile
 import unittest
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent.parent
+ORIGEN = json.loads((RAIZ / "scripts" / "sitio.json").read_text(encoding="utf-8"))["origen"]
 IGNORAR = shutil.ignore_patterns(".git", "node_modules")
 
 
@@ -38,14 +40,14 @@ class Mutaciones(unittest.TestCase):
 
     def test_cada_defecto_se_detecta(self):
         casos = {
-            "referencia @id sin definir": ("index.html", '"author": { "@id":', '"author": { "@id": "https://yaruki.hjgr.dev/#nadie", "x":0 }, "z": { "@id":'),
+            "referencia @id sin definir": ("index.html", '"author": { "@id":', f'"author": {{ "@id": "{ORIGEN}/#nadie", "x":0 }}, "z": {{ "@id":'),
             "nombre de persona no publicado": ("index.html", '"name": "Harold de Jesús García Ramírez"', '"name": "Nombre Inventado Pérez"'),
             "aggregateRating prohibido": ("index.html", '"isAccessibleForFree": true', '"aggregateRating": {"ratingValue": 5}, "isAccessibleForFree": true'),
             "downloadUrl prohibido": ("index.html", '"isAccessibleForFree": true', '"downloadUrl": "https://play.google.com/x", "isAccessibleForFree": true'),
             "sin BreadcrumbList en página legal": ("terminos/index.html", '"@type": "BreadcrumbList"', '"@type": "ItemList"'),
             "falta og:image:alt": ("privacidad/index.html", 'property="og:image:alt"', 'property="og:image:altx"'),
             "falta theme-color oscuro": ("terminos/index.html", '(prefers-color-scheme: dark)', '(prefers-color-scheme: x)'),
-            "item relativo en BreadcrumbList": ("terminos/index.html", '"item": "https://yaruki.hjgr.dev/"', '"item": "/"'),
+            "item relativo en BreadcrumbList": ("terminos/index.html", f'"item": "{ORIGEN}/"', '"item": "/"'),
             "moneda no ISO 4217": ("index.html", '"priceCurrency": "MXN"', '"priceCurrency": "pesos"'),
             "precio no numérico": ("index.html", '"price": "0"', '"price": "gratis"'),
             "dato personal nuevo en Person": ("index.html", '"name": "Harold de Jesús García Ramírez"', '"name": "Harold de Jesús García Ramírez", "email": "otro@example.com"'),

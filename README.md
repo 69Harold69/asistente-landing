@@ -1,6 +1,6 @@
 # asistente-landing — sitio de Yaruki
 
-Sitio estático (HTML/CSS/JS, sin paso de build) para `yaruki.hjgr.dev`. Construido
+Sitio estático (HTML/CSS/JS, sin paso de build) para `yarukiapp.com`. Construido
 según `asistente-ia-ops/docs/plan-landing-yaruki.md`. Incluye el teléfono 3D
 con la coreografía de scroll (`assets/js/stage.js`), la demo de tema al
 cargar con revelado circular (`theme-demo.js`) y los detalles de la ronda del
@@ -610,7 +610,7 @@ la regla `portada` en `validar.mjs` en la misma PR, y no agregues `Review` ni `a
   del sistema) y se pasó a PNG de 8 bits con ImageMagick (~20 KB).
 
 Los metadatos `og:*` y `twitter:*` de `index.html` apuntan a
-`https://yaruki.hjgr.dev/`, con URL absoluta (las redes no resuelven
+`https://yarukiapp.com/`, con URL absoluta (las redes no resuelven
 rutas relativas). Si cambia el dominio, actualizarlos junto con
 `<link rel="canonical">`.
 
@@ -791,7 +791,7 @@ el protocolo exige publicarla (no es un secreto) y su contenido es exactamente l
 (el `hide` del bloque de Caddy solo cubre `.git*`, `README.md`, `scripts`, `package.json`, `package-lock.json` y `node_modules`). Tras publicar el tag en el droplet:
 
 ```bash
-curl -s https://yaruki.hjgr.dev/72d573f4443baf5a20fc8627fb495555.txt   # debe imprimir exactamente la clave
+curl -s https://yarukiapp.com/72d573f4443baf5a20fc8627fb495555.txt   # debe imprimir exactamente la clave
 ```
 
 Después de cada publicación, desde tu laptop y con el repo ya actualizado (avisa solo de las páginas del
@@ -808,14 +808,17 @@ de `scripts/sitio.json`, así que tras la mudanza a dominio propio el aviso sigu
 
 ## Mudanza a dominio propio
 
-El dominio vive en **un solo lugar**: `scripts/sitio.json` (`{"origen": "https://yaruki.hjgr.dev"}`).
+**Registro (2026-11-20):** el sitio se muda de `https://yaruki.hjgr.dev` a **`https://yarukiapp.com`**.
+La mudanza va por etapas; esto es lo hecho y lo que falta.
+
+El dominio vive en **un solo lugar**: `scripts/sitio.json` (hoy `{"origen": "https://yarukiapp.com"}`).
 `scripts/dominio.py` (solo biblioteca estándar) reescribe a partir de ahí todas las URLs
-absolutas, de forma idempotente, sin build:
+absolutas, de forma idempotente, sin build (sigue valiendo para una mudanza futura):
 
 ```bash
-python3 scripts/dominio.py --check                    # no escribe; sale ≠ 0 si algo no coincide
-python3 scripts/dominio.py --origen https://yaruki.app  # fija sitio.json y reescribe
-python3 scripts/dominio.py                            # reescribe al origen de sitio.json
+python3 scripts/dominio.py --check                            # no escribe; sale ≠ 0 si algo no coincide
+python3 scripts/dominio.py --origen https://otro.example      # fija sitio.json y reescribe (ejemplo)
+python3 scripts/dominio.py                                    # reescribe al origen de sitio.json
 ```
 
 Reescribe: `canonical` y `alternate`, `og:url`, `og:image`, `twitter:image`/`twitter:url`, cualquier
@@ -827,78 +830,74 @@ legítimo; si lo es, agrega su host a `EXTERNOS` en `dominio.py` y `validar.mjs`
 dominio viejo en JS, CSS, JSON/manifest, XML, TXT, SVG o texto del HTML (se corrige a mano).
 `validar` lee `sitio.json` (no tiene el dominio escrito) y su regla `dominio` falla si queda una
 URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus pruebas
-(`scripts/pruebas/test_dominio.py`, que prueban el viaje de ida y vuelta byte a byte).
+(`scripts/pruebas/test_dominio.py`, que prueban el viaje de ida y vuelta byte a byte). Ojo: tras la mudanza, `--check`
+ya no ve el dominio anterior como propio; por eso `test_dominio.py` (clase `DominioAnterior`) busca `yaruki.hjgr.dev`,
+con o sin esquema, en todo el árbol salvo las excepciones de abajo.
 
-**Excepciones deliberadas** (el dominio viejo puede seguir apareciendo ahí):
-- Este README (documenta la mudanza y el despliegue).
-- `scripts/pruebas/test_dominio.py` (lo usa como dato de prueba).
+**Excepciones deliberadas** (el dominio viejo, `yaruki.hjgr.dev`, puede seguir apareciendo ahí):
+- Este README (documenta la mudanza, el dominio viejo como origen de la redirección y el despliegue).
+- `scripts/pruebas/test_dominio.py` (usa hosts de ejemplo como dato de prueba, su origen de partida sale de `sitio.json`, y
+  nombra el dominio anterior para buscarlo).
+- `dev.yaruki.hjgr.dev`: la vista previa con contraseña, que se queda en el dominio viejo (no es el sitio público).
 - `privacidad@hjgr.dev`: es el **correo** de contacto, no la URL del sitio. Sigue igual mientras
   el buzón siga en `hjgr.dev`; si algún día se muda, es un buscar-y-reemplazar aparte en las 4 páginas
   (los textos legales no nombran el dominio del sitio, solo ese correo).
 - `dev.hjgr.yaruki` (identificador del paquete en Play) y `asistente.hjgr.dev` (la API): no son el sitio.
 
-### Pasos para Harold
+### Estado de la mudanza
 
-1. **Comprar el dominio** (`yaruki.app` o `.mx`) y ponerlo en Cloudflare. DNS: registro `A` de la raíz
-   (y de `www`) a `159.223.135.90`, **DNS only** (nube gris), igual que en «Despliegue».
-2. **Caddy: bloque nuevo.** Copia el bloque de `yaruki.hjgr.dev` de «Despliegue §3» (con el mismo `hide`,
-   que debe incluir `scripts package.json package-lock.json`) cambiando solo el encabezado por
-   `yaruki.app { ... }`, y agrega `www.yaruki.app { redir https://yaruki.app{uri} permanent }`.
-   El mismo clon `/var/www/asistente-landing` sirve a los dos. Valida y recarga:
-   `sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
-3. **En el repo** (PR normal): `python3 scripts/dominio.py --origen https://yaruki.app`, luego
-   `cd scripts/pruebas && node validar.mjs` (debe dar 0), revisar `git diff` y, en `main`, `python3 scripts/versionar.py`.
-   Actualiza en el README el `yaruki.hjgr.dev` de los comandos de verificación. Despliega con un tag (ver «Despliegue §5»).
-4. **Redirecciones 301 del dominio viejo, ruta por ruta.** Cambia el bloque de `yaruki.hjgr.dev` por:
+Hecho:
+- **Dominio elegido:** `yarukiapp.com` (2026-11-20).
+- **DNS:** hecho.
+- **Caddy, bloque nuevo (2026-11-20, «primera recarga»):** el servidor ya sirve `yarukiapp.com` con una copia exacta del
+  bloque de «Despliegue §3» (mismo clon `/var/www/asistente-landing`, mismas cabeceras, CSP y `hide`), con log propio
+  en `/var/log/caddy/yarukiapp-access.log`, y `www.yarukiapp.com` redirige con 301 a `https://yarukiapp.com{uri}`.
+  `yaruki.hjgr.dev` sigue sirviendo el sitio igual por ahora.
+- **Repo:** esta rama (`claude/landing-migracion-yarukiapp`): `python3 scripts/dominio.py --origen https://yarukiapp.com`
+  (canonical, OG, Twitter, JSON-LD, enlaces absolutos, `sitemap.xml`, `robots.txt`, `sitio.json`), `lastmod` de las 6 URLs
+  y este README. Se publica por tag (ver «Despliegue §5»).
+
+Pendiente:
+1. **Redirección 301 del dominio viejo («segunda recarga»)**, después de publicar este código. Cambia el bloque de
+   `yaruki.hjgr.dev` por el de abajo. Siguen sirviéndose **sin redirigir**, desde el dominio viejo, dos archivos:
+   `/google9633e8d6c904333e.html` (verificación de Search Console: no sigue redirecciones a otro dominio y la
+   propiedad vieja debe seguir verificada para «Cambio de dirección») y el archivo de la clave de IndexNow
+   (`/72d573f4443baf5a20fc8627fb495555.txt`).
 
    ```caddyfile
    yaruki.hjgr.dev {
    	root * /var/www/asistente-landing
 
-   	# El archivo de verificación de Search Console sigue respondiendo 200 en el dominio viejo
-   	# (Search Console no sigue redirecciones a otro dominio al verificar y revisa el archivo
-   	# periódicamente), para que la propiedad vieja siga verificada y «Cambio de dirección» funcione.
-   	@verificacion path /google9633e8d6c904333e.html
+   	@verificacion path /google9633e8d6c904333e.html /72d573f4443baf5a20fc8627fb495555.txt
    	handle @verificacion {
    		file_server
    	}
 
    	handle {
-   		redir https://yaruki.app{uri} permanent
+   		redir https://yarukiapp.com{uri} permanent
    	}
    }
    ```
 
-   Valida y recarga igual que en el paso 2 (`sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`).
-   `{uri}` conserva ruta y query (`/privacidad/` → `https://yaruki.app/privacidad/`); `permanent` es un 301.
-   Comprueba: `curl -sI https://yaruki.hjgr.dev/privacidad/ | head -3` (301 y `location: https://yaruki.app/privacidad/`),
-   y lo mismo con `/`, `/terminos/`, `/eliminar-cuenta/`, `/sitemap.xml` y una URL inexistente.
-5. **Search Console.**
-   - Da de alta el dominio nuevo y verifícalo. `google9633e8d6c904333e.html` **no se toca**: se queda en el repo
-     (y en el sitio viejo, ver paso 4). Ese archivo verifica una propiedad por prefijo de URL del dominio donde
-     responde; como el repo ahora también lo sirve en `yaruki.app`, puede verificar la propiedad nueva, pero lo más sólido es
-     una propiedad de **dominio** con registro TXT en DNS, que cubre `www` y subdominios. La propiedad vieja debe seguir verificada.
-   - Con ambas verificadas, en la propiedad **vieja**: Configuración → **Cambio de dirección** → elige la nueva.
-     (Solo aplica al pasar de un dominio o subdominio a otro, que es este caso.)
-   - Envía el sitemap nuevo (`https://yaruki.app/sitemap.xml`) y pide indexar la portada.
-   - Bing Webmaster Tools: da de alta el dominio nuevo (puedes importarlo de Search Console).
-   - Orden que recomienda Google: redirecciones, revisar canonical/robots, probarlas, Cambio de dirección, mantener
-     las redirecciones y enviar el sitemap nuevo.
-6. **Cuánto mantener el 301:** Google dice «Keep the redirects for as long as possible» y, en general, **al menos
-   un año**, pudiendo ser indefinido. Plan: mantenerlo indefinidamente (cuesta nada). Fuente:
-   <https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes> (consultada el 2026-11-10).
-7. **App Links / `ANDROID_APP_SHA256`: no intervienen.** Verificado en `asistente-android` `origin/main`
-   (`app/src/prod/AndroidManifest.xml`, `MainActivity.kt`) y en `.well-known`: los App Links usan el dominio de la **API**
-   (`asistente.hjgr.dev`, que sirve `/.well-known/assetlinks.json`), no el de la landing. `/.well-known/` de la landing no se toca.
-8. **App Android:** `app/src/main/res/values/enlaces_legales.xml` tiene escritas las URLs legales de
-   `yaruki.hjgr.dev`. Siguen funcionando mientras el 301 exista, pero conviene cambiarlas en la siguiente versión
-   (y su prueba `AbrirEnlaceExternoTest`). Backend: solo un comentario en `config/legal.php` y los runbooks.
-9. **Enlace de la beta** (`href` de los botones `[data-cta-beta]` de `index.html`; antes `BETA_URL`): es el Google Group de testers; no depende del dominio. No cambia.
-10. **Política de privacidad y Términos:** no nombran el dominio del sitio (solo el correo): no requieren texto nuevo.
-11. **Ficha de Play Console:** actualiza la **URL de la política de privacidad** (Contenido de la app), el sitio web
-    del desarrollador, el enlace de eliminación de cuenta del formulario de Seguridad de los datos y el correo/URL de
-    contacto si los muestra. El enlace viejo seguirá redirigiendo.
-12. **Backlinks:** actualiza el perfil de GitHub, la descripción del repo y lo que enlace al dominio viejo.
+   Valida y recarga con `sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
+   `{uri}` conserva ruta y query; `permanent` es un 301. Comprueba con
+   `curl -sI https://yaruki.hjgr.dev/privacidad/ | head -3` (301 y `location: https://yarukiapp.com/privacidad/`), y lo mismo con
+   `/`, `/terminos/`, `/eliminar-cuenta/`, `/sitemap.xml` y una URL inexistente. **Aún no existe**: no lo des por hecho.
+   Plan: mantenerlo indefinidamente (Google recomienda al menos un año:
+   <https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes>).
+2. **Search Console y Bing Webmaster Tools** (Harold): dar de alta y verificar el dominio nuevo, «Cambio de dirección» desde la
+   propiedad vieja, enviar el sitemap nuevo. La guía detallada vive en el repo de ops, `docs/guia-buscadores-landing.md`.
+3. **App Android:** las URLs legales de `app/src/main/res/values/enlaces_legales.xml` siguen apuntando al dominio viejo
+   (funcionan mientras exista el 301): issue `asistente-android#203`.
+4. **Backend:** referencias al dominio viejo (comentario de `config/legal.php`, runbooks): issue `asistente-backend#414`.
+5. **Correo:** `privacidad@hjgr.dev` no cambia hasta la tanda de correos.
+6. **Vista previa:** `dev.yaruki.hjgr.dev` se queda por ahora en el dominio viejo (mudarla: `asistente-ia-ops#30`).
+7. **Ficha de Play Console y backlinks** (perfil de GitHub, descripción del repo): actualizar al dominio nuevo cuando se
+   decida (sin verificar en esta tanda).
+
+Sin cambios: la **API** `asistente.hjgr.dev` y los App Links (usan el dominio de la API, no el de la landing; `/.well-known/` de la
+landing no se toca). El enlace de la beta (`[data-cta-beta]`) es el Google Group de testers y no depende del dominio. La
+política de privacidad y los Términos no nombran el dominio del sitio (solo el correo).
 
 ## Despliegue (NO ejecutado — sólo instrucciones para cuando el dueño lo apruebe)
 
@@ -940,7 +939,7 @@ Agregar al `Caddyfile` del droplet (junto al bloque existente de
 `asistente.hjgr.dev`), **sin tocarlo**:
 
 ```caddyfile
-yaruki.hjgr.dev {
+yarukiapp.com {
 	root * /var/www/asistente-landing
 	encode gzip zstd
 
@@ -973,16 +972,28 @@ yaruki.hjgr.dev {
 		-Server
 	}
 }
+
+www.yarukiapp.com {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	redir https://yarukiapp.com{uri} permanent
+}
 ```
 
 Notas:
+- **Dominio:** el bloque principal es `yarukiapp.com` (antes `yaruki.hjgr.dev`; ver «Mudanza a dominio propio»). En el servidor tiene
+  además un log propio, `/var/log/caddy/yarukiapp-access.log`, que este README no reproduce.
 - **CSP:** todo el JS (GSAP, ScrollTrigger y canvas-confetti vendorizados en
   `assets/js/vendor/`, más los módulos propios) y las fuentes se sirven
   desde el mismo origen, así que `script-src 'self'` y `font-src 'self'`
   alcanzan. No hay nada inline: los estilos que calcula JS van por CSSOM
   (`el.style.setProperty`), que la CSP permite.
 - **`hide`:** el repo se clona tal cual en `/var/www`; sin esto,
-  `https://yaruki.hjgr.dev/.git/config` (y con él todo el historial) quedaba
+  `https://yarukiapp.com/.git/config` (y con él todo el historial) quedaba
   público.
 - **`hide`: todo lo que está en el clon y no es del sitio.** El droplet sirve el clon
   tal cual, así que cualquier archivo del repo que no sea del sitio sería descargable. Lista
@@ -1032,7 +1043,7 @@ Notas:
 sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
 
 # Verificación: debe responder 200 con las cabeceras de seguridad de arriba.
-curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
+curl -sI https://yarukiapp.com/privacidad/ | head -5
 ```
 
 Validar primero es obligatorio: un error en el bloque nuevo no debe tumbar
@@ -1060,7 +1071,7 @@ El droplet **no** hace `git pull` a ciegas: publica un **tag** `publicable-AAAA-
   git checkout <tag>                      # p. ej. publicable-2026-11-11a
   git describe --tags --exact-match       # debe imprimir ese mismo tag
   git rev-parse --short HEAD              # debe ser el commit que el PM entregó junto con el tag
-  curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5
+  curl -sI https://yarukiapp.com/privacidad/ | head -5
   ```
 
 - **Qué tag está publicado:** `cd /var/www/asistente-landing && git describe --tags --exact-match`
@@ -1081,7 +1092,7 @@ El droplet **no** hace `git pull` a ciegas: publica un **tag** `publicable-AAAA-
 
   ```bash
   sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
-  curl -sI https://yaruki.hjgr.dev/privacidad/ | head -5   # volver a verificar, igual que en el paso 4
+  curl -sI https://yarukiapp.com/privacidad/ | head -5   # volver a verificar, igual que en el paso 4
   ```
 
 No toca Sail ni el worker de colas del backend. Impacto en RAM: despreciable.
