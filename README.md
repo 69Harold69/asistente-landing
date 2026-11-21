@@ -830,11 +830,14 @@ legítimo; si lo es, agrega su host a `EXTERNOS` en `dominio.py` y `validar.mjs`
 dominio viejo en JS, CSS, JSON/manifest, XML, TXT, SVG o texto del HTML (se corrige a mano).
 `validar` lee `sitio.json` (no tiene el dominio escrito) y su regla `dominio` falla si queda una
 URL absoluta propia con otro origen; `todo.mjs` corre `dominio.py --check` y sus pruebas
-(`scripts/pruebas/test_dominio.py`, que prueban el viaje de ida y vuelta byte a byte).
+(`scripts/pruebas/test_dominio.py`, que prueban el viaje de ida y vuelta byte a byte). Ojo: tras la mudanza, `--check`
+ya no ve el dominio anterior como propio; por eso `test_dominio.py` (clase `DominioAnterior`) busca `yaruki.hjgr.dev`,
+con o sin esquema, en todo el árbol salvo las excepciones de abajo.
 
 **Excepciones deliberadas** (el dominio viejo, `yaruki.hjgr.dev`, puede seguir apareciendo ahí):
 - Este README (documenta la mudanza, el dominio viejo como origen de la redirección y el despliegue).
-- `scripts/pruebas/test_dominio.py` (usa hosts de ejemplo como dato de prueba; su origen de partida sale de `sitio.json`).
+- `scripts/pruebas/test_dominio.py` (usa hosts de ejemplo como dato de prueba, su origen de partida sale de `sitio.json`, y
+  nombra el dominio anterior para buscarlo).
 - `dev.yaruki.hjgr.dev`: la vista previa con contraseña, que se queda en el dominio viejo (no es el sitio público).
 - `privacidad@hjgr.dev`: es el **correo** de contacto, no la URL del sitio. Sigue igual mientras
   el buzón siga en `hjgr.dev`; si algún día se muda, es un buscar-y-reemplazar aparte en las 4 páginas
@@ -878,7 +881,7 @@ Pendiente:
 
    Valida y recarga con `sudo -u caddy -H caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
    `{uri}` conserva ruta y query; `permanent` es un 301. Comprueba con
-   `curl -sI https://yarukiapp.com/privacidad/ | head -3` (301 y `location: https://yarukiapp.com/privacidad/`), y lo mismo con
+   `curl -sI https://yaruki.hjgr.dev/privacidad/ | head -3` (301 y `location: https://yarukiapp.com/privacidad/`), y lo mismo con
    `/`, `/terminos/`, `/eliminar-cuenta/`, `/sitemap.xml` y una URL inexistente. **Aún no existe**: no lo des por hecho.
    Plan: mantenerlo indefinidamente (Google recomienda al menos un año:
    <https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes>).
@@ -888,7 +891,7 @@ Pendiente:
    (funcionan mientras exista el 301): issue `asistente-android#203`.
 4. **Backend:** referencias al dominio viejo (comentario de `config/legal.php`, runbooks): issue `asistente-backend#414`.
 5. **Correo:** `privacidad@hjgr.dev` no cambia hasta la tanda de correos.
-6. **Vista previa:** `dev.yaruki.hjgr.dev` se queda en el dominio viejo.
+6. **Vista previa:** `dev.yaruki.hjgr.dev` se queda por ahora en el dominio viejo (mudarla: `asistente-ia-ops#30`).
 7. **Ficha de Play Console y backlinks** (perfil de GitHub, descripción del repo): actualizar al dominio nuevo cuando se
    decida (sin verificar en esta tanda).
 
