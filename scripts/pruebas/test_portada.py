@@ -75,7 +75,7 @@ class ReglasDePortada(unittest.TestCase):
             "los pasos no son una <ol>": (lambda t: t.replace('<ol class="pasos-lista" role="list">', '<ul class="pasos-lista">', 1).replace("</ol>\n      </div>\n    </section>\n\n    <section id=\"preguntas\"", "</ul>\n      </div>\n    </section>\n\n    <section id=\"preguntas\"", 1), "[portada]"),
             "solo 6 preguntas": (seis_preguntas, "[portada]"),
             "#como-funciona dentro de .layout-con-stage": (dentro_del_recorrido, "[portada]"),
-            "promesa absoluta en las preguntas": (lambda t: t.replace("<p>Hoy sí: durante la beta no se cobra nada", "<p>Nunca actúa a tus espaldas. Hoy sí: durante la beta no se cobra nada", 1), "[portada]"),
+            "promesa absoluta en las preguntas": (lambda t: t.replace("<p>Hoy sí: descargarla y usarla no cuesta nada", "<p>Nunca actúa a tus espaldas. Hoy sí: descargarla y usarla no cuesta nada", 1), "[portada]"),
             "FAQPage con otra pregunta que las visibles": (lambda t: t.replace('"name": "¿Es gratis?"', '"name": "¿Cuesta algo?"', 1), "[portada]"),
             "FAQPage: respuesta distinta de la visible": (lambda t: t.replace('"text": "Todavía no: Yaruki', '"text": "No: Yaruki', 1), "[faq-visible]"),
             "tarjeta de «Lo que viene» sin chip": (lambda t: t.replace('<h3>Finanzas</h3>\n              <span class="chip">Próximamente</span>', '<h3>Finanzas</h3>', 1), "[portada]"),

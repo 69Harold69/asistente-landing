@@ -127,7 +127,7 @@ async function recorridoPortada(combo, dir, nombreCombo) {
       await mover(caja.x + caja.width * 0.9, caja.y + caja.height * 0.85);
       await dormir(1000);
       await foto(page, dir, "portada-mouse-abajo-derecha");
-      const cta = page.locator("#hero [data-cta-beta]").first();
+      const cta = page.locator("#hero [data-cta-play]").first();
       const cb = await cta.boundingBox();
       if (cb) {
         await mover(cb.x + cb.width / 2, cb.y + cb.height / 2);
@@ -277,9 +277,9 @@ async function medicionAngosta() {
       };
       await medir(ruta);
       if (ruta === "/") {
-        // El botón «Únete a la beta» del hero entra completo en el primer pantallazo a 320×568 (con ≥ 8 px de margen).
-        const pie = await page.evaluate(() => document.querySelector(".seccion-hero [data-cta-beta]")?.getBoundingClientRect().bottom ?? Infinity);
-        if (pie > ANGOSTO.viewport.height - 8) guardia.fallas.push({ tipo: "hero-320", detalle: `el pie del botón de la beta queda en ${pie.toFixed(0)} px (alto ${ANGOSTO.viewport.height}; máximo ${ANGOSTO.viewport.height - 8})`, contexto: nombreCombo });
+        // El botón la insignia de Google Play del hero entra completo en el primer pantallazo a 320×568 (con ≥ 8 px de margen).
+        const pie = await page.evaluate(() => document.querySelector(".seccion-hero [data-cta-play]")?.getBoundingClientRect().bottom ?? Infinity);
+        if (pie > ANGOSTO.viewport.height - 8) guardia.fallas.push({ tipo: "hero-320", detalle: `el pie de la insignia de Google Play queda en ${pie.toFixed(0)} px (alto ${ANGOSTO.viewport.height}; máximo ${ANGOSTO.viewport.height - 8})`, contexto: nombreCombo });
       }
       if (ruta === "/") {
         for (const { id } of SECCIONES_PORTADA.slice(1)) {
