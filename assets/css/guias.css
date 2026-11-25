@@ -43,6 +43,10 @@
 
 .guia-etiqueta {
   margin-bottom: var(--space-2);
+  /* La etiqueta es más larga que el chip de una palabra: en móvil angosto pasa a dos renglones en vez de desbordar. */
+  white-space: normal;
+  max-width: 100%;
+  border-radius: var(--radius-lg);
 }
 
 .guia-cabecera h1 {
