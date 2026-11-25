@@ -8,7 +8,8 @@ Trabaja sobre el arbol real (solo lectura). Fija el contrato posterior a la beta
   - App Store sigue deshabilitado con «Proximamente»;
   - el JSON-LD de la app declara installUrl, Android, precio 0;
   - no se menciona Premium (no se puede comprar);
-  - las paginas legales coinciden con la huella aprobada de `legales.sha256` (un cambio legal aprobado por el
+  - las paginas legales coinciden con la huella aprobada de `legales.sha256`, calculada sin el sello `?v=` de
+    los assets (un cambio legal aprobado por el
     dueno actualiza ese archivo en la misma PR: queda explicito y revisable, y la prueba sigue teniendo sentido
     despues del merge).
 """
@@ -188,7 +189,9 @@ class Lanzamiento(unittest.TestCase):
                 manifiesto[ruta.strip()] = dig
         self.assertEqual(sorted(manifiesto), sorted(f"{d}/index.html" for d in LEGALES))
         for ruta, dig in manifiesto.items():
-            real = hashlib.sha256((RAIZ / ruta).read_bytes()).hexdigest()
+            # Sin el sello `?v=<version>` de los assets: `versionar.py` lo cambia en cada cierre y no es contenido legal.
+            contenido = re.sub(rb"\?v=[0-9a-f]{10}", b"?v=", (RAIZ / ruta).read_bytes())
+            real = hashlib.sha256(contenido).hexdigest()
             self.assertEqual(real, dig, f"{ruta} cambio sin actualizar legales.sha256 (los legales solo cambian con aprobacion del dueno)")
 
 

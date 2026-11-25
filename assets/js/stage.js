@@ -1,5 +1,5 @@
-import { ESCENAS } from "./scenes/registro.js?v=aa89f90c40";
-import { barraDeEstado } from "./icons.js?v=aa89f90c40";
+import { ESCENAS } from "./scenes/registro.js?v=4c0c80b309";
+import { barraDeEstado } from "./icons.js?v=4c0c80b309";
 
 /**
  * Escenario del teléfono 3D — orquestador (plan, 4.1/4.2/5.3/5.4).
