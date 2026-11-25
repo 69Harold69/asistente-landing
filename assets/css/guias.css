@@ -376,7 +376,7 @@
   margin-bottom: 0;
 }
 
-/* Cierre: unirse a la beta y seguir leyendo -------------------------------- */
+/* Cierre: descargar en Google Play y seguir leyendo -------------------------------- */
 
 .guia-cta {
   background: var(--color-accent-soft);
@@ -386,18 +386,6 @@
 
 .guia-cta h2 {
   color: var(--color-on-accent-soft);
-}
-
-.guia-cta .pasos-beta {
-  margin: var(--space-3) 0 0;
-  max-width: none;
-  color: var(--color-text);
-  font-size: var(--text-base);
-}
-
-.guia-cta .pasos-beta-numero {
-  background: var(--color-accent);
-  color: var(--color-on-accent-ui);
 }
 
 .guia-cta a:not(.button) {

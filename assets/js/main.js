@@ -86,9 +86,9 @@ if (new URLSearchParams(location.search).has("malla-diagnostico")) {
 }
 
 /*
-  Botón "Únete a la beta": ya es un enlace real en el HTML (`href` al Google
-  Group de testers), así que aquí no hay nada que activar. El `href` vive
-  SOLO en `index.html` (README, sección "BRAND_NAME y el enlace de la beta").
+  Insignia «Descárgala en Google Play»: ya es un enlace real en el HTML (`href` a la ficha
+  pública de la app), así que aquí no hay nada que activar. El `href` vive
+  SOLO en el HTML (README, sección "BRAND_NAME y el enlace de Google Play").
 */
 inicializarReveals(escenario);
 inicializarProgreso();
