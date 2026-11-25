@@ -26,7 +26,7 @@ const SECCIONES = ["hero", "fase-chat", "fase-elementos", "fase-habitos", "fase-
 
 /** Elementos con texto propio que hay que medir; devuelve datos serializables (índice estable por orden del DOM). */
 function recolectar() {
-  const SALTAR = ".pie, #stage, .nav-recorrido, .malla-diagnostico, .chip, .chip-beta-header, .button--primary, .pasos-beta-numero, [data-theme-toggle], .punto-vivo-envoltura";
+  const SALTAR = ".pie, #stage, .nav-recorrido, .malla-diagnostico, .chip, .chip-play-header, .button--primary, .play-badge, [data-theme-toggle], .punto-vivo-envoltura";
   const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
   const out = [];
   // Sin lo de `#stage`: la escena del teléfono agrega y quita nodos y movía el índice de todo lo que va después; un
@@ -82,7 +82,7 @@ function recolectar() {
 
 /** Índices (mismo orden que `recolectar`) de todo elemento con texto propio de las secciones pedidas, sin filtros de posición. */
 function recolectarTodos(solo) {
-  const SALTAR = ".pie, #stage, .nav-recorrido, .malla-diagnostico, .chip, .chip-beta-header, .button--primary, .pasos-beta-numero, [data-theme-toggle], .punto-vivo-envoltura";
+  const SALTAR = ".pie, #stage, .nav-recorrido, .malla-diagnostico, .chip, .chip-play-header, .button--primary, .play-badge, [data-theme-toggle], .punto-vivo-envoltura";
   const out = [];
   [...document.querySelectorAll("main *, .site-header *")].filter((el) => !el.closest("#stage")).forEach((el, idx) => {
     if (el.closest(SALTAR) || !el.closest(solo.map((id) => "#" + id).join(","))) return;

@@ -63,6 +63,7 @@
         "applicationCategory": "BusinessApplication",
         "applicationSubCategory": "Productividad",
         "operatingSystem": "Android",
+        "installUrl": "https://play.google.com/store/apps/details?id=dev.hjgr.yaruki",
         "inLanguage": "es-MX",
         "image": "https://yarukiapp.com/assets/img/og-yaruki.png",
         "isAccessibleForFree": true,
@@ -81,7 +82,7 @@
           {
             "@type": "Question",
             "name": "¿Es gratis?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Hoy sí: durante la beta no se cobra nada y Yaruki no tiene anuncios. Los mensajes de voz son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope. Como dicen los Términos, en el futuro algunas funciones (por ejemplo, las llamadas o un mayor uso de los mensajes de voz) podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Hoy sí: descargarla y usarla no cuesta nada, y Yaruki no tiene anuncios. El plan gratuito incluye 5 mensajes de voz al día, que se reinician a medianoche (hora de México). Como dicen los Términos, en el futuro algunas funciones (por ejemplo, las llamadas o un mayor uso de los mensajes de voz) podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes." }
           },
           {
             "@type": "Question",
@@ -91,12 +92,12 @@
           {
             "@type": "Question",
             "name": "¿Funciona por voz?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Sí, con mensajes de voz: son parte del plan gratuito, hasta 5 al día, y en la prueba cerrada no hay tope. La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud; Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. Más en la guía de recordatorios por voz." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí, con mensajes de voz: el plan gratuito incluye 5 al día, que se reinician a medianoche (hora de México). La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud; Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. Más en la guía de recordatorios por voz." }
           },
           {
             "@type": "Question",
             "name": "¿Hay versión para iPhone?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Todavía no: Yaruki está en beta cerrada y solo para Android. Una versión para iPhone está planeada, pero sin fecha. Más en Lo que viene." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Todavía no: Yaruki está disponible solo para Android, en Google Play. Una versión para iPhone está planeada, pero sin fecha. Más en Lo que viene." }
           },
           {
             "@type": "Question",
@@ -105,8 +106,8 @@
           },
           {
             "@type": "Question",
-            "name": "¿Cómo me uno a la beta?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Yaruki está en beta cerrada para Android. Únete al grupo de testers con tu cuenta de Google, espera unos minutos y acepta la invitación en Google Play con la misma cuenta; desde ahí descargas la app." }
+            "name": "¿Cómo la descargo?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yaruki está en Google Play para Android. Abre la ficha con el enlace «Descárgala en Google Play»; es gratis." }
           },
           {
             "@type": "Question",
@@ -143,7 +144,7 @@
         Yaruki
       </a>
       <div class="header-acciones">
-        <span class="chip chip-beta-header">Beta cerrada en Android</span>
+        <span class="chip chip-play-header">Disponible en Google Play</span>
         <div class="toggle-envoltura">
           <button type="button" class="theme-toggle" data-theme-toggle aria-label="Tema oscuro" aria-pressed="false">
             <svg class="icono-sol" viewBox="0 0 24 24" aria-hidden="true">
@@ -187,14 +188,14 @@
       </p>
       <div class="cta-row">
         <div class="cta-item">
-          <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/" data-cta-beta>Únete a la beta</a>
+          <a class="play-badge" href="https://play.google.com/store/apps/details?id=dev.hjgr.yaruki" data-cta-play><img src="assets/img/google-play-descargar-es-419.png" alt="Descargar en Google Play" width="646" height="250"></a>
         </div>
         <div class="cta-item">
           <span class="button button--disabled" role="link" aria-disabled="true">Descárgala en App Store</span>
           <span class="chip">Próximamente</span>
         </div>
       </div>
-      <p class="cta-nota">Beta cerrada en Android · únete al grupo con tu cuenta de Google y acepta la invitación en Google Play.</p>
+      <p class="cta-nota">Disponible en Google Play para Android.</p>
       <p class="pista-scroll" aria-hidden="true">
         Desliza para descubrir
         <svg class="pista-scroll-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -243,8 +244,8 @@
           Tus conversaciones se guardan 30 días y puedes volver a ellas.
         </p>
         <p class="fase-texto">
-          Los mensajes de voz son parte del plan gratuito, hasta 5 al día. En
-          la prueba cerrada no hay tope.
+          El plan gratuito incluye 5 mensajes de voz al día, que se reinician
+          a medianoche (hora de México).
         </p>
       </section>
 
@@ -306,23 +307,13 @@
         <p class="fase-texto">
           «Tu día» te muestra tu racha, tus tareas de hoy, tus proyectos activos
           y lo que sigue pendiente, ordenado en Vencidas, Hoy y Próximas — para
-          que decidas qué sigue sin tener que buscarlo.
+          que decidas qué sigue sin tener que buscarlo. Descárgala gratis en Google Play.
         </p>
         <div class="cta-row">
           <div class="cta-item">
-            <a class="button button--primary" href="https://groups.google.com/g/yaruki-beta/" data-cta-beta>Únete a la beta</a>
+            <a class="play-badge" href="https://play.google.com/store/apps/details?id=dev.hjgr.yaruki" data-cta-play><img src="assets/img/google-play-descargar-es-419.png" alt="Descargar en Google Play" width="646" height="250"></a>
           </div>
         </div>
-        <ol class="pasos-beta" aria-label="Cómo unirte a la beta">
-          <li>
-            <span class="pasos-beta-numero" aria-hidden="true">1</span>
-            <span>Únete al <a href="https://groups.google.com/g/yaruki-beta/">grupo de testers</a> con tu cuenta de Google.</span>
-          </li>
-          <li>
-            <span class="pasos-beta-numero" aria-hidden="true">2</span>
-            <span>Espera unos minutos y acepta la <a href="https://play.google.com/apps/testing/dev.hjgr.yaruki">invitación en Google Play</a> con la misma cuenta. Desde ahí la descargas.</span>
-          </li>
-        </ol>
       </section>
     </div>
     </div>
@@ -444,7 +435,7 @@
           <details class="pregunta">
             <summary>¿Es gratis?</summary>
             <div class="pregunta-respuesta">
-              <p>Hoy sí: durante la beta no se cobra nada y Yaruki no tiene anuncios. Los mensajes de voz son parte del plan gratuito, hasta 5 al día; en la prueba cerrada no hay tope. Como dicen los <a href="/terminos/">Términos</a>, en el futuro algunas funciones (por ejemplo, las llamadas o un mayor uso de los mensajes de voz) podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes.</p>
+              <p>Hoy sí: descargarla y usarla no cuesta nada, y Yaruki no tiene anuncios. El plan gratuito incluye 5 mensajes de voz al día, que se reinician a medianoche (hora de México). Como dicen los <a href="/terminos/">Términos</a>, en el futuro algunas funciones (por ejemplo, las llamadas o un mayor uso de los mensajes de voz) podrían formar parte de un plan de pago; si algún día se cobra, te lo avisamos antes.</p>
             </div>
           </details>
           <details class="pregunta">
@@ -456,13 +447,13 @@
           <details class="pregunta">
             <summary>¿Funciona por voz?</summary>
             <div class="pregunta-respuesta">
-              <p>Sí, con mensajes de voz: son parte del plan gratuito, hasta 5 al día, y en la prueba cerrada no hay tope. La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud; Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. Más en la guía de <a href="/recordatorios-por-voz/">recordatorios por voz</a>.</p>
+              <p>Sí, con mensajes de voz: el plan gratuito incluye 5 al día, que se reinician a medianoche (hora de México). La grabación se sube a nuestro servidor, que la manda a Gemini en Google Cloud Vertex AI únicamente para transcribirla a texto. El audio no se guarda en Yaruki: en nuestro servidor se procesa en memoria y se descarta al terminar la solicitud; Google (Vertex AI) lo procesa según sus propios términos y no podemos garantizar que no lo retenga temporalmente. Más en la guía de <a href="/recordatorios-por-voz/">recordatorios por voz</a>.</p>
             </div>
           </details>
           <details class="pregunta">
             <summary>¿Hay versión para iPhone?</summary>
             <div class="pregunta-respuesta">
-              <p>Todavía no: Yaruki está en beta cerrada y solo para Android. Una versión para iPhone está planeada, pero sin fecha. Más en <a href="#lo-que-viene">Lo que viene</a>.</p>
+              <p>Todavía no: Yaruki está disponible solo para Android, en Google Play. Una versión para iPhone está planeada, pero sin fecha. Más en <a href="#lo-que-viene">Lo que viene</a>.</p>
             </div>
           </details>
           <details class="pregunta">
@@ -472,9 +463,9 @@
             </div>
           </details>
           <details class="pregunta">
-            <summary>¿Cómo me uno a la beta?</summary>
+            <summary>¿Cómo la descargo?</summary>
             <div class="pregunta-respuesta">
-              <p>Yaruki está en beta cerrada para Android. Únete al <a href="https://groups.google.com/g/yaruki-beta/">grupo de testers</a> con tu cuenta de Google, espera unos minutos y acepta la <a href="https://play.google.com/apps/testing/dev.hjgr.yaruki">invitación en Google Play</a> con la misma cuenta; desde ahí descargas la app.</p>
+              <p>Yaruki está en Google Play para Android. Abre la ficha con el enlace «<a href="https://play.google.com/store/apps/details?id=dev.hjgr.yaruki">Descárgala en Google Play</a>»; es gratis.</p>
             </div>
           </details>
           <details class="pregunta">
@@ -567,6 +558,7 @@
             Yaruki es un proyecto de Harold de Jesús García Ramírez, Guadalajara,
             Jalisco, México.
           </p>
+          <p class="pie-marcas">Google Play y el logotipo de Google Play son marcas comerciales de Google LLC.</p>
           <nav class="footer-guias" aria-label="Guías">
             <p class="footer-guias-titulo">Guías</p>
             <ul class="footer-links">

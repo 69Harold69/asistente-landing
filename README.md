@@ -28,11 +28,11 @@ asistente-landing/
 │   │   ├── fonts.css    @font-face de las legales, las guías y la 404 (los mismos recortes de assets/fuentes/)
 │   │   ├── fuentes-portada.css  @font-face de la portada (recortes latinos de assets/fuentes/)
 │   │   ├── base.css     Layout, grid con escenario sticky, componentes compartidos
-│   │   ├── guias.css    Páginas-guía: resumen, pasos, ejemplos de chat en CSS, tabla comparativa, cierre con la beta
+│   │   ├── guias.css    Páginas-guía: resumen, pasos, ejemplos de chat en CSS, tabla comparativa, cierre con la insignia de Google Play
 │   │   ├── phone.css    El teléfono 3D (marco, bisel, isla, canto en capas, espalda)
 │   │   └── scenes.css   Contenido de cada escena dentro de la pantalla del teléfono
 │   ├── js/
-│   │   ├── config.js    BRAND_NAME (el enlace de la beta vive en el `href` de `index.html`)
+│   │   ├── config.js    BRAND_NAME (el enlace de Google Play vive en el `href` de las insignias)
 │   │   ├── guias.js     Solo el toggle de tema de las páginas-guía (sin GSAP ni teléfono)
 │   │   ├── theme.js     Toggle sol/luna (revelado circular con View Transitions, crossfade de respaldo)
 │   │   ├── theme-demo.js  Demo de tema al cargar, una vez por visita, con la pista junto al toggle
@@ -282,28 +282,48 @@ cambio de escena. Los tamaños de `scenes.css` están en `--dp` (1dp =
 - **`theme-color`** claro y oscuro y `og:image:alt`/`twitter:image:alt` en las 4 páginas públicas (`validar` los exige).
 - **Páginas legales:** cada una tiene su `<title>`, meta description y `<link rel="canonical">`.
 
-## BRAND_NAME y el enlace de la beta
+## BRAND_NAME y el enlace de Google Play
 
 `assets/js/config.js` tiene una sola constante:
 - `BRAND_NAME = "Yaruki"` — el HTML de cada página sigue escribiendo "Yaruki"
   literal en el texto visible (título, wordmark, copy); la constante es para
   lo que genera JS, no reemplaza al texto estático.
 
-El enlace de "Únete a la beta" **ya no es una constante de JS** (#21): es el
-`href` de los dos botones `[data-cta-beta]` de `index.html` (`#hero` y `#cta`),
-escrito a mano, activo y sin chip "Próximamente" desde el HTML. Apunta al
-Google Group de testers (`https://groups.google.com/g/yaruki-beta/`); la
-prueba cerrada de Google Play usa ese grupo como lista, así que unirse es el
-paso 1. El paso 2, aceptar la invitación en
-`https://play.google.com/apps/testing/dev.hjgr.yaruki`, está escrito en la
-lista `.pasos-beta` de `#cta`. Así el enlace existe para rastreadores y para
-quien navega sin JS, y no queda una segunda fuente de verdad que pueda
-contradecir al HTML en silencio. Para cambiarlo, edita el `href` en los dos
-botones (y el de la lista `.pasos-beta`, que apunta al mismo grupo), y los
-de las páginas-guía (`organizar-tareas-con-ia/`, `recordatorios-por-voz/`),
-que repiten el botón y la lista (`git grep yaruki-beta`);
-`node scripts/pruebas/sin-js.mjs` comprueba que sean enlaces navegables.
-`main.js` ya no toca esos botones; solo el efecto magnético los toma.
+Desde el 2026-11-24 (#132) Yaruki está en producción en Google Play: ya no hay beta cerrada, grupo de testers ni
+invitación. El enlace **no es una constante de JS**: es el `href` de las insignias `[data-cta-play]` (`#hero` y `#cta`
+de `index.html`, y el cierre `#descargar` de las dos guías), escrito a mano, activo y sin chip «Próximamente»:
+`https://play.google.com/store/apps/details?id=dev.hjgr.yaruki`. El mismo valor es `installUrl` del JSON-LD
+`SoftwareApplication` (no `downloadUrl`, que es para la descarga directa del binario). Para cambiarlo, edita el `href` en
+todos los lugares (`git grep dev.hjgr.yaruki`); `node scripts/pruebas/sin-js.mjs` y `scripts/pruebas/test_lanzamiento.py`
+comprueban que sean enlaces navegables a esa URL. `main.js` ya no toca esos enlaces. El botón de App Store sigue
+deshabilitado con el chip «Próximamente».
+
+### Insignia de Google Play
+
+- **Archivo:** `assets/img/google-play-descargar-es-419.png` (646 × 250 px, PNG con transparencia), la insignia oficial
+  «Descargar en Google Play» en español de Latinoamérica (es-419), sin retocar. sha256
+  `777c1400d580bcc8dc39539c6958874840f5896aca22a5da0abf824518824fab`.
+- **Origen:** `https://play.google.com/intl/en_us/badges/static/images/badges/es-419_badge_web_generic.png` (alojada por
+  Google en la página de insignias, que redirige al Partner Marketing Hub). No hay SVG público para es-419 (el `.svg`
+  de esa ruta da 404). Bajada el 2026-11-24.
+- **Reglas de Google aplicadas** (Partner Marketing Hub,
+  `https://partnermarketinghub.withgoogle.com/brands/google-play/google-play/lockups-icons-badges/#badges`):
+  «The badge height must be a minimum of 28px.» (aquí se ve de ~47,5 px); «Always be sure to leave enough clear space
+  around the badge. To determine the minimum amount of clear space, use one-quarter of the height of the badge.»
+  (≈ 12 px: lo dan los huecos de `.cta-row` y los márgenes); «use the localized badge version that aligns with the
+  language» (es-419); «Don't change the badge color.» y «Don't remove or rearrange badge elements, or otherwise adjust
+  the badge in any way.» (se muestra con `<img>`, sin recolorear, sin recortar píxeles visibles ni cambiar
+  proporciones; el margen transparente del PNG, 29 px arriba y abajo, se absorbe con un `margin-block` negativo para que
+  el área táctil y el foco abracen la parte visible); «Use only solid backgrounds or simple background images that
+  create enough contrast with the badge.» (fondo liso claro u oscuro de la página; la insignia es negra con borde y no
+  se invierte en el tema oscuro).
+- **Atribución legal** en el pie de las páginas con la insignia: «Google Play y el logotipo de Google Play son marcas
+  comerciales de Google LLC.» La redacción la dio el dueño; el generador oficial
+  (`partnermarketinghub.withgoogle.com/tools/legal-line-generator/`) pide cuenta aprobada y no se pudo consultar.
+  Si Google exige otra, cámbiala en el pie de `index.html` y de las dos guías (`.pie-marcas`).
+- **Nombre accesible:** el `alt` es «Descargar en Google Play», el texto que se ve en la insignia (WCAG 2.5.3); el enlace
+  no lleva `aria-label`.
+- Tamaño en CSS: `.play-badge` mide `10rem` de ancho (160 px; 47,5 px de insignia visible, ≥ 44 px táctiles).
 
 **Sin JavaScript** (`sin-js.mjs`): el contenido y los enlaces están en el HTML.
 Lo decorativo que solo vive con JS (el teléfono, que `stage.js` llena y
@@ -352,7 +372,7 @@ al primer clic en el toggle).
   URL sin hash; sin JS es un ancla común a `#hero`. Los puntos ya recorridos (`data-pasado`) toman
   el acento. Decorativo (sin texto ni rol); se va con los puntos
   (`data-fuera`); sin JS queda el conector tenue.
-- **Mascota del header:** respira y se infla con el hover de un CTA de la beta o con el foco de teclado de un CTA activo. Con reduced-motion, sin escala.
+- **Mascota del header:** respira y se infla con el hover o el foco de teclado de la insignia de Google Play. Con reduced-motion, sin escala.
 - **Malla de fondo continua (`malla.js`, #98; nació en el hero con el #26):** UN solo
   `<canvas class="malla-fondo">`, fijo (`position: fixed`, `z-index: -1`, alto `100lvh`), creado por el
   módulo como primer hijo de `<body>` y visible en toda la portada donde el fondo es el mismo: el
@@ -461,7 +481,7 @@ al primer clic en el toggle).
     píxeles proyectados, el regreso al centro exacto, el apagado durante el giro, que no haya pupila, el
     brillo del lado correcto y los bordes de la caja sin líneas.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
-  magnéticos toman únicamente CTAs activos: los botones de la beta ya son activos desde el HTML.
+  magnéticos toman únicamente `.button--primary` dentro del recorrido; desde #132 ninguno queda en la portada (la insignia de Google Play no se mueve: su área libre no debe depender del cursor).
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
   Dashboard cuentan desde 0; el valor final ya está en el HTML.
 - **«Cómo funciona» y preguntas frecuentes (`#como-funciona`, `#preguntas`):** contenido indexable debajo del recorrido
@@ -731,9 +751,8 @@ referencia de `ofl/baloo2/upstream_info.md`). Manrope: `aaronbell/manrope` en
 1. ~~Retención de backups~~ → **resuelto 2026-10-04: 30 días** (decisión del dueño), con cron de rotación en el droplet. El plazo ARCO usa el artículo 31 de la LFPDPPP 2025 (20 días para responder, 15 para hacer efectivo, ampliables una vez).
 2. ~~Atribución exacta de las fuentes~~ → **resuelto 2026-11-10** (ver "Fuentes autoalojadas": OFL canónicos de google/fonts@5bb2873, sin Reserved Font Name; licencia de GSAP completada).
 3. El badge de App Store en `index.html` queda deshabilitado (decisión 3.2 del
-   plan). "Únete a la beta" ya está activo (prueba cerrada, 2026-10-13); cuando
-   haya ficha pública en producción cambia a "Descárgala en Google Play"
-   (decisión 3.8) y el JSON-LD gana `downloadUrl`.
+   plan). Hecho el 2026-11-24 (#132): con la ficha pública en producción, el CTA es la insignia
+   «Descárgala en Google Play» (decisión 3.8) y el JSON-LD gana `installUrl`.
 4. ~~Texto del hero y el lema sin cerrar~~ → **resuelto, punto de control 2:**
    titular/subtítulo de la opción B + el significado chico arriba (ver
    "Coreografía de scroll" y el reporte de esa sesión).
@@ -882,7 +901,7 @@ Pendiente:
    decida (sin verificar en esta tanda).
 
 Sin cambios: la **API** `asistente.hjgr.dev` y los App Links (usan el dominio de la API, no el de la landing; `/.well-known/` de la
-landing no se toca). El enlace de la beta (`[data-cta-beta]`) es el Google Group de testers y no depende del dominio. La
+landing no se toca). El enlace de Google Play (`[data-cta-play]`) apunta a la ficha de la tienda y no depende del dominio. La
 política de privacidad y los Términos no nombran el dominio del sitio (solo el correo).
 
 ## Despliegue (NO ejecutado — sólo instrucciones para cuando el dueño lo apruebe)
@@ -1097,6 +1116,7 @@ node rendimiento.mjs                     # presupuesto de la portada: LCP texto 
 node compresion.mjs                      # el servidor de pruebas comprime como Caddy (`encode gzip zstd`: Chrome recibe gzip)
 node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + pruebas python + capturas + lighthouse (+ tactil)
 python3 -I test_portada.py               # defectos sembrados de la portada (pasos, preguntas, FAQPage, promesas absolutas)
+python3 -I test_lanzamiento.py            # lanzamiento en Google Play (#132): sin beta/grupo/invitación, CTA de Play con la insignia, App Store «Próximamente», sin Premium, legales iguales a `scripts/pruebas/legales.sha256`
 ```
 
 Cada comando sale con código ≠ 0 si algo falla; `capturas` y `tactil` fallan ante `console.error`,

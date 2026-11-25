@@ -51,6 +51,8 @@ const pasos = [
   // Reglas de las páginas-guía (Article, FAQ visible, sitemap): defectos sembrados que validar debe atrapar (#50).
   ["guias-pruebas", "python3", ["-I", "test_guias.py"]],
   ["portada-pruebas", "python3", ["-I", "test_portada.py"]],
+  // Lanzamiento en Google Play (#132): sin beta/grupo/invitación, CTA de Play con la insignia, App Store «Próximamente», sin Premium, legales iguales a legales.sha256.
+  ["lanzamiento-pruebas", "python3", ["-I", "test_lanzamiento.py"]],
   // Malla de fondo continua (#98): onda en reposo, cursor, táctil, pausas, reduced-motion, intensidad, costo por cuadro y contraste AA por sección.
   ["malla", process.execPath, ["malla.mjs", "--salida", path.join(salida, "malla")]],
   // Mirada de la mascota (#27): dirección y tope, giros, transform intacto, reduced-motion y táctil.

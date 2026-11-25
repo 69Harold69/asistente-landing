@@ -592,15 +592,12 @@ try {
     const SECCIONES = [
       ["hero", "hero", [
         ["lema", ".hero-significado"], ["titular", "#titular"], ["subtítulo", ".subtitulo-hero"],
-        ["botón beta", ".cta-item:nth-child(1) .button"], ["chip beta", ".cta-item:nth-child(1) .chip"],
         ["botón App Store", ".cta-item:nth-child(2) .button"], ["chip App Store", ".cta-item:nth-child(2) .chip"],
         ["nota del CTA", ".cta-nota"], ["enlace de la nota", ".cta-nota a"], ["«Desliza para descubrir»", ".pista-scroll"],
       ]],
       ["fase Chat", "fase-chat", [["etiqueta", "#fase-chat .fase-kicker"], ["título", "#fase-chat .fase-titulo"], ["párrafo 1", "#fase-chat .fase-texto"], ["párrafo 4", "#fase-chat .fase-texto:nth-of-type(4)"]]],
       ["fase Hábitos", "fase-habitos", [["etiqueta", "#fase-habitos .fase-kicker"], ["título", "#fase-habitos .fase-titulo"], ["párrafo", "#fase-habitos .fase-texto"]]],
       ["Tu día", "cta", [["etiqueta", "#cta .fase-kicker"], ["título", "#cta .fase-titulo"], ["párrafo", "#cta .fase-texto"]]],
-      // Con el vidrio la sección es más alta que la pantalla: los pasos se miden centrados en su propia lista.
-      ["Tu día (pasos)", "cta", [["enlace del paso 1", "#cta .pasos-beta li:nth-child(1) a"], ["paso 1", "#cta .pasos-beta li:nth-child(1) span:last-child"], ["paso 2", "#cta .pasos-beta li:nth-child(2) span:last-child"]], "#cta .pasos-beta"],
       ["Cómo funciona", "como-funciona", [["título", "#como-funciona .fase-titulo"], ["intro", "#como-funciona .bloque-intro"], ["paso 1", "#como-funciona li:nth-child(1) h3"], ["texto 1", "#como-funciona li:nth-child(1) p"], ["enlace del texto 1", "#como-funciona li:nth-child(1) p a"], ["enlace del texto 2", "#como-funciona li:nth-child(2) p a"], ["texto 3", "#como-funciona li:nth-child(3) p"]]],
       ["Lo que viene", "lo-que-viene", [["título", "#lo-que-viene .fase-titulo"], ["intro", "#lo-que-viene .bloque-intro"], ["tarjeta", "#lo-que-viene .tarjeta-viene h3"]]],
       ["Preguntas", "preguntas", [["título", "#preguntas .fase-titulo"], ["intro", "#preguntas .bloque-intro"], ["enlace de la intro", "#preguntas .bloque-intro a"], ["pregunta", "#preguntas summary"]]],
@@ -709,7 +706,7 @@ try {
         console.log(`   ${tema} · ${nombreSeccion}: ${vistas.size} posiciones del cursor`);
         for (const bl of bloques) {
           if (bl.falta || !bl.rects.length) {
-            ok(["chip beta", "chip App Store", "enlace de la nota"].includes(bl.n) || bl.n === "párrafo 4", `${tema} ${nombreSeccion} ${bl.n}: no está o no se ve (solo se admite en los chips y el enlace de la nota del hero, o el párrafo 4 de Chat)`);
+            ok(["chip App Store", "enlace de la nota"].includes(bl.n) || bl.n === "párrafo 4", `${tema} ${nombreSeccion} ${bl.n}: no está o no se ve (solo se admite en los chips y el enlace de la nota del hero, o el párrafo 4 de Chat)`);
             continue;
           }
           const minimo = bl.grande ? 3 : 4.5;

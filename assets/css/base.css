@@ -769,11 +769,11 @@ strong {
   gap: var(--space-2);
 }
 
-/* El chip "Beta cerrada en Android" se esconde en móvil angosto (punto de
+/* El chip "Disponible en Google Play" se esconde en móvil angosto (punto de
    control 2, mejora 9): con el wordmark + el toggle, 3 elementos no entran
    en un renglón sin que el header se parta en dos líneas. */
 @media (max-width: 480px) {
-  .chip-beta-header {
+  .chip-play-header {
     display: none;
   }
 }
@@ -1279,7 +1279,7 @@ html[data-malla-recorrido] {
 }
 
 /*
-  Android angosto (320×568): con 36 px bajo el subtítulo y 36 px sobre el titular, el pie de «Únete a la beta»
+  Android angosto (320×568): con 36 px bajo el subtítulo y 36 px sobre el titular, el pie de la insignia de Google Play
   caía en ~570 px y se cortaba en el primer pantallazo. Por debajo de 360 px el hero respira 12 px menos
   arriba y entre subtítulo y botón; de 360 px para arriba no cambia nada.
 */
@@ -1376,44 +1376,41 @@ html[data-malla-recorrido] {
   margin-top: var(--space-1);
 }
 
-/* Pasos para entrar a la beta (#cta): el grupo de testers y luego Play. */
-.pasos-beta {
-  list-style: none;
-  margin: var(--space-2) auto 0;
-  padding: 0;
-  max-width: 40ch;
-  display: grid;
-  gap: var(--space-2);
-  text-align: left;
+/*
+  Insignia oficial de Google Play (es-419, #132). Se muestra COMPLETA y sin alterar (ver README, «Insignia de Google Play»):
+  la imagen oficial trae 29 px transparentes arriba y abajo de 250 (11,6 %); el margen negativo hace que el enlace
+  mida solo la parte visible (el foco y el área táctil abrazan la insignia) sin recortar ni tocar el archivo.
+  Mínimo de Google: 28 px de alto de la insignia; aquí 160 px de ancho => 47,5 px visibles (≥ 44 px táctiles).
+  Área libre: un cuarto del alto (≈ 12 px) a cada lado; la dan los huecos de `.cta-row` (≥ 1.5rem) y el
+  `margin-block` de la fila.
+*/
+/* `flow-root`: fuera de un contenedor flex (cierre de las guías) el margen negativo del `<img>` colapsaría a través del
+   enlace y el foco y el área táctil volverían a incluir la franja transparente. */
+.play-badge {
+  display: flow-root;
+  width: 10rem;
+  max-width: 100%;
+  border-radius: 0.375rem;
+  text-decoration: none;
+}
+
+.play-badge img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-block: calc(-29 / 646 * 100%);
+}
+
+.play-badge:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* Marcas de Google Play en el pie (atribución legal): discreta. */
+.pie-marcas {
+  margin-top: var(--space-2);
   font-size: var(--text-sm);
-  line-height: 1.5;
   color: var(--color-text-secondary);
-}
-
-.pasos-beta li {
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
-}
-
-.pasos-beta-numero {
-  flex: none;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-accent-soft);
-  color: var(--color-on-accent-soft);
-  font-weight: 700;
-  font-size: 0.8rem;
-}
-
-.pasos-beta a {
-  color: var(--color-accent);
-  font-weight: 600;
-  text-underline-offset: 0.18em;
 }
 
 /*
@@ -1442,9 +1439,6 @@ html[data-malla-recorrido] {
     justify-content: flex-start;
   }
 
-  #cta .pasos-beta {
-    margin-left: 0;
-  }
 }
 
 /*
@@ -1575,7 +1569,7 @@ html[data-malla-recorrido] {
 }
 
 /* Mascota del header: respira sola (.punto-vivo--breathe) y se infla un poco
-   con el hover de un CTA de la beta (también mientras dice "Próximamente":
+   con el hover del CTA de Google Play (también mientras dice "Próximamente":
    es el botón que la página invita a mirar) o con el foco de uno activo. El
    envoltorio es dueño de la escala; la respiración, del punto. */
 .punto-vivo-envoltura {
@@ -1584,7 +1578,7 @@ html[data-malla-recorrido] {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  body:has([data-cta-beta]:hover, .button--primary:focus-visible) .punto-vivo-envoltura {
+  body:has([data-cta-play]:hover, [data-cta-play]:focus-visible) .punto-vivo-envoltura {
     transform: scale(1.3);
   }
 }

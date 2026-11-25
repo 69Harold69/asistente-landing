@@ -3,7 +3,7 @@
   sin-js: mejora progresiva. Abre las páginas con JavaScript DESACTIVADO (Playwright
   `javaScriptEnabled: false`), en claro y oscuro, escritorio y móvil, y verifica:
     - el texto del contenido está presente y visible (titulares y párrafos de cada sección);
-    - los dos CTA «Únete a la beta» son enlaces navegables (href https real al grupo, sin estado deshabilitado);
+    - las dos insignias de Google Play son enlaces navegables (href https real a la ficha, sin estado deshabilitado);
     - ningún elemento de contenido con texto queda con opacidad 0 ni oculto (salvo las etiquetas de hover
       de la navegación por puntos, que son decoración que aparece al pasar el mouse);
     - ninguna página tiene scroll horizontal (#46);
@@ -21,7 +21,7 @@ const a = leerArgs();
 if (a.ayuda || a.help) salir(0, "Uso: node sin-js.mjs [--salida DIR]");
 const dirSalida = a.salida ? carpetaSalida(a.salida) : null;
 
-const CTA_BETA = "https://groups.google.com/g/yaruki-beta/";
+const CTA_PLAY = "https://play.google.com/store/apps/details?id=dev.hjgr.yaruki";
 const PAGINAS = ["/", "/privacidad/", "/terminos/", "/eliminar-cuenta/", "/organizar-tareas-con-ia/", "/recordatorios-por-voz/", "/no-existe"];
 const TAMANOS = { escritorio: { width: 1440, height: 900 }, tablet: { width: 820, height: 1180 }, tablet768: { width: 768, height: 1024 }, tabletapaisada: { width: 1024, height: 768 }, movil: { width: 390, height: 844 }, angosto: { width: 320, height: 568 } };
 const IGNORAR_OPACIDAD = "nav-recorrido-etiqueta";
@@ -61,10 +61,10 @@ try {
               const r = e.getBoundingClientRect();
               return getComputedStyle(e).display !== "none" && r.width > 0 && r.height > 0;
             };
-            const ctas = [...document.querySelectorAll("[data-cta-beta]")].map((e) => ({
+            const ctas = [...document.querySelectorAll("[data-cta-play]")].map((e) => ({
               href: e.getAttribute("href"),
               deshabilitado: e.getAttribute("aria-disabled") === "true" || e.classList.contains("button--disabled"),
-              chip: !!e.parentElement.querySelector("[data-chip-proximamente-beta]"),
+              chip: !!e.parentElement.querySelector(".chip"),
               pointerEvents: getComputedStyle(e).pointerEvents,
             }));
             const sinHref = [...document.querySelectorAll("a")].filter((e) => !e.getAttribute("href")).map((e) => e.textContent.trim());
@@ -92,9 +92,9 @@ try {
         for (const v of r.vacios) falla(combo, `texto invisible sin JS: ${v}`);
         if (r.sinHref.length) falla(combo, `enlaces <a> sin href: ${r.sinHref.join(" | ")}`);
         if (ruta === "/") {
-          if (r.ctas.length !== 2) falla(combo, `se esperaban 2 CTA «Únete a la beta» y hay ${r.ctas.length}`);
+          if (r.ctas.length !== 2) falla(combo, `se esperaban 2 insignias de Google Play y hay ${r.ctas.length}`);
           for (const c of r.ctas) {
-            if (c.href !== CTA_BETA) falla(combo, `CTA sin href navegable al grupo (href=${c.href})`);
+            if (c.href !== CTA_PLAY) falla(combo, `CTA sin href navegable a la ficha de Play (href=${c.href})`);
             if (c.deshabilitado) falla(combo, "CTA con estado deshabilitado sin JS");
             if (c.chip) falla(combo, "CTA con chip «Próximamente» sin JS");
             if (c.pointerEvents === "none") falla(combo, "CTA sin eventos de puntero (no se puede tocar)");

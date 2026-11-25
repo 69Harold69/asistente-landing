@@ -121,7 +121,7 @@ for (const [bloque, destino, modo] of [
     await dormir(2500);
   }
   if (modo.startsWith("ctrl-clic")) {
-    await page.locator(`#${bloque} a.button--primary`).click({ modifiers: ["Control"] });
+    await page.locator(`#${bloque} a[data-cta-play]`).click({ modifiers: ["Control"] });
   } else {
     // Un clic en el título (no enfocable) fija el punto de partida; el Tab siguiente cae en el botón del bloque.
     await page.locator(`#${bloque} :is(h1, h2)`).click();

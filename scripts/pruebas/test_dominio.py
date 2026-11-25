@@ -187,7 +187,7 @@ class Auditoria(Base):
         correr(self.raiz, "--origen", NUEVO)
         idx = (self.raiz / "index.html").read_text(encoding="utf-8")
         self.assertIn("mailto:privacidad@hjgr.dev", idx)
-        self.assertIn("play.google.com/apps/testing/dev.hjgr.yaruki", idx)
+        self.assertIn("play.google.com/store/apps/details?id=dev.hjgr.yaruki", idx)
 
 
 class DominioAnterior(unittest.TestCase):
