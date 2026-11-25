@@ -1,5 +1,5 @@
-import { barraDeNavegacion, logotipo } from "../icons.js?v=aa89f90c40";
-import { contar, detener } from "./contar.js?v=aa89f90c40";
+import { barraDeNavegacion, logotipo } from "../icons.js?v=4c0c80b309";
+import { contar, detener } from "./contar.js?v=4c0c80b309";
 
 /**
  * Dashboard (cierre) — copia de `ui/dashboard/DashboardScreen.kt` (0.1.6a, `ContenidoDashboard` :186-279):
