@@ -86,7 +86,7 @@ if (new URLSearchParams(location.search).has("malla-diagnostico")) {
 }
 
 /*
-  Insignia «Descárgala en Google Play»: ya es un enlace real en el HTML (`href` a la ficha
+  Insignia «Descargar en Google Play»: ya es un enlace real en el HTML (`href` a la ficha
   pública de la app), así que aquí no hay nada que activar. El `href` vive
   SOLO en el HTML (README, sección "BRAND_NAME y el enlace de Google Play").
 */

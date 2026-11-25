@@ -321,6 +321,8 @@ deshabilitado con el chip «Próximamente».
   comerciales de Google LLC.» La redacción la dio el dueño; el generador oficial
   (`partnermarketinghub.withgoogle.com/tools/legal-line-generator/`) pide cuenta aprobada y no se pudo consultar.
   Si Google exige otra, cámbiala en el pie de `index.html` y de las dos guías (`.pie-marcas`).
+- **Nombre accesible:** el `alt` es «Descargar en Google Play», el texto que se ve en la insignia (WCAG 2.5.3); el enlace
+  no lleva `aria-label`.
 - Tamaño en CSS: `.play-badge` mide `10rem` de ancho (160 px; 47,5 px de insignia visible, ≥ 44 px táctiles).
 
 **Sin JavaScript** (`sin-js.mjs`): el contenido y los enlaces están en el HTML.
@@ -479,7 +481,7 @@ al primer clic en el toggle).
     píxeles proyectados, el regreso al centro exacto, el apagado durante el giro, que no haya pupila, el
     brillo del lado correcto y los bordes de la caja sin líneas.
 - **CTAs magnéticos y tilt:** sólo puntero fino, sin reduced-motion. Los
-  magnéticos toman únicamente CTAs activos: la insignia de Google Play ya es activa desde el HTML.
+  magnéticos toman únicamente `.button--primary` dentro del recorrido; desde #132 ninguno queda en la portada (la insignia de Google Play no se mueve: su área libre no debe depender del cursor).
 - **Contadores (`scenes/contar.js`):** los números de Elementos y del
   Dashboard cuentan desde 0; el valor final ya está en el HTML.
 - **«Cómo funciona» y preguntas frecuentes (`#como-funciona`, `#preguntas`):** contenido indexable debajo del recorrido
@@ -1114,7 +1116,7 @@ node rendimiento.mjs                     # presupuesto de la portada: LCP texto 
 node compresion.mjs                      # el servidor de pruebas comprime como Caddy (`encode gzip zstd`: Chrome recibe gzip)
 node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + pruebas python + capturas + lighthouse (+ tactil)
 python3 -I test_portada.py               # defectos sembrados de la portada (pasos, preguntas, FAQPage, promesas absolutas)
-python3 -I test_lanzamiento.py            # lanzamiento en Google Play (#132): sin beta/grupo/invitación, CTA de Play con la insignia, App Store «Próximamente», sin Premium, legales intactas
+python3 -I test_lanzamiento.py            # lanzamiento en Google Play (#132): sin beta/grupo/invitación, CTA de Play con la insignia, App Store «Próximamente», sin Premium, legales iguales a `scripts/pruebas/legales.sha256`
 ```
 
 Cada comando sale con código ≠ 0 si algo falla; `capturas` y `tactil` fallan ante `console.error`,

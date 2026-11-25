@@ -8,26 +8,32 @@ Trabaja sobre el arbol real (solo lectura). Fija el contrato posterior a la beta
   - App Store sigue deshabilitado con «Proximamente»;
   - el JSON-LD de la app declara installUrl, Android, precio 0;
   - no se menciona Premium (no se puede comprar);
-  - las paginas legales no cambian respecto de origin/main.
+  - las paginas legales coinciden con la huella aprobada de `legales.sha256` (un cambio legal aprobado por el
+    dueno actualiza ese archivo en la misma PR: queda explicito y revisable, y la prueba sigue teniendo sentido
+    despues del merge).
 """
+import hashlib
 import json
 import pathlib
 import re
-import shutil
-import subprocess
 import unittest
 from html.parser import HTMLParser
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent.parent
 PLAY = "https://play.google.com/store/apps/details?id=dev.hjgr.yaruki"
 LEGALES = ("privacidad", "terminos", "eliminar-cuenta")
+INSIGNIA = "assets/img/google-play-descargar-es-419.png"
+# sha256 de la insignia oficial es-419 de Google (sin retocar; ver README, «Insignia de Google Play»).
+INSIGNIA_SHA256 = "777c1400d580bcc8dc39539c6958874840f5896aca22a5da0abf824518824fab"
 
 # Con limite de palabra para «beta» (evita falsos positivos como «alfabeta»/«metabetas»); el resto son frases.
 PROHIBIDAS_HTML = [
     r"\bbeta\b", r"prueba cerrada", r"\btesters?\b", r"groups\.google", r"grupo de",
     r"invitaci[oó]n", r"[uú]nete", r"/apps/testing/", r"no hay tope",
+    r"acceso anticipado", r"early access", r"lista de espera",
 ]
-PROHIBIDAS_ASSETS = [r"\bbeta\b", r"\btesters?\b", r"groups\.google", r"/apps/testing/"]
+PROHIBIDAS_ASSETS = [r"\bbeta\b", r"\btesters?\b", r"groups\.google", r"/apps/testing/", r"prueba cerrada",
+                     r"acceso anticipado", r"lista de espera", r"invitaci[oó]n"]
 # En assets los nombres de clase como `chip-beta-header` o `pasos-beta` deben desaparecer: ahi «beta» es parte
 # de un identificador unido por guiones, asi que se busca sin limite de palabra pero solo la cadena «beta».
 PROHIBIDAS_ASSETS_ID = [r"beta"]
@@ -106,29 +112,35 @@ class Lanzamiento(unittest.TestCase):
         return leer(RAIZ / "index.html")
 
     def test_3_enlaces_de_play(self):
-        p = Enlaces()
-        p.feed(self._portada())
-        play = [(a, imgs) for a, imgs in p.enlaces if "play.google.com" in a.get("href", "")]
-        self.assertTrue(play, "no hay enlaces a Google Play")
-        for a, _ in play:
-            self.assertEqual(a["href"], PLAY, f"enlace de Play distinto de la ficha: {a['href']}")
+        """Toda pagina no legal: cada enlace de Play va a la ficha; cada insignia es la oficial, con alt, width y height."""
+        total = 0
+        for pagina in paginas_no_legales():
+            p = Enlaces()
+            p.feed(leer(pagina))
+            rel = pagina.relative_to(RAIZ)
+            for a, imgs in p.enlaces:
+                href = a.get("href", "")
+                if "play.google.com" in href:
+                    self.assertEqual(href, PLAY, f"{rel}: enlace de Play distinto de la ficha: {href}")
+                if "data-cta-play" in a or "play-badge" in a.get("class", ""):
+                    total += 1
+                    self.assertEqual(href, PLAY, f"{rel}: insignia que no va a la ficha: {href}")
+                    self.assertEqual(len(imgs), 1, f"{rel}: la insignia debe ser exactamente una <img>")
+                    img = imgs[0]
+                    src = (pagina.parent / img.get("src", "")).resolve()
+                    self.assertEqual(src, (RAIZ / INSIGNIA).resolve(), f"{rel}: src de la insignia: {img.get('src')}")
+                    self.assertEqual((img.get("width"), img.get("height")), ("646", "250"), f"{rel}: width/height de la insignia")
+                    # WCAG 2.5.3: el nombre accesible contiene el texto visible de la insignia («DESCARGAR EN Google Play»).
+                    self.assertIn("descargar en google play", img.get("alt", "").lower(), f"{rel}: alt de la insignia")
+                    self.assertNotIn("aria-label", a, f"{rel}: aria-label en la insignia tapa el alt")
+        self.assertGreaterEqual(total, 4, "se esperaban las insignias del hero, #cta y las dos guias")
         t = self._portada()
         hero = t[t.index('id="hero"'):t.index('id="fase-chat"')]
         cta = t[t.index('id="cta"'):t.index('id="como-funciona"')]
-        self.assertIn(f'href="{PLAY}"', hero, "falta el enlace de Play en el hero")
-        self.assertIn(f'href="{PLAY}"', cta, "falta el enlace de Play en #cta")
-        # el del hero lleva una <img> con archivo real, width/height numericos y alt
-        ph = Enlaces()
-        ph.feed(hero)
-        con_img = [(a, imgs) for a, imgs in ph.enlaces if a.get("href") == PLAY and imgs]
-        self.assertTrue(con_img, "el enlace de Play del hero no contiene <img>")
-        img = con_img[0][1][0]
-        src = img.get("src", "").lstrip("/").split("?")[0]
-        self.assertTrue(src.startswith("assets/"), f"src fuera de assets/: {src}")
-        self.assertTrue((RAIZ / src).is_file(), f"la insignia no existe: {src}")
-        self.assertRegex(img.get("width", ""), r"^\d+$")
-        self.assertRegex(img.get("height", ""), r"^\d+$")
-        self.assertTrue(img.get("alt", "").strip(), "alt vacio")
+        self.assertIn(f'href="{PLAY}" data-cta-play', hero, "falta la insignia de Play en el hero")
+        self.assertIn(f'href="{PLAY}" data-cta-play', cta, "falta la insignia de Play en #cta")
+        dig = hashlib.sha256((RAIZ / INSIGNIA).read_bytes()).hexdigest()
+        self.assertEqual(dig, INSIGNIA_SHA256, "la insignia cambio: debe ser la oficial de Google, sin retocar")
 
     def test_4_app_store_sigue_deshabilitado(self):
         p = Enlaces()
@@ -168,16 +180,16 @@ class Lanzamiento(unittest.TestCase):
         self.assertEqual(malas, [], "se menciona Premium: " + ", ".join(malas))
 
     def test_7_legales_intactas(self):
-        if not shutil.which("git"):
-            self.skipTest("git no esta disponible")
-        r = subprocess.run(["git", "-C", str(RAIZ), "rev-parse", "--verify", "-q", "origin/main"], capture_output=True)
-        if r.returncode != 0:
-            self.skipTest("no hay origin/main")
-        for d in LEGALES:
-            ruta = f"{d}/index.html"
-            base = subprocess.run(["git", "-C", str(RAIZ), "show", f"origin/main:{ruta}"], capture_output=True)
-            self.assertEqual(base.returncode, 0, ruta)
-            self.assertEqual((RAIZ / ruta).read_bytes(), base.stdout, f"{ruta} cambio respecto de origin/main")
+        """Huella aprobada de cada legal. Si el dueno aprueba un cambio legal, se actualiza `legales.sha256` en la misma PR."""
+        manifiesto = {}
+        for linea in (RAIZ / "scripts/pruebas/legales.sha256").read_text(encoding="utf-8").splitlines():
+            if linea.strip():
+                dig, ruta = linea.split(None, 1)
+                manifiesto[ruta.strip()] = dig
+        self.assertEqual(sorted(manifiesto), sorted(f"{d}/index.html" for d in LEGALES))
+        for ruta, dig in manifiesto.items():
+            real = hashlib.sha256((RAIZ / ruta).read_bytes()).hexdigest()
+            self.assertEqual(real, dig, f"{ruta} cambio sin actualizar legales.sha256 (los legales solo cambian con aprobacion del dueno)")
 
 
 if __name__ == "__main__":

@@ -1384,8 +1384,10 @@ html[data-malla-recorrido] {
   Área libre: un cuarto del alto (≈ 12 px) a cada lado; la dan los huecos de `.cta-row` (≥ 1.5rem) y el
   `margin-block` de la fila.
 */
+/* `flow-root`: fuera de un contenedor flex (cierre de las guías) el margen negativo del `<img>` colapsaría a través del
+   enlace y el foco y el área táctil volverían a incluir la franja transparente. */
 .play-badge {
-  display: block;
+  display: flow-root;
   width: 10rem;
   max-width: 100%;
   border-radius: 0.375rem;
