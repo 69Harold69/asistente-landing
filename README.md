@@ -1097,6 +1097,7 @@ node rendimiento.mjs                     # presupuesto de la portada: LCP texto 
 node compresion.mjs                      # el servidor de pruebas comprime como Caddy (`encode gzip zstd`: Chrome recibe gzip)
 node todo.mjs --comparar <base> [--con-tactil]   # validar + licencias.py + pruebas python + capturas + lighthouse (+ tactil)
 python3 -I test_portada.py               # defectos sembrados de la portada (pasos, preguntas, FAQPage, promesas absolutas)
+python3 -I test_lanzamiento.py            # lanzamiento en Google Play (#132): sin beta/grupo/invitación, CTA de Play con la insignia, App Store «Próximamente», sin Premium, legales intactas
 ```
 
 Cada comando sale con código ≠ 0 si algo falla; `capturas` y `tactil` fallan ante `console.error`,
